@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Cronogramas</title>
+    <style>
+        /* Estilização simples para organizar */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        div { margin-bottom: 10px; }
+        label { display: inline-block; width: 150px; }
+        select, button { padding: 8px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+        #status { font-weight: bold; color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <h2>Gerador de Cronogramas de Medicina 2026.1</h2>
+
+    <div>
+        <label for="componente">Componente:</label>
+        <select id="componente">
+            <option value="mapd1">MAPD 1 (Período 3)</option>
+            <option value="mapd2">MAPD 2 (Período 4)</option>
+        </select>
+    </div>
+    <div>
+        <label for="turma">Turma:</label>
+        <select id="turma">
+            <option value="A">Turma A</option>
+            <option value="B">Turma B</option>
+            <option value="C">Turma C</option>
+        </select>
+    </div>
+    <div>
+        <label for="diaSemana">Dia da Semana:</label>
+        <select id="diaSemana">
+            <option value="1">Segunda-feira</option>
+            <option value="2">Terça-feira</option>
+            <option value="3">Quarta-feira</option>
+            <option value="4">Quinta-feira</option>
+            <option value="5">Sexta-feira</option>
+        </select>
+    </div>
+    <div>
+        <label for="horario">Horário:</label>
+        <select id="horario">
+            <option value="13:00-15:30">13:00 - 15:30</option>
+            <option value="15:30-18:00">15:30 - 18:00</option>
+        </select>
+    </div>
+    
+    <button id="gerarBtn">Gerar Cronograma (.docx)</button>
+    <p id="status"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
