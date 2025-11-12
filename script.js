@@ -233,12 +233,16 @@ document.addEventListener("DOMContentLoaded", () => {
     /**
      * NOVA FUNÇÃO: Gera a string HTML completa para a nova aba.
      */
+   /**
+     * ATUALIZADA: Gera a string HTML completa para a nova aba.
+     * (A coluna do dia da semana foi removida)
+     */
     function gerarHtmlDoCronograma(dados) {
         // Gera as linhas da tabela principal
         const linhasTabela = dados.eventos.map(evento => `
             <tr>
                 <td>${formatarData(evento.data)}</td>
-                <td></td> <td>${dados.horario}</td>
+                <td>${dados.horario}</td>
                 <td>${evento.conteudo || ''}</td>
                 <td>${evento.ch || ''}</td>
                 <td>${evento.atividades || ''}</td>
@@ -254,8 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <!DOCTYPE html>
             <html lang="pt-br">
             <head>
-                <meta charset="UTF-B">
-                <title>Cronograma ${dados.info.componente} - ${dados.turma}</title>
+                <meta charset="UTF-8"> <title>Cronograma ${dados.info.componente} - ${dados.turma}</title>
                 <style>
                     body { font-family: Arial, sans-serif; margin: 20px; }
                     h2 { text-align: center; }
@@ -325,7 +328,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <thead>
                         <tr>
                             <th>DATA</th>
-                            <th>(${dados.diaSemanaTexto})</th>
                             <th>HORÁRIO</th>
                             <th>CONTEÚDO</th>
                             <th>CH</th>
