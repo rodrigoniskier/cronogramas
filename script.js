@@ -13,60 +13,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /**
      * DADOS FIXOS DO CALENDÁRIO 2026.1
-     * Extraídos dos arquivos PDF e CSV fornecidos.
+     * (Exatamente como antes)
      */
     const CALENDARIO_2026_1 = {
-        // INÍCIO DAS AULAS 2026.1 
         inicioAulas: new Date("2026-02-05T00:00:00-03:00"), 
-        // Encerramento semestre 2026.1 
         fimSemestre: new Date("2026-07-01T23:59:59-03:00"), 
-        
-        // Feriados e eventos que param as aulas 
         feriados: [
-            "2026-02-16", // Carnaval 
-            "2026-02-17", // Carnaval 
-            "2026-02-18", // Carnaval 
-            "2026-04-02", // Feriado Semana Santa 
-            "2026-04-03", // Feriado Semana Santa 
-            "2026-04-21", // Feriado Tiradentes 
-            "2026-05-01", // Feriado Dia do Trabalhador 
-            "2026-05-08", // III MED INOVA 
-            "2026-06-04", // Feriado de Corpus Christi 
-            "2026-06-24", // Feriado de São João 
+            "2026-02-16", "2026-02-17", "2026-02-18", "2026-04-02", "2026-04-03",
+            "2026-04-21", "2026-05-01", "2026-05-08", "2026-06-04", "2026-06-24",
         ],
-
-        // Datas de provas fixas do calendário geral 
-        provaIntegrada: "2026-06-13", // 
-        reposicao: "2026-06-15", //  (Usaremos a primeira data do período)
-        avaliacaoFinal: "2026-06-22", //  (Usaremos a primeira data do período)
+        provaIntegrada: "2026-06-13",
+        reposicao: "2026-06-15",
+        avaliacaoFinal: "2026-06-22",
     };
 
-    // Datas específicas das provas P3 e P4 
     const PROVAS_2026_1 = {
-        P3: {
-            "1a_avaliacao": "2026-04-27" // MAPD P3 [cite: 14]
-        },
-        P4: {
-            "1a_avaliacao": "2026-04-01" // MAPD P4 [cite: 15]
-        }
+        P3: { "1a_avaliacao": "2026-04-27" },
+        P4: { "1a_avaliacao": "2026-04-01" }
     };
 
     /**
-     * MODELO DE CONTEÚDO - MAPD 1 (Período 3)
-     * Extraído do arquivo: CRONOGRAMA MAPD-1 TURMA ÚNICA 2025-2.docx 
-     * 'dataFixaKey' mapeia este evento para uma data específica.
+     * MODELO DE CONTEÚDO - MAPD 1
+     * (Exatamente como antes)
      */
     const TEMPLATE_MAPD1 = {
         info: {
-            componente: "Mecanismos de Agressão, Patológicos e Defesa 1.", // [cite: 2]
-            ch: "60h/A", // [cite: 2]
-            teorica: "30h/A", // [cite: 2]
-            pratica: "30h/A", // [cite: 2]
-            periodo: "3º", // [cite: 2]
-            coordenador: "Rodrigo Niskier Ferreira Barbosa." // [cite: 2]
+            componente: "Mecanismos de Agressão, Patológicos e Defesa 1.",
+            ch: "60h/A", teorica: "30h/A", pratica: "30h/A",
+            periodo: "3º", coordenador: "Rodrigo Niskier Ferreira Barbosa."
         },
         conteudo: [
-            // 
             { data: null, dataFixaKey: null, conteudo: "Apresentação do componente, Lesões e Adaptações", ch: "3h/T", atividades: "Aula expositiva; metodologia ativa; uso de TICs.", recursos: "Vídeos, Power Point, Imagens, Software", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
             { data: null, dataFixaKey: null, conteudo: "Morte Celular: Necrose e Apoptose", ch: "3h/T", atividades: "Aula expositiva; metodologia ativa; uso de TICs.", recursos: "Vídeos, Power Point, Imagens, Software", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
             { data: null, dataFixaKey: null, conteudo: "Aula teórico-prática: Discussão de casos clínicos", ch: "3h/P", atividades: "Uso de Plataformas Digitais", recursos: "Dispositivos digitais", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
@@ -84,27 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
             { data: null, dataFixaKey: null, conteudo: "Aula teórico-prática: Projeto de Controle de infecções em serviços de saúde", ch: "3h/P", atividades: "Uso de Plataformas Digitais", recursos: "Dispositivos digitais", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
             { data: null, dataFixaKey: null, conteudo: "Aula teórico-prática: Resistência aos antibióticos", ch: "3h/P", atividades: "Uso de Plataformas Digitais", recursos: "Dispositivos digitais", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
             { data: null, dataFixaKey: null, conteudo: "Aula teórico-prática: discussão de caso clínico", ch: "3h/P", atividades: "Uso de Plataformas Digitais", recursos: "Dispositivos digitais", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
-            { data: null, dataFixaKey: "provaIntegrada", conteudo: "Avaliação integrada", ch: "3h/T", atividades: "", recursos: "", grupos: "", docente: "", local: "" }, // 
-            { data: null, dataFixaKey: "reposicao", conteudo: "Reposição das avaliações de aprendizagem", ch: "3h/T", atividades: "Prova teórica", recursos: "Prova, Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" }, // 
-            { data: null, dataFixaKey: "avaliacaoFinal", conteudo: "Avaliação final", ch: "3h/T", atividades: "Prova teórica", recursos: "Prova, Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" } // 
+            { data: null, dataFixaKey: "provaIntegrada", conteudo: "Avaliação integrada", ch: "3h/T", atividades: "", recursos: "", grupos: "", docente: "", local: "" },
+            { data: null, dataFixaKey: "reposicao", conteudo: "Reposição das avaliações de aprendizagem", ch: "3h/T", atividades: "Prova teórica", recursos: "Prova, Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" },
+            { data: null, dataFixaKey: "avaliacaoFinal", conteudo: "Avaliação final", ch: "3h/T", atividades: "Prova teórica", recursos: "Prova, Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de aula" }
         ]
     };
 
     /**
-     * MODELO DE CONTEÚDO - MAPD 2 (Período 4)
-     * Extraído do arquivo: CRONOGRAMA MAPD-2 TURMA A 2025-2.docx 
+     * MODELO DE CONTEÚDO - MAPD 2
+     * (Exatamente como antes)
      */
     const TEMPLATE_MAPD2 = {
         info: {
-            componente: "Mecanismos de Agressão, Patológicos e Defesa 2.", // [cite: 6]
-            ch: "60h/A", // [cite: 6]
-            teorica: "30h/A", // [cite: 6]
-            pratica: "30h/A", // [cite: 6]
-            periodo: "4º", // [cite: 6]
-            coordenador: "Rodrigo Niskier Ferreira Barbosa." // [cite: 6]
+            componente: "Mecanismos de Agressão, Patológicos e Defesa 2.",
+            ch: "60h/A", teorica: "30h/A", pratica: "30h/A",
+            periodo: "4º", coordenador: "Rodrigo Niskier Ferreira Barbosa."
         },
         conteudo: [
-            // 
             { data: null, dataFixaKey: null, conteudo: "Apresentação do Componente; Resgate de conteúdos (Foco: Mecanismos Básicos de Agressão, Patológicos e de Defesa)", ch: "3h/T", atividades: "Apresentação do modelo e plataformas IA; Definição de metas iniciais; Início da interação com IA para explorar \"Lesões e Adaptações\", \"Morte Celular\" e \"Imunidade\" via casos e simulações.", recursos: "Plataforma Black Board (IA); Material Institucional.", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de Aula" },
             { data: null, dataFixaKey: null, conteudo: "Aula Teórico-Prática: Casos Clínicos - Foco em Bactérias de Interesse Clínico", ch: "3h/P", atividades: "Discussão de casos complexos envolvendo bactérias comuns; Análise de raciocínio diagnóstico inicial e resposta imune inata; Mentoria sobre uso da IA para pesquisa de patógenos.", recursos: "Plataforma Black Board (Dados de Interação IA, Casos); Artigos/Guidelines (via IA).", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" },
             { data: null, dataFixaKey: null, conteudo: "Aula Teórica- Prática: Habilidades Laboratoriais de Microbiologia (Coloração de Gram, Semeadura - Princípios)", ch: "3h/P", atividades: "Prática orientada em laboratório físico focada na aplicação clínica da coloração de Gram e semeadura; Atividade baseada em IA para estudo guiado.", recursos: "Laboratório de Microbiologia; Microscópios; Corantes; Placas; Plataforma Black Board (Guias virtuais).", grupos: "Grupos:1 e 2 (prática), Grupos 3 e 4 Atividade via BB", docente: "Rodrigo Niskier", local: "Laboratório de Microbiologia (Bloco G)" },
@@ -121,39 +93,48 @@ document.addEventListener("DOMContentLoaded", () => {
             { data: null, dataFixaKey: null, conteudo: "Imunidade Antitumoral", ch: "3h/T", atividades: "Alunos apresentam a resolução de um Mega-Desafio inicial sobre interação tumor-imunidade; Feedback focado no raciocínio e uso da IA na pesquisa.", recursos: "Apresentações dos alunos; Plataforma Black Board (Análise de processo IA).", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de Aula" },
             { data: null, dataFixaKey: null, conteudo: "Aula Teórico-Prática: Casos - Foco em Imunoterapia e Novas Abordagens em Câncer", ch: "3h/P", atividades: "Discussão de casos que aplicam imunoterapia ou terapias alvo em oncologia; Análise dos mecanismos de ação e efeitos adversos.", recursos: "Plataforma Black Board (Casos, Simulações IA de tratamento); Artigos/Revisões (via IA).", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" },
             { data: null, dataFixaKey: null, conteudo: "Oficina Prática (Simulação/Discussão): Estudo de Casos Clínicos (Teórico-Prática - Integração)", ch: "3h/P", atividades: "Resolução guiada de casos clínicos complexos (utilizando IA); Foco na integração de todos os temas em um único paciente.", recursos: "Plataforma Black Board (Casos simulados, Ferramentas IA); Material de referência.", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" },
-            { data: null, dataFixaKey: "provaIntegrada", conteudo: "PROVA INTEGRADA (comum para todas as turmas)", ch: "3h/T", atividades: "", recursos: "", grupos: "", docente: "", local: "" }, // 
-            { data: null, dataFixaKey: "reposicao", conteudo: "REPOSIÇÕES", ch: "3h/T", atividades: "Prova teórica", recursos: "Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" }, // 
-            // O Feriado de 08/12  não existe em 2026.1, então o ignoramos.
-            { data: null, dataFixaKey: "avaliacaoFinal", conteudo: "AVALIAÇÃO FINAL", ch: "3h/T", atividades: "Prova teórica", recursos: "Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" }, // 
-            { data: null, dataFixaKey: null, conteudo: "FEEDBACK FINAL E ENCERRAMENTO", ch: "3h/T", atividades: "Revisão de avaliações e inclusão de notas no sistema acadêmico", recursos: "Plataforma BlackBoard", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de Aula" } // 
+            { data: null, dataFixaKey: "provaIntegrada", conteudo: "PROVA INTEGRADA (comum para todas as turmas)", ch: "3h/T", atividades: "", recursos: "", grupos: "", docente: "", local: "" },
+            { data: null, dataFixaKey: "reposicao", conteudo: "REPOSIÇÕES", ch: "3h/T", atividades: "Prova teórica", recursos: "Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" },
+            { data: null, dataFixaKey: "avaliacaoFinal", conteudo: "AVALIAÇÃO FINAL", ch: "3h/T", atividades: "Prova teórica", recursos: "Espelho de prova", grupos: "Todos", docente: "Rodrigo Niskier", local: "Laboratório de Informática" },
+            { data: null, dataFixaKey: null, conteudo: "FEEDBACK FINAL E ENCERRAMENTO", ch: "3h/T", atividades: "Revisão de avaliações e inclusão de notas no sistema acadêmico", recursos: "Plataforma BlackBoard", grupos: "Todos", docente: "Rodrigo Niskier", local: "Sala de Aula" }
         ]
     };
 
-    // Objeto 'window.docx' é fornecido pela biblioteca 'docx' carregada no HTML
-    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, ImageRun, HeadingLevel, TextRun, AlignmentType } = window.docx;
+    /**
+     * NOVA FUNÇÃO: Converte um arquivo (como o logo) para Base64.
+     * Isto permite-nos incorporar a imagem no HTML.
+     */
+    function converterParaBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
 
     /**
-     * Função principal que é chamada quando o botão é clicado.
+     * FUNÇÃO PRINCIPAL (MODIFICADA)
      */
     async function lidarComGeracao() {
         botaoGerar.disabled = true;
-        statusEl.textContent = "Gerando cronograma... (isso pode levar alguns segundos)";
+        statusEl.textContent = "Gerando cronograma...";
 
         try {
-            // 1. Coletar dados do formulário
+            // 1. Coletar dados (igual a antes)
             const selecao = {
                 componente: inputs.componente.value,
                 turma: inputs.turma.value,
-                diaSemana: parseInt(inputs.diaSemana.value, 10), // 1 = Seg, 2 = Ter, ..., 5 = Sex
+                diaSemana: parseInt(inputs.diaSemana.value, 10),
                 horario: inputs.horario.value,
                 diaSemanaTexto: inputs.diaSemana.options[inputs.diaSemana.selectedIndex].text
             };
 
-            // 2. Escolher o modelo e as datas de prova corretos
+            // 2. Escolher modelo (igual a antes)
             const template = (selecao.componente === 'mapd1') ? TEMPLATE_MAPD1 : TEMPLATE_MAPD2;
             const provas = (selecao.componente === 'mapd1') ? PROVAS_2026_1.P3 : PROVAS_2026_1.P4;
 
-            // 3. Calcular todas as datas dos eventos
+            // 3. Calcular datas (igual a antes)
             const eventosCalculados = calcularDatasEventos(
                 template.conteudo,
                 selecao.diaSemana,
@@ -161,29 +142,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 provas
             );
             
-            // 4. Buscar o logo
-            const logoBuffer = await fetch('./logo.jpg')
-                .then(res => res.arrayBuffer())
+            // 4. (NOVO) Carregar o logo e converter para Base64
+            // Isto garante que a imagem funciona na nova aba.
+            const logoBase64 = await fetch('./logo.jpg')
+                .then(res => res.blob())
+                .then(converterParaBase64)
                 .catch(err => {
-                    console.error("Erro ao carregar o logo.jpg. Certifique-se que o arquivo existe e que está a usar um servidor local.");
-                    throw new Error("Falha ao carregar logo.jpg");
+                    console.error("Erro ao carregar o logo.jpg.", err);
+                    throw new Error("Falha ao carregar logo.jpg. Verifique se o arquivo está na pasta.");
                 });
 
-            // 5. Preparar dados completos para o gerador DOCX
+            // 5. Preparar dados completos (igual a antes)
             const dadosDocumento = {
                 ...selecao,
                 info: template.info,
                 eventos: eventosCalculados,
-                logo: logoBuffer
+                logo: logoBase64 // Agora contém a string Base64
             };
             
-            // 6. Criar o documento
-            const doc = criarDocumento(dadosDocumento);
+            // 6. (NOVO) Gerar a string HTML
+            const htmlString = gerarHtmlDoCronograma(dadosDocumento);
 
-            // 7. Gerar e salvar o arquivo
-            const blob = await Packer.toBlob(doc);
-            saveAs(blob, `cronograma_${selecao.componente}_${selecao.turma}_2026-1.docx`);
-            statusEl.textContent = "Cronograma gerado com sucesso!";
+            // 7. (NOVO) Abrir a nova aba e escrever o HTML
+            const novaAba = window.open();
+            novaAba.document.write(htmlString);
+            novaAba.document.close(); // Finaliza a escrita
+
+            statusEl.textContent = "Visualização gerada com sucesso!";
 
         } catch (error) {
             console.error(error);
@@ -194,18 +179,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
-     * Calcula as datas para cada evento do cronograma.
-     * @param {Array} conteudoTemplate - A lista de objetos de conteúdo.
-     * @param {number} diaSemanaEscolhido - O dia da semana (1-5).
-     * @param {object} calendario - O objeto CALENDARIO_2026_1.
-     * @param {object} provas - O objeto de provas (P3 ou P4).
-     * @returns {Array} A lista de eventos com as datas calculadas.
+     * LÓGICA DE DATAS (Exatamente como antes)
      */
     function calcularDatasEventos(conteudoTemplate, diaSemanaEscolhido, calendario, provas) {
-        // Faz uma cópia para não alterar o original
         let eventos = JSON.parse(JSON.stringify(conteudoTemplate));
-        
-        // Mapeia todas as datas fixas
         const datasFixas = {
             "1a_avaliacao": provas["1a_avaliacao"],
             "provaIntegrada": calendario.provaIntegrada,
@@ -214,189 +191,158 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         let dataAtual = new Date(calendario.inicioAulas);
-
-        // 1. Acha a primeira data de aula
-        // Avança a data até ser o dia da semana escolhido
         while (dataAtual.getDay() !== diaSemanaEscolhido) {
             dataAtual.setDate(dataAtual.getDate() + 1);
         }
 
-        // 2. Itera sobre cada evento do template e atribui uma data
         for (const evento of eventos) {
-            // Verifica se este evento tem uma data fixa (ex: Prova)
             if (evento.dataFixaKey && datasFixas[evento.dataFixaKey]) {
                 const dataFixaStr = datasFixas[evento.dataFixaKey];
-                evento.data = new Date(`${dataFixaStr}T00:00:00-03:00`); // Define a data fixa
-                
-                // Se for uma prova que substitui uma aula semanal,
-                // avançamos a 'dataAtual' para a semana seguinte
-                // para que a próxima aula não caia na mesma data da prova.
+                evento.data = new Date(`${dataFixaStr}T00:00:00-03:00`);
                 if (dataAtual < evento.data) {
                     dataAtual.setTime(evento.data.getTime());
                     dataAtual.setDate(dataAtual.getDate() + 7);
                 }
-            
             } else {
-                // Evento normal (aula semanal)
-                
-                // 3. Verifica se a data atual é um feriado
                 let dataValida = false;
                 while (!dataValida) {
-                    // Formata para 'YYYY-MM-DD'
                     const dataAtualStr = dataAtual.toISOString().split('T')[0];
-                    
                     if (calendario.feriados.includes(dataAtualStr)) {
-                        // É feriado, pula para a próxima semana
                         dataAtual.setDate(dataAtual.getDate() + 7);
                     } else {
-                        // Não é feriado, data é válida
                         dataValida = true;
                     }
                 }
-                
-                // 4. Atribui a data válida ao evento
                 evento.data = new Date(dataAtual);
-                
-                // 5. Avança para a próxima semana
                 dataAtual.setDate(dataAtual.getDate() + 7);
             }
         }
-        
         return eventos;
     }
 
     /**
-     * Formata um objeto Date para "DD/MM"
+     * Formata "DD/MM" (Exatamente como antes)
      */
     function formatarData(data) {
         if (!data) return "";
         const dia = String(data.getDate()).padStart(2, '0');
-        const mes = String(data.getMonth() + 1).padStart(2, '0'); // Meses são 0-indexados
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
         return `${dia}/${mes}`;
     }
 
     /**
-     * Cria o objeto do documento DOCX.
-     * @param {object} dados - Todos os dados compilados.
-     * @returns {Document} O objeto Document da biblioteca docx.
+     * NOVA FUNÇÃO: Gera a string HTML completa para a nova aba.
      */
-    function criarDocumento(dados) {
-        const doc = new Document({
-            sections: [{
-                properties: {
-                    // Configura margens (opcional, mas bom para layout)
-                    // Unidade: 1/1440 de uma polegada (twips)
-                    margin: { top: 720, right: 720, bottom: 720, left: 720 },
-                },
-                children: [
-                    // --- Logótipo ---
-                    new Paragraph({
-                        children: [
-                            new ImageRun({
-                                data: dados.logo,
-                                transformation: {
-                                    width: 200,
-                                    height: 57, // Proporção aproximada do logo
-                                },
-                            }),
-                        ],
-                    }),
-                    new Paragraph({ text: "Coordenação de Medicina", style: "Heading2" }), // 
-                    
-                    // --- Tabela de Cabeçalho (Info do Curso) ---
-                    // 
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph("1. CURSO: Medicina")] }),
-                                    new TableCell({ children: [new Paragraph("CRONOGRAMA DE AULAS")] }),
-                                ],
-                            }),
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph(`2. COMPONENTE CURRICULAR: ${dados.info.componente}`)] }),
-                                    new TableCell({ children: [
-                                        new Paragraph(`CH: ${dados.info.ch}`),
-                                        new Paragraph(`Teórica: ${dados.info.teorica}`),
-                                        new Paragraph(`Prática: ${dados.info.pratica}`),
-                                    ]}),
-                                ],
-                            }),
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph("3. SEMESTRE: 2026/1")] }),
-                                    new TableCell({ children: [
-                                        new Paragraph(`PERÍODO: ${dados.info.periodo}`),
-                                        new Paragraph(`TURMA: ${dados.turma}`),
-                                    ]}),
-                                ],
-                            }),
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph(`4. COORDENADOR: ${dados.info.coordenador}`)] }),
-                                    new TableCell({ children: [new Paragraph("")] }), // Célula vazia
-                                ],
-                            }),
-                        ],
-                    }),
-                    
-                    new Paragraph({ text: "CRONOGRAMA", style: "Heading1", alignment: AlignmentType.CENTER }), // [cite: 3, 7]
+    function gerarHtmlDoCronograma(dados) {
+        // Gera as linhas da tabela principal
+        const linhasTabela = dados.eventos.map(evento => `
+            <tr>
+                <td>${formatarData(evento.data)}</td>
+                <td></td> <td>${dados.horario}</td>
+                <td>${evento.conteudo || ''}</td>
+                <td>${evento.ch || ''}</td>
+                <td>${evento.atividades || ''}</td>
+                <td>${evento.recursos || ''}</td>
+                <td>${evento.grupos || ''}</td>
+                <td>${evento.docente || ''}</td>
+                <td>${evento.local || ''}</td>
+            </tr>
+        `).join(''); // .join('') junta todas as strings das linhas
 
-                    // --- Tabela Principal do Cronograma ---
-                    // [cite: 4, 8]
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            // Cabeçalho da Tabela
-                            new TableRow({
-                                tableHeader: true,
-                                children: [
-                                    new TableCell({ children: [new Paragraph("DATA")] }),
-                                    new TableCell({ children: [new Paragraph(`(${dados.diaSemanaTexto})`)] }),
-                                    new TableCell({ children: [new Paragraph("HORÁRIO")] }),
-                                    new TableCell({ children: [new Paragraph("CONTEÚDO")] }),
-                                    new TableCell({ children: [new Paragraph("CH")] }),
-                                    new TableCell({ children: [new Paragraph("ATIVIDADES")] }),
-                                    new TableCell({ children: [new Paragraph("RECURSOS")] }),
-                                    new TableCell({ children: [new Paragraph("GRUPOS")] }),
-                                    new TableCell({ children: [new Paragraph("DOCENTES")] }),
-                                    new TableCell({ children: [new Paragraph("LOCAL")] }),
-                                ],
-                            }),
-                            
-                            // Linhas de Conteúdo (geradas dinamicamente)
-                            ...dados.eventos.map(evento => {
-                                return new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph(formatarData(evento.data))] }),
-                                        new TableCell({ children: [new Paragraph("")] }), // Coluna do dia da semana (vazia)
-                                        new TableCell({ children: [new Paragraph(dados.horario)] }),
-                                        new TableCell({ children: [new Paragraph(evento.conteudo)] }),
-                                        new TableCell({ children: [new Paragraph(evento.ch)] }),
-                                        new TableCell({ children: [new Paragraph(evento.atividades)] }),
-                                        new TableCell({ children: [new Paragraph(evento.recursos)] }),
-                                        new TableCell({ children: [new Paragraph(evento.grupos)] }),
-                                        new TableCell({ children: [new Paragraph(evento.docente)] }),
-                                        new TableCell({ children: [new Paragraph(evento.local)] }),
-                                    ],
-                                });
-                            })
-                        ],
-                    }),
-                ],
-            }],
-            // Define estilos básicos (opcional, mas melhora a aparência)
-            styles: {
-                default: {
-                    heading1: { run: { size: 32, bold: true }, paragraph: { spacing: { before: 240, after: 120 } } },
-                    heading2: { run: { size: 28, bold: true }, paragraph: { spacing: { before: 200, after: 100 } } },
-                },
-            },
-        });
+        // Retorna o HTML completo da página
+        return `
+            <!DOCTYPE html>
+            <html lang="pt-br">
+            <head>
+                <meta charset="UTF-B">
+                <title>Cronograma ${dados.info.componente} - ${dados.turma}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h2 { text-align: center; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                    th, td { border: 1px solid #ccc; padding: 6px; font-size: 10pt; text-align: left; vertical-align: top; }
+                    th { background-color: #f4f4f4; }
+                    
+                    /* Estilos da tabela de cabeçalho (para ficar igual ao modelo) */
+                    .table-header { margin-bottom: 20px; }
+                    .table-header td { border: 1px solid #999; vertical-align: top; padding: 5px; }
+                    .table-header tr td:first-child { width: 50%; }
+                    
+                    /* Estilos para Impressão */
+                    @media print {
+                        body { margin: 0.5cm; }
+                        /* Esconde o botão de imprimir ao imprimir */
+                        .no-print { display: none; }
+                        /* Tenta quebrar a página de forma inteligente (evita quebrar linhas da tabela) */
+                        tr { page-break-inside: avoid; }
+                    }
+                    
+                    /* Estilo do botão de imprimir */
+                    .print-button {
+                        padding: 10px 15px; font-size: 16px; background-color: #007bff;
+                        color: white; border: none; border-radius: 5px; cursor: pointer;
+                        margin-bottom: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <button class="print-button no-print" onclick="window.print()">
+                    Imprimir para PDF
+                </button>
 
-        return doc;
+                <img src="${dados.logo}" alt="Logo UNIPÊ" style="width: 200px; height: auto;">
+                <p>Coordenação de Medicina</p>
+
+                <table class="table-header">
+                    <tr>
+                        <td>1. CURSO: Medicina</td>
+                        <td>CRONOGRAMA DE AULAS</td>
+                    </tr>
+                    <tr>
+                        <td>2. COMPONENTE CURRICULAR: ${dados.info.componente}</td>
+                        <td>
+                            CH: ${dados.info.ch}<br>
+                            Teórica: ${dados.info.teorica}<br>
+                            Prática: ${dados.info.pratica}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3. SEMESTRE: 2026/1</td>
+                        <td>
+                            PERÍODO: ${dados.info.periodo}<br>
+                            TURMA: ${dados.turma}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>4. COORDENADOR: ${dados.info.coordenador}</td>
+                        <td></td>
+                    </tr>
+                </table>
+
+                <h2>CRONOGRAMA</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>DATA</th>
+                            <th>(${dados.diaSemanaTexto})</th>
+                            <th>HORÁRIO</th>
+                            <th>CONTEÚDO</th>
+                            <th>CH</th>
+                            <th>ATIVIDADES</th>
+                            <th>RECURSOS</th>
+                            <th>GRUPOS</th>
+                            <th>DOCENTES</th>
+                            <th>LOCAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasTabela}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
     }
 
     // Adiciona o 'listener' ao botão
