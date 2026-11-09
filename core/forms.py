@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, BaseUserCreationForm
 
 from .models import Componente, Configuracao, DataBloqueada, Semestre, Usuario
 
@@ -21,12 +21,30 @@ class _Bootstrap:
 class LoginForm(_Bootstrap, AuthenticationForm):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
-        self.fields["username"].label = "E-mail"
-        self.fields["username"].widget = forms.EmailInput(attrs={"autofocus": True, "autocomplete": "username"})
+        self.fields["username"].label = "Nome de usuário ou e-mail"
         self._estilizar()
 
+
+class CadastroProfessorForm(_Bootstrap, BaseUserCreationForm):
+    class Meta:
+        model = Usuario
+        fields = ["nome", "email", "username"]
+        widgets = {
+            "nome": forms.TextInput(attrs={"autocomplete": "name"}),
+            "email": forms.EmailInput(attrs={"autocomplete": "email"}),
+            "username": forms.TextInput(attrs={"autocomplete": "username", "autocapitalize": "none"}),
+        }
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.fields["username"].required = True
+        self._estilizar()
+
+    def clean_email(self):
+        return self.cleaned_data["email"].lower()
+
     def clean_username(self):
-        return self.cleaned_data["username"].strip().lower()
+        return self.cleaned_data["username"].lower()
 
 
 class UsuarioForm(_Bootstrap, forms.ModelForm):

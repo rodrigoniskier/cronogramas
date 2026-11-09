@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 
 DIAS_SEMANA = [
@@ -28,6 +29,17 @@ def ch_padrao(inicio, fim):
 
 class UsuarioManager(BaseUserManager):
     use_in_migrations = True
+
+    def _campo_login(self, identificador):
+        identificador = identificador.strip().lower()
+        campo = self.model.USERNAME_FIELD if "@" in identificador else "username"
+        return {campo: identificador}
+
+    def get_by_natural_key(self, username):
+        return self.get(**self._campo_login(username))
+
+    async def aget_by_natural_key(self, username):
+        return await self.aget(**self._campo_login(username))
 
     def _criar(self, email, password, **extra):
         if not email:
@@ -57,7 +69,18 @@ class Usuario(AbstractUser):
         COORD = "COORD", "Coordenador"
         PROF = "PROF", "Professor"
 
-    username = None
+    username = models.CharField(
+        "nome de usuário",
+        max_length=150,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Use letras sem acento, números, ponto, hífen ou sublinhado.",
+        validators=[RegexValidator(
+            r"\A[a-zA-Z0-9._-]+\Z",
+            "Use apenas letras sem acento, números, ponto, hífen ou sublinhado.",
+        )],
+    )
     first_name = None
     last_name = None
     email = models.EmailField("e-mail", unique=True)
@@ -78,6 +101,7 @@ class Usuario(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.email = (self.email or "").strip().lower()
+        self.username = (self.username or "").strip().lower() or None
         super().save(*args, **kwargs)
 
     @property

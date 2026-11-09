@@ -7,7 +7,7 @@
     {% else %}
       <label class="form-label fw-semibold" for="{{ f.id_for_label }}">{{ f.label|capfirst }}{% if f.field.required %} <span class="text-danger" title="obrigatório">*</span>{% endif %}</label>
       {{ f }}
-      {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+      {% if f.help_text %}<div class="form-text" id="{{ f.auto_id }}_helptext">{{ f.help_text }}</div>{% endif %}
     {% endif %}
     {% for e in f.errors %}<div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ e }}</div>{% endfor %}
   </div>

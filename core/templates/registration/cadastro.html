@@ -1,0 +1,11 @@
+{% extends "registration/base.html" %}
+
+{% block titulo %}Cadastro de professor{% endblock %}
+{% block formulario %}
+  <h2 class="h5 mb-3">Cadastro de professor</h2>
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "core/_form.html" with col="col-12" %}
+    <button class="btn btn-primary w-100 py-2 mt-3">Criar conta e entrar</button>
+  </form>
+  <p class="text-center mt-3 mb-0">Já tem conta? <a href="{% url 'login' %}">Entrar</a>.</p>
+{% endblock %}

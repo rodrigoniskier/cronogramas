@@ -7,7 +7,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import PermissionDenied
@@ -18,10 +18,12 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import content_disposition_header
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from . import exports
-from .forms import ComponenteForm, ConfiguracaoForm, DataBloqueadaForm, SemestreForm, UsuarioForm
+from .forms import CadastroProfessorForm, ComponenteForm, ConfiguracaoForm, DataBloqueadaForm, SemestreForm, UsuarioForm
 from .models import (
     DIAS_SEMANA, Componente, Configuracao, Conflito, DataBloqueada, Encontro,
     HistoricoAlteracao, HorarioSemanal, ObservacaoConflito, Semestre, Usuario, ch_padrao,
@@ -357,6 +359,36 @@ def api_encontro_historico(request, pk):
          "campo": h.campo, "anterior": h.valor_anterior, "novo": h.valor_novo}
         for h in itens
     ]})
+
+
+# ---------------------------------------------------------------- acesso
+
+
+@login_not_required
+@sensitive_post_parameters()
+@never_cache
+@require_http_methods(["GET", "POST"])
+def cadastro_professor(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    form = CadastroProfessorForm(
+        request.POST if request.method == "POST" else None,
+        instance=Usuario(perfil=Usuario.Perfil.PROF),
+    )
+    if form.is_valid():
+        try:
+            with transaction.atomic():
+                usuario = form.save()
+        except IntegrityError:
+            # Outra requisição pode cadastrar o mesmo e-mail ou login após a validação.
+            form.validate_unique()
+            if not form.errors:
+                raise
+        else:
+            login(request, usuario)
+            return redirect("dashboard")
+    return render(request, "registration/cadastro.html", {"form": form})
 
 
 # ---------------------------------------------------------------- dashboard

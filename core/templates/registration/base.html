@@ -1,0 +1,26 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}{% endblock %} · CronoMed UNIPÊ</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/icons/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/app.css' %}">
+</head>
+<body>
+<main class="login-fundo">
+  <div class="card login-card shadow-lg">
+    <div class="card-body p-4">
+      <div class="text-center mb-3">
+        {% if tem_logo %}<img src="{% url 'logo' %}" alt="UNIPÊ — Centro Universitário de João Pessoa">
+        {% else %}<div class="marca-texto">UNIPÊ<small>Centro Universitário de João Pessoa</small></div>{% endif %}
+      </div>
+      <h1 class="h4 text-center fw-bold mb-0" style="color:var(--unipe-azul)">CronoMed</h1>
+      <p class="text-center text-secondary small mb-4">Cronogramas acadêmicos colaborativos</p>
+      {% block formulario %}{% endblock %}
+    </div>
+    <div class="card-footer text-center small text-secondary bg-white">CronoMed UNIPÊ — Desenvolvido por Prof. Rodrigo Niskier.</div>
+  </div>
+</main>
+</body>
+</html>
