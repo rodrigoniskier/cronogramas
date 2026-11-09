@@ -1,0 +1,31 @@
+{% extends "core/base.html" %}
+{% block titulo %}{{ sem.nome }}{% endblock %}
+{% block cabecalho %}Semestre {{ sem.nome }}{% endblock %}
+{% block conteudo %}
+<a href="{% url 'semestres' %}" class="small"><i class="bi bi-arrow-left"></i> Voltar aos semestres</a>
+<div class="row g-3 mt-1">
+  <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-unlock"></i> Período de preenchimento</div><div class="card-body">
+    <p>Período letivo: <strong>{{ sem.data_inicio|date:"d/m/Y" }} a {{ sem.data_fim|date:"d/m/Y" }}</strong> · <a href="{% url 'semestre_editar' sem.pk %}">editar</a></p>
+    {% if sem.preenchimento_liberado %}
+      <p><span class="badge text-bg-success"><i class="bi bi-unlock"></i> Preenchimento liberado</span> {% if sem.liberado_em %}<span class="small text-secondary">desde {{ sem.liberado_em|date:"d/m/Y H:i" }}</span>{% endif %}</p>
+      <form method="post" data-confirmar="Suspender o preenchimento? Professores e coordenadores não poderão editar os cronogramas deste semestre.">{% csrf_token %}<input type="hidden" name="acao" value="suspender"><button class="btn btn-outline-secondary"><i class="bi bi-lock"></i> Suspender preenchimento</button></form>
+    {% else %}
+      <p><span class="badge text-bg-secondary"><i class="bi bi-lock"></i> Preenchimento não liberado</span></p>
+      <p class="small text-secondary">Enquanto não liberado, apenas a administração edita os cronogramas. Componentes incluídos depois da liberação já nascem liberados.</p>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="liberar"><button class="btn btn-destaque"><i class="bi bi-unlock"></i> Liberar preenchimento</button></form>
+    {% endif %}
+  </div></div></div>
+  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-calendar-x"></i> Feriados e datas bloqueadas</div><div class="card-body">
+    <table class="table table-sm"><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th></th></tr></thead><tbody>
+      {% for d in sem.datas_bloqueadas.all %}<tr><td>{{ d.data|date:"D, d/m/Y" }}</td><td>{{ d.descricao }}</td><td>{{ d.get_tipo_display }}</td>
+        <td class="text-end"><form method="post" data-confirmar="Liberar esta data? Os encontros regulares previstos para ela serão recriados.">{% csrf_token %}<input type="hidden" name="acao" value="remover_data"><input type="hidden" name="id" value="{{ d.pk }}"><button class="btn btn-sm btn-outline-danger" aria-label="Remover data bloqueada"><i class="bi bi-trash"></i></button></form></td></tr>
+      {% empty %}<tr><td colspan="4" class="text-secondary text-center">Nenhuma data bloqueada.</td></tr>{% endfor %}
+    </tbody></table>
+    <form method="post" novalidate>{% csrf_token %}<input type="hidden" name="acao" value="bloquear_data">
+      {% include "core/_form.html" with col="col-md-4" %}
+      <button class="btn btn-primary mt-3"><i class="bi bi-plus-lg"></i> Bloquear data</button>
+    </form>
+    <p class="small text-secondary mt-2 mb-0">Ao bloquear uma data, encontros regulares ainda vazios nesse dia são removidos; encontros já preenchidos são mantidos como excepcionais para revisão do coordenador.</p>
+  </div></div></div>
+</div>
+{% endblock %}

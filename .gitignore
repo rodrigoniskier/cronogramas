@@ -1,0 +1,7 @@
+db.sqlite3
+.secret_key
+.env
+media/
+staticfiles/
+__pycache__/
+*.pyc

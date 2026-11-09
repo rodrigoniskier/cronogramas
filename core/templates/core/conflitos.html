@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% block titulo %}Central de Conflitos{% endblock %}
+{% block cabecalho %}Central de Conflitos{% endblock %}
+{% block conteudo %}
+<div class="card mb-3"><div class="card-body">
+<form method="get" class="row g-2 align-items-end">
+  <div class="col-md-3"><label class="form-label small mb-0" for="c-prof">Professor</label>
+    <select id="c-prof" name="professor" class="form-select form-select-sm pesquisavel"><option value="">Todos</option>{% for d in docentes %}<option value="{{ d.pk }}" {% if g.professor == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.nome }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small mb-0" for="c-comp">Componente</label>
+    <select id="c-comp" name="componente" class="form-select form-select-sm"><option value="">Todos</option>{% for c in componentes %}<option value="{{ c.pk }}" {% if g.componente == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nome }} — T. {{ c.turma }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><label class="form-label small mb-0" for="c-coord">Coordenador</label>
+    <select id="c-coord" name="coordenador" class="form-select form-select-sm"><option value="">Todos</option>{% for d in coordenadores %}<option value="{{ d.pk }}" {% if g.coordenador == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.nome }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-sem">Semestre</label>
+    <select id="c-sem" name="semestre" class="form-select form-select-sm"><option value="">Todos</option>{% for s in semestres %}<option value="{{ s.pk }}" {% if g.semestre == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-data">Data</label><input id="c-data" type="date" name="data" value="{{ g.data }}" class="form-control form-control-sm"></div>
+  <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-sit">Situação</label>
+    <select id="c-sit" name="situacao" class="form-select form-select-sm">
+      <option value="ATIVO" {% if situacao == 'ATIVO' %}selected{% endif %}>Ativos</option>
+      <option value="RESOLVIDO" {% if situacao == 'RESOLVIDO' %}selected{% endif %}>Resolvidos</option>
+      <option value="TODOS" {% if situacao == 'TODOS' %}selected{% endif %}>Todos</option></select></div>
+  <div class="col-6 col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="c-meus" name="meus" value="1" {% if g.meus == '1' %}checked{% endif %}><label class="form-check-label" for="c-meus">Somente relacionados a mim</label></div></div>
+  <div class="col-md-auto ms-auto d-flex gap-2">
+    <button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'conflitos' %}">Limpar</a>
+  </div>
+</form>
+</div></div>
+
+<div class="d-flex align-items-center mb-2">
+  <strong>{{ conflitos|length }} conflito{{ conflitos|length|pluralize }} encontrado{{ conflitos|length|pluralize }}</strong>
+  <form method="post" action="{% url 'conflitos_verificar' %}" class="ms-auto">{% csrf_token %}
+    <input type="hidden" name="proximo" value="{{ request.get_full_path }}">
+    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Verificar novamente</button></form>
+</div>
+
+{% for c in conflitos %}
+<article class="card mb-3" style="border-left:6px solid {% if c.ativo %}var(--conflito){% else %}var(--ok){% endif %}">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      {% if c.ativo %}<span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Conflito ativo</span>
+      {% else %}<span class="badge text-bg-success"><i class="bi bi-check-circle-fill"></i> Resolvido em {{ c.resolvido_em|date:"d/m/Y H:i" }}</span>{% endif %}
+      <span><i class="bi bi-person-fill"></i> <strong>{{ c.professor.nome }}</strong></span>
+      <span><i class="bi bi-calendar-event"></i> {{ c.data|date:"l, d/m/Y" }}</span>
+      <span><i class="bi bi-clock"></i> Sobreposição: <strong>{{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}</strong></span>
+      <a class="btn btn-sm btn-primary ms-auto" href="{% url 'conflito_detalhe' c.pk %}"><i class="bi bi-search"></i> Detalhes, histórico e resolução</a>
+    </div>
+    <div class="row g-2">
+      {% for l in c.lados %}
+      <div class="col-md-6"><div class="border rounded p-2 h-100 bg-light">
+        <div class="fw-semibold">{{ l.comp.nome }} — Turma {{ l.comp.turma }}</div>
+        <div class="small text-secondary">{{ l.comp.semestre.nome }} · Coord.: {{ l.comp.coordenador.nome }}</div>
+        <div class="small"><i class="bi bi-clock"></i> {{ l.enc.hora_inicio|time:"H:i" }}–{{ l.enc.hora_fim|time:"H:i" }}{% if l.enc.conteudo %} · {{ l.enc.conteudo|truncatechars:70 }}{% endif %}</div>
+        <a class="btn btn-sm btn-outline-primary mt-2" href="{{ l.url }}"><i class="bi bi-box-arrow-up-right"></i> Abrir encontro{% if l.pode_editar %} e editar{% endif %}</a>
+        {% if not l.pode_editar %}<span class="small text-secondary ms-1"><i class="bi bi-lock"></i> somente consulta</span>{% endif %}
+      </div></div>
+      {% endfor %}
+    </div>
+  </div>
+</article>
+{% empty %}
+<div class="card"><div class="card-body text-center py-5 text-secondary"><i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>Nenhum conflito para os filtros selecionados.</div></div>
+{% endfor %}
+{% endblock %}

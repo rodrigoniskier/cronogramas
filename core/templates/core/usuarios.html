@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block cabecalho %}Usuários{% endblock %}
+{% block conteudo %}
+<div class="d-flex mb-3"><a class="btn btn-destaque ms-auto" href="{% url 'usuario_novo' %}"><i class="bi bi-person-plus"></i> Novo usuário</a></div>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0">
+  <thead><tr><th>Nome completo</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th><span class="visually-hidden">Ações</span></th></tr></thead><tbody>
+  {% for u in usuarios %}
+  <tr><td class="fw-semibold">{{ u.nome }}</td><td>{{ u.email }}</td><td>{{ u.get_perfil_display }}</td>
+    <td>{% if u.is_active %}<span class="badge text-bg-success"><i class="bi bi-check"></i> Ativo</span>{% else %}<span class="badge text-bg-secondary"><i class="bi bi-slash-circle"></i> Inativo</span>{% endif %}
+        {% if u.precisa_trocar_senha %}<span class="badge text-bg-warning">senha temporária</span>{% endif %}</td>
+    <td class="text-end text-nowrap">
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'usuario_editar' u.pk %}"><i class="bi bi-pencil"></i> Editar</a>
+      <form method="post" action="{% url 'usuario_redefinir_senha' u.pk %}" class="d-inline" data-confirmar="Gerar nova senha temporária para {{ u.nome }}? A senha atual deixará de funcionar.">{% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-key"></i> Redefinir senha</button></form></td></tr>
+  {% endfor %}
+</tbody></table></div></div>
+{% endblock %}

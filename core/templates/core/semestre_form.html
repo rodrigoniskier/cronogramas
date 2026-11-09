@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}
+{% block titulo %}Semestre{% endblock %}
+{% block cabecalho %}{% if sem %}Editar semestre{% else %}Novo semestre letivo{% endif %}{% endblock %}
+{% block conteudo %}
+<div class="card" style="max-width:820px"><div class="card-body">
+<form method="post" novalidate>{% csrf_token %}
+  {% include "core/_form.html" with col="col-md-4" %}
+  <div class="d-flex gap-2 mt-3"><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button><a class="btn btn-outline-secondary" href="{% url 'semestres' %}">Cancelar</a></div>
+</form></div></div>
+{% endblock %}

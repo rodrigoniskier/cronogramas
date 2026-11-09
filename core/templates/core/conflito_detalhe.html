@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+{% block titulo %}Conflito{% endblock %}
+{% block cabecalho %}Conflito docente{% endblock %}
+{% block conteudo %}
+<a href="{% url 'conflitos' %}" class="small"><i class="bi bi-arrow-left"></i> Voltar à Central de Conflitos</a>
+<div class="alert {% if c.ativo %}alert-danger{% else %}alert-success{% endif %} mt-2" role="status">
+  {% if c.ativo %}<i class="bi bi-exclamation-triangle-fill"></i> <strong>Conflito ativo.</strong>{% else %}<i class="bi bi-check-circle-fill"></i> <strong>Conflito resolvido</strong> em {{ c.resolvido_em|date:"d/m/Y H:i" }}.{% endif %}
+  <strong>{{ c.professor.nome }}</strong> {% if c.ativo %}está{% else %}estava{% endif %} em dois encontros em {{ c.data|date:"l, d/m/Y" }},
+  com sobreposição das <strong>{{ c.sobreposicao_inicio|time:"H:i" }} às {{ c.sobreposicao_fim|time:"H:i" }}</strong>.
+  {% if c.ativo %}Para resolver, altere o professor, a data ou o horário de um dos encontros.{% endif %}
+</div>
+<div class="row g-3 mb-3">
+  {% for l in c.lados %}
+  <div class="col-lg-6"><div class="card h-100">
+    <div class="card-header">{{ l.comp.nome }} — Turma {{ l.comp.turma }}</div>
+    <div class="card-body">
+      <dl class="row mb-2 small">
+        <dt class="col-4">Semestre</dt><dd class="col-8">{{ l.comp.semestre.nome }}</dd>
+        <dt class="col-4">Coordenador(a)</dt><dd class="col-8">{{ l.comp.coordenador.nome }}</dd>
+        <dt class="col-4">Data e horário</dt><dd class="col-8">{{ l.enc.data|date:"d/m/Y" }} · {{ l.enc.hora_inicio|time:"H:i" }}–{{ l.enc.hora_fim|time:"H:i" }}</dd>
+        <dt class="col-4">Professor atual</dt><dd class="col-8">{{ l.enc.professor.nome|default:"— não definido —" }}</dd>
+        <dt class="col-4">Conteúdo</dt><dd class="col-8">{{ l.enc.conteudo|default:"—" }}</dd>
+      </dl>
+      <a class="btn btn-sm btn-outline-primary" href="{{ l.url }}"><i class="bi bi-box-arrow-up-right"></i> Abrir no cronograma</a>
+      <hr>
+      {% if l.pode_editar %}
+      <form method="post" class="row g-2 align-items-end">{% csrf_token %}
+        <input type="hidden" name="acao" value="trocar_professor"><input type="hidden" name="encontro" value="{{ l.enc.pk }}">
+        <div class="col"><label class="form-label small fw-semibold mb-0" for="tp-{{ l.enc.pk }}">Trocar o professor deste encontro</label>
+          <select id="tp-{{ l.enc.pk }}" name="professor_id" class="form-select form-select-sm pesquisavel">
+            <option value="">— sem professor —</option>
+            {% for d in docentes %}<option value="{{ d.pk }}" {% if d.pk == l.enc.professor_id %}selected{% endif %}>{{ d.nome }}</option>{% endfor %}
+          </select></div>
+        <div class="col-auto"><button class="btn btn-sm btn-primary"><i class="bi bi-check-lg"></i> Aplicar</button></div>
+      </form>
+      <p class="small text-secondary mt-2 mb-0">Para mudar data ou horário, abra o encontro no cronograma.</p>
+      {% else %}
+      <p class="small text-secondary mb-0"><i class="bi bi-lock"></i> {{ l.motivo }} Registre abaixo uma solicitação de ajuste para o responsável.</p>
+      {% endif %}
+    </div></div></div>
+  {% endfor %}
+</div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card h-100">
+    <div class="card-header"><i class="bi bi-chat-left-text"></i> Solicitações de ajuste e observações</div>
+    <div class="card-body">
+      {% for o in observacoes %}
+      <div class="border rounded p-2 mb-2 bg-light"><div class="small text-secondary">{{ o.autor.nome|default:"—" }} · {{ o.criado_em|date:"d/m/Y H:i" }}</div>{{ o.texto|linebreaksbr }}</div>
+      {% empty %}<p class="text-secondary small">Nenhuma observação registrada.</p>{% endfor %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="observacao">
+        <label class="form-label small fw-semibold" for="obs">Nova solicitação ou observação</label>
+        <textarea id="obs" name="texto" class="form-control mb-2" rows="2" required maxlength="2000" placeholder="Ex.: Solicito ao coordenador do outro componente a troca do docente nesta data."></textarea>
+        <button class="btn btn-sm btn-primary"><i class="bi bi-send"></i> Registrar</button></form>
+    </div></div></div>
+  <div class="col-lg-6"><div class="card h-100">
+    <div class="card-header"><i class="bi bi-clock-history"></i> Histórico dos dois encontros</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 small">
+      <thead><tr><th>Quando</th><th>Quem</th><th>Componente</th><th>Campo</th><th>De → Para</th></tr></thead><tbody>
+      {% for h in historico %}<tr><td class="text-nowrap">{{ h.data_hora|date:"d/m/Y H:i" }}</td><td>{{ h.usuario.nome|default:"—" }}</td><td>{{ h.componente.nome }}</td><td>{{ h.campo }}</td><td>{{ h.valor_anterior|default:"(vazio)"|truncatechars:50 }} → {{ h.valor_novo|default:"(vazio)"|truncatechars:50 }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-secondary py-3">Sem alterações registradas.</td></tr>{% endfor %}
+    </tbody></table></div></div></div>
+</div>
+{% endblock %}

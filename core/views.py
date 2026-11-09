@@ -1,0 +1,860 @@
+import json
+import re
+import unicodedata
+import secrets
+from datetime import date, datetime, time
+from functools import wraps
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
+from django.db.models import Q
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.http import content_disposition_header
+from django.views.decorators.http import require_GET, require_POST
+
+from . import exports
+from .forms import ComponenteForm, ConfiguracaoForm, DataBloqueadaForm, SemestreForm, UsuarioForm
+from .models import (
+    DIAS_SEMANA, Componente, Configuracao, Conflito, DataBloqueada, Encontro,
+    HistoricoAlteracao, HorarioSemanal, ObservacaoConflito, Semestre, Usuario, ch_padrao,
+)
+from .services import (
+    conflitos_ativos, conflitos_do_usuario, estatisticas, feriados_do_componente, gerar_encontros, motivo_sem_edicao,
+    pode_editar, pode_gerenciar, problemas_para_aprovacao, registrar, sincronizar_conflitos,
+)
+
+
+# ------------------------------------------------------------------ utilidades
+
+
+def apenas_admin(view):
+    @wraps(view)
+    def _w(request, *a, **kw):
+        if not request.user.eh_admin:
+            raise PermissionDenied
+        return view(request, *a, **kw)
+    return _w
+
+
+def _local(dt):
+    return timezone.localtime(dt).strftime("%d/%m/%Y %H:%M") if dt else ""
+
+
+def _componentes():
+    return Componente.objects.select_related("semestre", "coordenador")
+
+
+def _com_stats(componentes):
+    componentes = list(componentes)
+    st = estatisticas(componentes)
+    for c in componentes:
+        c.st = st[c.id]
+    return componentes
+
+
+def encontro_json(e):
+    return {
+        "id": e.id,
+        "data": e.data.isoformat(),
+        "data_br": e.data.strftime("%d/%m/%Y"),
+        "dia": e.dia_semana,
+        "inicio": e.hora_inicio.strftime("%H:%M"),
+        "fim": e.hora_fim.strftime("%H:%M"),
+        "conteudo": e.conteudo,
+        "professor_id": e.professor_id,
+        "professor_nome": e.professor.nome if e.professor_id else "",
+        "tipo": e.tipo,
+        "atividade": e.atividade,
+        "recursos": e.recursos,
+        "grupos": e.grupos,
+        "ch": e.ch,
+        "local": e.local,
+        "horario_modelo": e.horario_modelo,
+        "observacoes": e.observacoes,
+        "excepcional": e.excepcional,
+        "versao": e.versao,
+        "atualizado_por": e.atualizado_por.nome if e.atualizado_por_id else "",
+        "atualizado_em": _local(e.atualizado_em),
+        "preenchido": e.preenchido,
+    }
+
+
+def _conflito_lado(c, meu, outro):
+    oc = outro.componente
+    return {
+        "id": c.id,
+        "professor": c.professor.nome,
+        "data_br": c.data.strftime("%d/%m/%Y"),
+        "sobreposicao": f"{c.sobreposicao_inicio:%H:%M}–{c.sobreposicao_fim:%H:%M}",
+        "meu_horario": f"{meu.hora_inicio:%H:%M}–{meu.hora_fim:%H:%M}",
+        "outro_componente": oc.nome,
+        "outro_turma": oc.turma,
+        "outro_coordenador": oc.coordenador.nome,
+        "outro_horario": f"{outro.hora_inicio:%H:%M}–{outro.hora_fim:%H:%M}",
+        "outro_url": f"/componentes/{oc.id}/cronograma/#encontro-{outro.id}",
+        "detalhe_url": f"/conflitos/{c.id}/",
+    }
+
+
+def estado_json(componente, usuario):
+    encontros = list(componente.encontros.select_related("professor", "atualizado_por"))
+    mapa = {}
+    for c in conflitos_ativos().filter(
+        Q(encontro_a__componente=componente) | Q(encontro_b__componente=componente)
+    ):
+        for meu, outro in ((c.encontro_a, c.encontro_b), (c.encontro_b, c.encontro_a)):
+            if meu.componente_id == componente.id:
+                mapa.setdefault(meu.id, []).append(_conflito_lado(c, meu, outro))
+    ultimo = max((e for e in encontros if e.atualizado_em), key=lambda e: e.atualizado_em, default=None)
+    return {
+        "encontros": [encontro_json(e) for e in encontros],
+        "conflitos": mapa,
+        "feriados": [
+            {"data": f["data"].isoformat(), "data_br": f["data"].strftime("%d/%m/%Y"), "inicio": f["hora_inicio"].strftime("%H:%M"),
+             "horario": f["horario"], "descricao": f["descricao"], "ch": f["ch"]}
+            for f in feriados_do_componente(componente)
+        ],
+        "stats": estatisticas([componente])[componente.id],
+        "situacao": componente.situacao,
+        "ultima_edicao": (
+            {"por": ultimo.atualizado_por.nome if ultimo.atualizado_por_id else "—", "em": _local(ultimo.atualizado_em)}
+            if ultimo else None
+        ),
+        "pode_editar": pode_editar(usuario, componente),
+    }
+
+
+# --------------------------------------------------------- alteração de encontro
+
+CAMPOS_TEXTO = ("conteudo", "tipo", "atividade", "recursos", "grupos", "ch", "local", "observacoes")
+LIMITES = {"grupos": 300, "ch": 10, "local": 120}
+TIPOS_VALIDOS = {t for t, _ in Encontro.TIPOS}
+CAMPOS_AGENDA = ("data", "inicio", "fim")
+ROTULOS = {
+    "conteudo": "Conteúdo", "tipo": "Tipo", "atividade": "Atividades", "recursos": "Recursos",
+    "grupos": "Grupos", "ch": "CH", "local": "Local",
+    "observacoes": "Observações", "professor_id": "Professor", "data": "Data",
+    "inicio": "Início", "fim": "Término",
+}
+
+
+class ErroEdicao(Exception):
+    def __init__(self, mensagem, status=400, extra=None):
+        self.mensagem, self.status, self.extra = mensagem, status, extra or {}
+
+
+def _valor_atual(e, campo):
+    if campo in CAMPOS_TEXTO:
+        return getattr(e, campo)
+    if campo == "professor_id":
+        return e.professor_id
+    if campo == "data":
+        return e.data.isoformat()
+    if campo == "inicio":
+        return e.hora_inicio.strftime("%H:%M")
+    return e.hora_fim.strftime("%H:%M")
+
+
+def _normalizar(campo, valor):
+    if campo in CAMPOS_TEXTO:
+        valor = "" if valor is None else str(valor).strip()
+        if campo == "tipo" and valor not in TIPOS_VALIDOS:
+            raise ErroEdicao("Tipo inválido (use T, P, T/P ou -).")
+        if len(valor) > LIMITES.get(campo, 5000):
+            raise ErroEdicao(f"{ROTULOS[campo]}: máximo de {LIMITES.get(campo, 5000)} caracteres.")
+        return valor
+    if campo == "professor_id":
+        if valor in (None, "", 0, "0"):
+            return None
+        try:
+            return int(valor)
+        except (TypeError, ValueError):
+            raise ErroEdicao("Professor inválido.")
+    try:
+        if campo == "data":
+            return date.fromisoformat(str(valor)).isoformat()
+        return time.fromisoformat(str(valor)[:5]).strftime("%H:%M")
+    except ValueError:
+        raise ErroEdicao(f"{ROTULOS[campo]}: valor inválido.")
+
+
+@transaction.atomic
+def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
+    """Aplica alterações a um encontro com controle de concorrência por campo.
+
+    Se outro usuário alterou o MESMO campo desde que o cliente o carregou
+    (valor atual != valor-base enviado), levanta ErroEdicao 409 em vez de
+    sobrescrever. Alterações em campos diferentes são mescladas.
+    """
+    try:
+        e = Encontro.objects.select_for_update(of=("self",)).select_related(
+            "componente__semestre", "professor", "atualizado_por"
+        ).get(pk=pk)
+    except Encontro.DoesNotExist:
+        raise ErroEdicao("Este encontro não existe mais (pode ter sido removido).", 404)
+    comp = e.componente
+    motivo = motivo_sem_edicao(usuario, comp)
+    if motivo:
+        raise ErroEdicao(motivo, 403)
+
+    permitidos = set(CAMPOS_TEXTO) | {"professor_id"}
+    if pode_gerenciar(usuario, comp):
+        permitidos |= set(CAMPOS_AGENDA)
+    novos = {}
+    for campo, valor in campos.items():
+        if campo not in permitidos:
+            raise ErroEdicao(f"Você não tem permissão para alterar o campo “{ROTULOS.get(campo, campo)}”.", 403)
+        novos[campo] = _normalizar(campo, valor)
+
+    if base is not None and versao != e.versao and not forcar:
+        divergentes = [
+            c for c, novo in novos.items()
+            if c in base and _valor_atual(e, c) != _normalizar(c, base[c]) and _valor_atual(e, c) != novo
+        ]
+        if divergentes:
+            raise ErroEdicao(
+                "Outro usuário alterou este encontro enquanto você editava.", 409,
+                {"campos": divergentes, "rotulos": {c: ROTULOS[c] for c in divergentes}},
+            )
+
+    mudancas = {c: v for c, v in novos.items() if _valor_atual(e, c) != v}
+    if not mudancas:
+        return e, False
+
+    docentes_afetados = {e.professor_id}
+    for campo, novo in mudancas.items():
+        anterior = _valor_atual(e, campo)
+        if campo == "professor_id":
+            nome_ant = e.professor.nome if e.professor_id else ""
+            if novo is not None:
+                prof = Usuario.docentes().filter(pk=novo).first()
+                if not prof:
+                    raise ErroEdicao("Professor não encontrado no cadastro de docentes ativos.")
+                e.professor = prof
+            else:
+                e.professor = None
+            registrar(usuario, comp, "Professor", nome_ant, e.professor.nome if e.professor else "", e)
+        else:
+            if campo == "data":
+                e.data = date.fromisoformat(novo)
+            elif campo == "inicio":
+                e.hora_inicio = time.fromisoformat(novo)
+            elif campo == "fim":
+                e.hora_fim = time.fromisoformat(novo)
+            else:
+                setattr(e, campo, novo)
+            registrar(usuario, comp, ROTULOS[campo], anterior, novo, e)
+    if e.hora_fim <= e.hora_inicio:
+        raise ErroEdicao("O horário de término deve ser posterior ao de início.")
+    if set(mudancas) & set(CAMPOS_AGENDA):
+        e.excepcional = True
+    e.versao += 1
+    e.atualizado_por = usuario
+    e.atualizado_em = timezone.now()
+    e.save()
+    docentes_afetados.add(e.professor_id)
+    if set(mudancas) & ({"professor_id"} | set(CAMPOS_AGENDA)):
+        sincronizar_conflitos(docentes_afetados)
+    return e, True
+
+
+def _json_corpo(request):
+    try:
+        return json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        raise ErroEdicao("Requisição inválida.")
+
+
+def _erro_json(err):
+    return JsonResponse({"erro": err.mensagem, **err.extra}, status=err.status)
+
+
+@require_POST
+def api_encontro_salvar(request, pk):
+    try:
+        d = _json_corpo(request)
+        try:
+            e, _ = alterar_encontro(
+                request.user, pk, d.get("campos") or {}, d.get("base") or {}, d.get("versao"), bool(d.get("forcar"))
+            )
+        except ErroEdicao as err:
+            if err.status == 409:
+                atual = Encontro.objects.select_related("professor", "atualizado_por").get(pk=pk)
+                err.extra["encontro"] = encontro_json(atual)
+            raise
+    except ErroEdicao as err:
+        return _erro_json(err)
+    e = Encontro.objects.select_related("professor", "atualizado_por", "componente__semestre").get(pk=e.pk)
+    return JsonResponse({"encontro": encontro_json(e), "estado": estado_json(e.componente, request.user)})
+
+
+@require_GET
+def api_estado(request, pk):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    return JsonResponse(estado_json(comp, request.user))
+
+
+@require_POST
+def api_encontro_criar(request, pk):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    if not pode_gerenciar(request.user, comp):
+        return JsonResponse({"erro": "Apenas o coordenador responsável ou a administração podem inserir encontros."}, status=403)
+    if comp.bloqueado:
+        return JsonResponse({"erro": "Reabra o cronograma para revisão antes de inserir encontros."}, status=403)
+    try:
+        d = _json_corpo(request)
+        dia = date.fromisoformat(_normalizar("data", d.get("data")))
+        ini = time.fromisoformat(_normalizar("inicio", d.get("inicio")))
+        fim = time.fromisoformat(_normalizar("fim", d.get("fim")))
+        if fim <= ini:
+            raise ErroEdicao("O horário de término deve ser posterior ao de início.")
+        with transaction.atomic():
+            # Copia o conteúdo de um encontro já existente no mesmo dia/horário:
+            # é o caso de um segundo docente (ou grupo) na mesma aula.
+            irmao = comp.encontros.filter(data=dia, hora_inicio=ini).first()
+            e = Encontro.objects.create(
+                componente=comp, data=dia, hora_inicio=ini, hora_fim=fim, excepcional=True,
+                local=irmao.local if irmao else comp.local_padrao, ch=ch_padrao(ini, fim),
+                conteudo=irmao.conteudo if irmao else "", tipo=irmao.tipo if irmao else "",
+                atividade=irmao.atividade if irmao else "", recursos=irmao.recursos if irmao else "",
+                atualizado_por=request.user, atualizado_em=timezone.now(),
+            )
+            registrar(request.user, comp, "Encontro inserido", "", e.descricao, e)
+    except ErroEdicao as err:
+        return _erro_json(err)
+    return JsonResponse({"encontro_id": e.id, "estado": estado_json(comp, request.user)})
+
+
+@require_POST
+def api_encontro_excluir(request, pk):
+    e = get_object_or_404(Encontro.objects.select_related("componente__semestre", "componente__coordenador"), pk=pk)
+    comp = e.componente
+    if not pode_gerenciar(request.user, comp):
+        return JsonResponse({"erro": "Apenas o coordenador responsável ou a administração podem remover encontros."}, status=403)
+    if comp.bloqueado:
+        return JsonResponse({"erro": "Reabra o cronograma para revisão antes de remover encontros."}, status=403)
+    with transaction.atomic():
+        prof = e.professor_id
+        registrar(request.user, comp, "Encontro removido", f"{e.descricao} — {e.conteudo[:80]}", "")
+        e.delete()
+        sincronizar_conflitos({prof})
+    return JsonResponse({"estado": estado_json(comp, request.user)})
+
+
+@require_GET
+def api_encontro_historico(request, pk):
+    itens = HistoricoAlteracao.objects.filter(encontro_id=pk).select_related("usuario")[:100]
+    return JsonResponse({"itens": [
+        {"quando": _local(h.data_hora), "usuario": h.usuario.nome if h.usuario else "—",
+         "campo": h.campo, "anterior": h.valor_anterior, "novo": h.valor_novo}
+        for h in itens
+    ]})
+
+
+# ---------------------------------------------------------------- dashboard
+
+
+def dashboard(request):
+    semestres = Semestre.objects.all()
+    sem_id = request.GET.get("semestre", "")
+    qs = _componentes()
+    if sem_id.isdigit():
+        qs = qs.filter(semestre_id=sem_id)
+    componentes = _com_stats(qs)
+    u = request.user
+    meus_ids = set(u.componentes_vinculados.values_list("id", flat=True)) | set(
+        u.componentes_coordenados.values_list("id", flat=True)
+    )
+    for c in componentes:
+        c.meu = c.id in meus_ids
+    if request.GET.get("meus") == "1":
+        componentes = [c for c in componentes if c.meu]
+    componentes.sort(key=lambda c: (not c.meu, c.nome, c.turma))
+    total_enc = sum(c.st["total"] for c in componentes)
+    preench = sum(c.st["preenchidos"] for c in componentes)
+    ids = [c.id for c in componentes]
+    n_conf = conflitos_ativos().filter(
+        Q(encontro_a__componente__in=ids) | Q(encontro_b__componente__in=ids)
+    ).count()
+    cont = lambda s: sum(1 for c in componentes if c.st["status"] == s)
+    pendencias = list(conflitos_do_usuario(u)[:8])
+    for c in pendencias:
+        c.url_a = f"/componentes/{c.encontro_a.componente_id}/cronograma/#encontro-{c.encontro_a_id}"
+    return render(request, "core/dashboard.html", {
+        "componentes": componentes,
+        "semestres": semestres,
+        "sem_id": sem_id,
+        "so_meus": request.GET.get("meus") == "1",
+        "ind": {
+            "componentes": len(componentes),
+            "professores": Usuario.docentes().count(),
+            "encontros": total_enc,
+            "preenchidos": preench,
+            "pct": round(100 * preench / total_enc) if total_enc else 0,
+            "conflitos": n_conf,
+            "pendencias": cont("COM_PENDENCIAS"),
+            "prontos": cont("PRONTO"),
+            "aprovados": cont("APROVADO") + cont("PUBLICADO"),
+        },
+        "pendencias": pendencias,
+        "avisar": bool(request.session.pop("avisar_pendencias", False)) and bool(pendencias),
+        "meus_coordenados": [c for c in componentes if c.coordenador_id == u.id],
+    })
+
+
+# --------------------------------------------------------------- componentes
+
+
+def componentes_lista(request):
+    sem_id = request.GET.get("semestre", "")
+    qs = _componentes()
+    if sem_id.isdigit():
+        qs = qs.filter(semestre_id=sem_id)
+    return render(request, "core/componentes.html", {
+        "componentes": _com_stats(qs),
+        "semestres": Semestre.objects.all(),
+        "sem_id": sem_id,
+        "pode_criar": request.user.eh_admin or request.user.eh_coordenador,
+    })
+
+
+def _ler_horarios(post):
+    """Lê as linhas de horário semanal do formulário. Retorna (lista, erros)."""
+    horarios, erros = [], []
+    for d, i, f in zip(post.getlist("h_dia"), post.getlist("h_inicio"), post.getlist("h_fim")):
+        if not (d or i or f):
+            continue
+        try:
+            dia, ini, fim = int(d), time.fromisoformat(i), time.fromisoformat(f)
+            if dia not in range(7) or fim <= ini:
+                raise ValueError
+            horarios.append((dia, ini, fim))
+        except ValueError:
+            erros.append("Há um horário semanal inválido (verifique dia, início e término).")
+    if not horarios and not erros:
+        erros.append("Informe ao menos um horário semanal.")
+    if len({(d, i) for d, i, _ in horarios}) != len(horarios):
+        erros.append("Há horários semanais repetidos.")
+    return horarios, erros
+
+
+def componente_form(request, pk=None):
+    u = request.user
+    comp = get_object_or_404(_componentes(), pk=pk) if pk else None
+    if comp:
+        if not pode_gerenciar(u, comp):
+            raise PermissionDenied
+        if comp.bloqueado:
+            messages.warning(request, "Cronograma aprovado/publicado: reabra-o para revisão antes de alterar o cadastro.")
+            return redirect("cronograma", pk=comp.pk)
+    elif not (u.eh_admin or u.eh_coordenador):
+        raise PermissionDenied
+
+    form = ComponenteForm(request.POST or None, instance=comp, usuario=u)
+    horarios = [(h.dia_semana, h.hora_inicio, h.hora_fim) for h in comp.horarios.all()] if comp else []
+    erros_h = []
+    if request.method == "POST":
+        horarios, erros_h = _ler_horarios(request.POST)
+        if form.is_valid() and not erros_h:
+            try:
+                with transaction.atomic():
+                    obj = form.save(commit=False)
+                    if not u.eh_admin:
+                        obj.coordenador = u
+                    obj.save()
+                    form.save_m2m()
+                    obj.horarios.all().delete()
+                    HorarioSemanal.objects.bulk_create(
+                        [HorarioSemanal(componente=obj, dia_semana=d, hora_inicio=i, hora_fim=f) for d, i, f in horarios]
+                    )
+                    criados, removidos, preservados = gerar_encontros(obj)
+                    registrar(u, obj, "Cadastro do componente", "", "Componente criado" if not comp else "Cadastro atualizado")
+            except IntegrityError:
+                form.add_error("nome", "Já existe este componente para a mesma turma e semestre.")
+            else:
+                msg = f"Componente salvo. Encontros gerados: {criados} novo(s), {removidos} removido(s)."
+                if preservados:
+                    msg += f" {preservados} encontro(s) já preenchido(s) fora da grade foram preservados como excepcionais."
+                messages.success(request, msg)
+                return redirect("cronograma", pk=obj.pk)
+    return render(request, "core/componente_form.html", {
+        "form": form, "comp": comp, "erros_h": erros_h, "dias": DIAS_SEMANA,
+        "horarios": [(d, i.strftime("%H:%M"), f.strftime("%H:%M")) for d, i, f in horarios] or [("", "", "")],
+    })
+
+
+@require_POST
+def componente_excluir(request, pk):
+    comp = get_object_or_404(Componente, pk=pk)
+    if not pode_gerenciar(request.user, comp):
+        raise PermissionDenied
+    if comp.bloqueado:
+        messages.error(request, "Componentes aprovados ou publicados não podem ser excluídos.")
+        return redirect("cronograma", pk=pk)
+    with transaction.atomic():
+        profs = set(comp.encontros.values_list("professor_id", flat=True))
+        nome = str(comp)
+        comp.delete()
+        sincronizar_conflitos(profs)
+    messages.success(request, f"Componente “{nome}” excluído.")
+    return redirect("componentes")
+
+
+def cronograma(request, pk):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    u = request.user
+    docentes = list(Usuario.docentes().values("id", "nome"))
+    vinculados = set(comp.professores.values_list("id", flat=True)) | {comp.coordenador_id}
+    for d in docentes:
+        d["vinculado"] = d["id"] in vinculados
+    return render(request, "core/cronograma.html", {
+        "comp": comp,
+        "professores": comp.professores.all(),
+        "horarios": comp.horarios.all(),
+        "estado": estado_json(comp, u),
+        "docentes": docentes,
+        "gerencia": pode_gerenciar(u, comp),
+        "motivo": motivo_sem_edicao(u, comp),
+        "outros": _componentes().filter(semestre=comp.semestre),
+    })
+
+
+@require_POST
+def componente_validar(request, pk):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+    return JsonResponse({
+        "problemas": problemas_para_aprovacao(comp),
+        "estado": estado_json(comp, request.user),
+        "pode_aprovar": pode_gerenciar(request.user, comp) and comp.situacao == Componente.Situacao.RASCUNHO,
+    })
+
+
+@require_POST
+def componente_transicao(request, pk, acao):
+    with transaction.atomic():
+        comp = get_object_or_404(Componente.objects.select_for_update(), pk=pk)
+        u = request.user
+        if not pode_gerenciar(u, comp):
+            raise PermissionDenied
+        S = Componente.Situacao
+        agora = timezone.now()
+        if acao == "aprovar" and comp.situacao == S.RASCUNHO:
+            sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+            problemas = problemas_para_aprovacao(comp)
+            if problemas:
+                messages.error(request, f"Aprovação impedida: {len(problemas)} pendência(s). Use “Validar cronograma” para ver a lista.")
+            else:
+                comp.situacao, comp.aprovado_por, comp.aprovado_em = S.APROVADO, u, agora
+                comp.save()
+                registrar(u, comp, "Situação", "Em elaboração", "Aprovado")
+                messages.success(request, "Cronograma aprovado. A versão oficial já pode ser exportada.")
+        elif acao == "publicar" and comp.situacao == S.APROVADO:
+            comp.situacao, comp.publicado_por, comp.publicado_em = S.PUBLICADO, u, agora
+            comp.save()
+            registrar(u, comp, "Situação", "Aprovado", "Publicado")
+            messages.success(request, "Cronograma publicado.")
+        elif acao == "reabrir" and comp.situacao in (S.APROVADO, S.PUBLICADO):
+            anterior = comp.get_situacao_display()
+            comp.situacao = S.RASCUNHO
+            comp.aprovado_por = comp.aprovado_em = comp.publicado_por = comp.publicado_em = None
+            comp.save()
+            motivo = request.POST.get("motivo", "").strip()[:300]
+            registrar(u, comp, "Situação", anterior, "Reaberto para revisão" + (f" — {motivo}" if motivo else ""))
+            messages.warning(request, "Cronograma reaberto para revisão. Será necessária nova aprovação.")
+        else:
+            messages.error(request, "Ação não disponível na situação atual do cronograma.")
+    return redirect("cronograma", pk=pk)
+
+
+def exportar(request, pk, formato):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    oficial = comp.situacao in (Componente.Situacao.APROVADO, Componente.Situacao.PUBLICADO)
+    encontros = exports.linhas_cronograma(comp)
+    sufixo = "" if oficial else "_RASCUNHO"
+    base = f"Cronograma_{comp.nome}_Turma_{comp.turma}_{comp.semestre.nome}{sufixo}"
+    base = unicodedata.normalize("NFKD", base).encode("ascii", "ignore").decode()
+    nome = re.sub(r"_+", "_", "".join(ch if ch.isalnum() or ch in ".-" else "_" for ch in base)).strip("_")
+    if formato == "docx":
+        dados = exports.gerar_docx(comp, encontros, oficial)
+        tipo = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif formato == "pdf":
+        dados = exports.gerar_pdf(comp, encontros, oficial)
+        tipo = "application/pdf"
+    else:
+        raise Http404
+    resp = HttpResponse(dados, content_type=tipo)
+    resp["Content-Disposition"] = content_disposition_header(True, f"{nome}.{formato}")
+    return resp
+
+
+# ------------------------------------------------------------------ conflitos
+
+
+def _lados(c, usuario):
+    c.lados = []
+    for meu in (c.encontro_a, c.encontro_b):
+        c.lados.append({
+            "enc": meu,
+            "comp": meu.componente,
+            "url": f"/componentes/{meu.componente_id}/cronograma/#encontro-{meu.id}",
+            "pode_editar": pode_editar(usuario, meu.componente),
+            "motivo": motivo_sem_edicao(usuario, meu.componente),
+        })
+    return c
+
+
+def conflitos(request):
+    g = request.GET
+    situacao = g.get("situacao", "ATIVO")
+    qs = Conflito.objects.select_related(
+        "professor", "encontro_a__componente__coordenador", "encontro_b__componente__coordenador",
+        "encontro_a__componente__semestre", "encontro_b__componente__semestre",
+    )
+    if situacao in ("ATIVO", "RESOLVIDO"):
+        qs = qs.filter(status=situacao)
+    if g.get("professor", "").isdigit():
+        qs = qs.filter(professor_id=g["professor"])
+    if g.get("componente", "").isdigit():
+        qs = qs.filter(Q(encontro_a__componente_id=g["componente"]) | Q(encontro_b__componente_id=g["componente"]))
+    if g.get("coordenador", "").isdigit():
+        qs = qs.filter(
+            Q(encontro_a__componente__coordenador_id=g["coordenador"]) | Q(encontro_b__componente__coordenador_id=g["coordenador"])
+        )
+    if g.get("semestre", "").isdigit():
+        qs = qs.filter(encontro_a__componente__semestre_id=g["semestre"])
+    if g.get("data"):
+        try:
+            qs = qs.filter(data=date.fromisoformat(g["data"]))
+        except ValueError:
+            pass
+    if g.get("meus") == "1":
+        u = request.user
+        qs = qs.filter(
+            Q(professor=u) | Q(encontro_a__componente__professores=u) | Q(encontro_b__componente__professores=u)
+            | Q(encontro_a__componente__coordenador=u) | Q(encontro_b__componente__coordenador=u)
+        ).distinct()
+    lista = [_lados(c, request.user) for c in qs[:300]]
+    return render(request, "core/conflitos.html", {
+        "conflitos": lista, "g": g, "situacao": situacao,
+        "docentes": Usuario.docentes(),
+        "coordenadores": Usuario.objects.filter(perfil=Usuario.Perfil.COORD),
+        "componentes": _componentes(),
+        "semestres": Semestre.objects.all(),
+    })
+
+
+@require_POST
+def conflitos_verificar(request):
+    sincronizar_conflitos()
+    n = Conflito.objects.filter(status=Conflito.Status.ATIVO).count()
+    messages.info(request, f"Verificação concluída em toda a base: {n} conflito(s) ativo(s).")
+    return redirect(request.POST.get("proximo") or "conflitos")
+
+
+def conflito_detalhe(request, pk):
+    c = get_object_or_404(
+        Conflito.objects.select_related(
+            "professor", "encontro_a__componente__coordenador", "encontro_b__componente__coordenador",
+            "encontro_a__componente__semestre", "encontro_b__componente__semestre",
+            "encontro_a__professor", "encontro_b__professor",
+        ), pk=pk,
+    )
+    u = request.user
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        if acao == "observacao":
+            texto = request.POST.get("texto", "").strip()
+            if texto:
+                ObservacaoConflito.objects.create(conflito=c, autor=u, texto=texto[:2000])
+                messages.success(request, "Solicitação/observação registrada.")
+        elif acao == "trocar_professor":
+            enc_id = request.POST.get("encontro")
+            if enc_id in (str(c.encontro_a_id), str(c.encontro_b_id)):
+                try:
+                    alterar_encontro(u, int(enc_id), {"professor_id": request.POST.get("professor_id")})
+                    messages.success(request, "Alocação atualizada. O conflito foi reavaliado automaticamente.")
+                except ErroEdicao as err:
+                    messages.error(request, err.mensagem)
+        return redirect("conflito_detalhe", pk=pk)
+    _lados(c, u)
+    historico = HistoricoAlteracao.objects.filter(
+        encontro_id__in=[c.encontro_a_id, c.encontro_b_id]
+    ).select_related("usuario", "componente")[:50]
+    return render(request, "core/conflito_detalhe.html", {
+        "c": c, "historico": historico, "docentes": Usuario.docentes(),
+        "observacoes": c.observacoes.select_related("autor"),
+    })
+
+
+def historico(request):
+    qs = HistoricoAlteracao.objects.select_related("usuario", "componente")
+    comp_id = request.GET.get("componente", "")
+    if comp_id.isdigit():
+        qs = qs.filter(componente_id=comp_id)
+    pagina = Paginator(qs, 50).get_page(request.GET.get("page"))
+    return render(request, "core/historico.html", {
+        "pagina": pagina, "componentes": _componentes(), "comp_id": comp_id,
+    })
+
+
+# ------------------------------------------------------------ administração
+
+
+def _senha_temporaria():
+    return secrets.token_urlsafe(9)
+
+
+@apenas_admin
+def usuarios(request):
+    return render(request, "core/usuarios.html", {"usuarios": Usuario.objects.all()})
+
+
+@apenas_admin
+def usuario_form(request, pk=None):
+    alvo = get_object_or_404(Usuario, pk=pk) if pk else None
+    form = UsuarioForm(request.POST or None, instance=alvo)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        if alvo and alvo.pk == request.user.pk and (not obj.is_active or obj.perfil != Usuario.Perfil.ADMIN):
+            form.add_error(None, "Você não pode desativar ou rebaixar o seu próprio usuário administrador.")
+        else:
+            obj.is_staff = obj.is_superuser = obj.perfil == Usuario.Perfil.ADMIN
+            if not alvo:
+                senha = _senha_temporaria()
+                obj.set_password(senha)
+                obj.precisa_trocar_senha = True
+                obj.save()
+                messages.success(
+                    request,
+                    f"Usuário criado. Senha temporária de {obj.email}: {senha} — anote e entregue ao usuário; "
+                    "ela não será exibida novamente e deverá ser trocada no primeiro acesso.",
+                )
+            else:
+                obj.save()
+                messages.success(request, "Usuário atualizado.")
+            return redirect("usuarios")
+    return render(request, "core/usuario_form.html", {"form": form, "alvo": alvo})
+
+
+@apenas_admin
+@require_POST
+def usuario_redefinir_senha(request, pk):
+    alvo = get_object_or_404(Usuario, pk=pk)
+    senha = _senha_temporaria()
+    alvo.set_password(senha)
+    alvo.precisa_trocar_senha = True
+    alvo.save()
+    messages.success(
+        request,
+        f"Senha redefinida. Senha temporária de {alvo.email}: {senha} — ela não será exibida novamente "
+        "e deverá ser trocada no próximo acesso.",
+    )
+    return redirect("usuarios")
+
+
+def trocar_senha(request):
+    form = PasswordChangeForm(request.user, request.POST or None)
+    for f in form.fields.values():
+        f.widget.attrs["class"] = "form-control"
+    if request.method == "POST" and form.is_valid():
+        u = form.save()
+        u.precisa_trocar_senha = False
+        u.save(update_fields=["precisa_trocar_senha"])
+        update_session_auth_hash(request, u)
+        messages.success(request, "Senha alterada com sucesso.")
+        return redirect("dashboard")
+    return render(request, "core/senha.html", {"form": form})
+
+
+@apenas_admin
+def semestres(request):
+    lista = Semestre.objects.prefetch_related("datas_bloqueadas", "componentes")
+    return render(request, "core/semestres.html", {"semestres": lista})
+
+
+@apenas_admin
+def semestre_form(request, pk=None):
+    sem = get_object_or_404(Semestre, pk=pk) if pk else None
+    form = SemestreForm(request.POST or None, instance=sem)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save()
+        messages.success(request, "Semestre salvo.")
+        return redirect("semestre_detalhe", pk=obj.pk)
+    return render(request, "core/semestre_form.html", {"form": form, "sem": sem})
+
+
+def _regerar_semestre(sem):
+    total = 0
+    for comp in sem.componentes.filter(situacao=Componente.Situacao.RASCUNHO):
+        gerar_encontros(comp)
+        total += 1
+    return total
+
+
+@apenas_admin
+def semestre_detalhe(request, pk):
+    sem = get_object_or_404(Semestre, pk=pk)
+    form = DataBloqueadaForm(semestre=sem)
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        if acao == "liberar":
+            sem.preenchimento_liberado = True
+            sem.liberado_em = timezone.now()
+            sem.save()
+            messages.success(request, "Preenchimento liberado para professores e coordenadores.")
+        elif acao == "suspender":
+            sem.preenchimento_liberado = False
+            sem.save()
+            messages.warning(request, "Preenchimento suspenso. Os cronogramas continuam disponíveis para consulta.")
+        elif acao == "bloquear_data":
+            form = DataBloqueadaForm(request.POST, semestre=sem)
+            if form.is_valid():
+                obj = form.save(commit=False)
+                obj.semestre = sem
+                obj.save()
+                n = _regerar_semestre(sem)
+                messages.success(request, f"Data bloqueada. Encontros de {n} componente(s) em elaboração foram recalculados (encontros já preenchidos são preservados).")
+            else:
+                return render(request, "core/semestre_detalhe.html", {"sem": sem, "form": form})
+        elif acao == "remover_data":
+            DataBloqueada.objects.filter(semestre=sem, pk=request.POST.get("id")).delete()
+            n = _regerar_semestre(sem)
+            messages.success(request, f"Data liberada. Encontros de {n} componente(s) em elaboração foram recalculados.")
+        return redirect("semestre_detalhe", pk=pk)
+    return render(request, "core/semestre_detalhe.html", {"sem": sem, "form": form})
+
+
+@apenas_admin
+def configuracoes(request):
+    cfg = Configuracao.obter()
+    form = ConfiguracaoForm(request.POST or None, request.FILES or None, instance=cfg)
+    if not settings.ENVIO_DE_ARQUIVOS:
+        del form.fields["logo"]
+    if request.method == "POST":
+        if request.POST.get("acao") == "remover_logo":
+            cfg.logo.delete(save=True)
+            messages.success(request, "Logomarca removida.")
+            return redirect("configuracoes")
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configurações salvas.")
+            return redirect("configuracoes")
+    return render(request, "core/configuracoes.html", {"form": form, "cfg": cfg, "envio": settings.ENVIO_DE_ARQUIVOS})
+
+
+@login_not_required
+def logo(request):
+    caminho = Configuracao.obter().caminho_logo()
+    if not caminho:
+        raise Http404
+    tipo = "image/png" if caminho.suffix.lower() == ".png" else "image/jpeg"
+    return FileResponse(open(caminho, "rb"), content_type=tipo)

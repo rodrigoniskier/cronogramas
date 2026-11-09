@@ -1,0 +1,28 @@
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+  <thead><tr><th>Componente</th><th>Turma</th><th>Semestre</th><th>Coordenador(a)</th><th style="min-width:150px">Preenchimento</th><th class="text-center">Conflitos</th><th>Status</th><th><span class="visually-hidden">Ações</span></th></tr></thead>
+  <tbody>
+  {% for c in componentes %}
+    <tr>
+      <td><a class="fw-semibold text-decoration-none" href="{% url 'cronograma' c.pk %}">{{ c.nome }}</a>
+        {% if c.meu %}<span class="badge rounded-pill text-bg-light border ms-1" title="Você está vinculado a este componente"><i class="bi bi-person-check"></i> meu</span>{% endif %}
+        {% if c.codigo %}<div class="small text-secondary">{{ c.codigo }}</div>{% endif %}</td>
+      <td>{{ c.turma }}</td>
+      <td>{{ c.semestre.nome }}</td>
+      <td>{{ c.coordenador.nome }}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="progress flex-grow-1" style="height:.55rem" role="progressbar" aria-label="Preenchimento" aria-valuenow="{{ c.st.pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ c.st.pct }}%"></div></div>
+          <span class="small text-nowrap">{{ c.st.pct }}% <span class="text-secondary">({{ c.st.preenchidos }}/{{ c.st.total }})</span></span>
+        </div>
+      </td>
+      <td class="text-center">{% if c.st.conflitos %}<a href="{% url 'conflitos' %}?componente={{ c.pk }}" class="badge text-bg-danger text-decoration-none"><i class="bi bi-exclamation-triangle-fill"></i> {{ c.st.conflitos }}</a>{% else %}<span class="text-secondary">0</span>{% endif %}</td>
+      <td><span class="badge badge-status text-bg-{{ c.st.status_cor }}"><i class="bi {{ c.st.status_icone }}"></i> {{ c.st.status_rotulo }}</span></td>
+      <td class="text-end"><a class="btn btn-sm btn-outline-primary text-nowrap" href="{% url 'cronograma' c.pk %}"><i class="bi bi-table"></i> Abrir</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="8" class="text-center text-secondary py-4">Nenhum componente encontrado.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

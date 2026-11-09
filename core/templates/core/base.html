@@ -1,0 +1,80 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Painel{% endblock %} · CronoMed UNIPÊ</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/icons/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/tom-select.bootstrap5.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/app.css' %}">
+</head>
+<body>
+<a class="visually-hidden-focusable btn btn-destaque m-2" href="#conteudo">Ir para o conteúdo</a>
+<div class="app">
+  <nav class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="menu" aria-label="Navegação principal">
+    <div class="marca">
+      {% if tem_logo %}<img src="{% url 'logo' %}" alt="UNIPÊ — Centro Universitário de João Pessoa">
+      {% else %}<div class="marca-texto">UNIPÊ<small>Centro Universitário de João Pessoa</small></div>{% endif %}
+    </div>
+    <div class="produto">Crono<span>Med</span></div>
+    {% with n=request.resolver_match.url_name %}
+    <div class="nav flex-column">
+      <a class="nav-link {% if n == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2" aria-hidden="true"></i> Painel geral</a>
+      <a class="nav-link {% if n == 'componentes' or n == 'cronograma' or n == 'componente_novo' or n == 'componente_editar' %}active{% endif %}" href="{% url 'componentes' %}"><i class="bi bi-table" aria-hidden="true"></i> Componentes e cronogramas</a>
+      <a class="nav-link {% if n == 'conflitos' or n == 'conflito_detalhe' %}active{% endif %}" href="{% url 'conflitos' %}"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Central de Conflitos
+        {% if n_minhas_pendencias %}<span class="badge text-bg-danger ms-auto" title="Conflitos ativos relacionados a você">{{ n_minhas_pendencias }}<span class="visually-hidden"> pendências suas</span></span>{% endif %}</a>
+      <a class="nav-link {% if n == 'historico' %}active{% endif %}" href="{% url 'historico' %}"><i class="bi bi-clock-history" aria-hidden="true"></i> Histórico de alterações</a>
+      {% if user.eh_admin %}
+      <div class="secao">Administração</div>
+      <a class="nav-link {% if n == 'usuarios' or n == 'usuario_novo' or n == 'usuario_editar' %}active{% endif %}" href="{% url 'usuarios' %}"><i class="bi bi-people" aria-hidden="true"></i> Usuários</a>
+      <a class="nav-link {% if n == 'semestres' or n == 'semestre_detalhe' or n == 'semestre_novo' or n == 'semestre_editar' %}active{% endif %}" href="{% url 'semestres' %}"><i class="bi bi-calendar3" aria-hidden="true"></i> Semestres e calendário</a>
+      <a class="nav-link {% if n == 'configuracoes' %}active{% endif %}" href="{% url 'configuracoes' %}"><i class="bi bi-gear" aria-hidden="true"></i> Configurações</a>
+      {% endif %}
+    </div>
+    {% endwith %}
+    <div class="creditos">CronoMed UNIPÊ<br>Desenvolvido por Prof. Rodrigo Niskier</div>
+  </nav>
+  <div class="principal">
+    <header class="topbar">
+      <button class="btn btn-outline-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#menu" aria-controls="menu" aria-label="Abrir menu"><i class="bi bi-list"></i></button>
+      <h1>{% block cabecalho %}{% endblock %}</h1>
+      <div class="ms-auto dropdown">
+        <button class="btn btn-link text-decoration-none text-body d-flex align-items-center gap-2 p-0" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="avatar" aria-hidden="true">{{ user.nome|slice:":1"|upper }}</span>
+          <span class="d-none d-md-inline text-start lh-sm"><strong>{{ user.nome }}</strong><br><small class="text-secondary">{{ user.get_perfil_display }}</small></span>
+          <i class="bi bi-chevron-down small" aria-hidden="true"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><span class="dropdown-item-text small text-secondary">{{ user.email }}</span></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'trocar_senha' %}"><i class="bi bi-key me-2"></i>Alterar senha</a></li>
+          <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>Sair</button></form></li>
+        </ul>
+      </div>
+    </header>
+    <main class="conteudo" id="conteudo">
+      {% for m in messages %}
+      <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+      {% endfor %}
+      {% block conteudo %}{% endblock %}
+    </main>
+    <footer class="rodape">CronoMed UNIPÊ — Desenvolvido por Prof. Rodrigo Niskier.</footer>
+  </div>
+</div>
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toasts" aria-live="polite"></div>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/tom-select.complete.min.js' %}"></script>
+<script>
+  document.querySelectorAll('select.pesquisavel').forEach(function (s) {
+    new TomSelect(s, {plugins: s.multiple ? ['remove_button'] : [], maxOptions: 500, allowEmptyOption: true});
+  });
+  document.querySelectorAll('form[data-confirmar]').forEach(function (f) {
+    f.addEventListener('submit', function (ev) { if (!confirm(f.dataset.confirmar)) ev.preventDefault(); });
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

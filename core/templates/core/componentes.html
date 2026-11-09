@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% block titulo %}Componentes{% endblock %}
+{% block cabecalho %}Componentes e cronogramas{% endblock %}
+{% block conteudo %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <form method="get" class="d-flex gap-2 align-items-center">
+    <label class="fw-semibold" for="f-sem">Semestre</label>
+    <select id="f-sem" name="semestre" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      {% for s in semestres %}<option value="{{ s.pk }}" {% if sem_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
+    </select>
+  </form>
+  {% if pode_criar %}<a class="btn btn-destaque ms-auto" href="{% url 'componente_novo' %}"><i class="bi bi-plus-lg"></i> Novo componente</a>{% endif %}
+</div>
+<div class="card">{% include "core/_tabela_componentes.html" %}</div>
+<p class="small text-secondary mt-2">Todos os cronogramas podem ser consultados. A edição é restrita aos docentes vinculados, ao coordenador responsável e à administração.</p>
+{% endblock %}

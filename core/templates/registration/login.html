@@ -1,0 +1,33 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · CronoMed UNIPÊ</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/icons/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/app.css' %}">
+</head>
+<body>
+<main class="login-fundo">
+  <div class="card login-card shadow-lg">
+    <div class="card-body p-4">
+      <div class="text-center mb-3">
+        {% if tem_logo %}<img src="{% url 'logo' %}" alt="UNIPÊ — Centro Universitário de João Pessoa">
+        {% else %}<div class="marca-texto">UNIPÊ<small>Centro Universitário de João Pessoa</small></div>{% endif %}
+      </div>
+      <h1 class="h4 text-center fw-bold mb-0" style="color:var(--unipe-azul)">CronoMed</h1>
+      <p class="text-center text-secondary small mb-4">Cronogramas acadêmicos colaborativos</p>
+      {% if form.errors %}<div class="alert alert-danger" role="alert"><i class="bi bi-x-circle me-1"></i>E-mail ou senha incorretos. Verifique e tente novamente.</div>{% endif %}
+      <form method="post" novalidate>{% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="mb-3"><label class="form-label" for="{{ form.username.id_for_label }}">E-mail</label>{{ form.username }}</div>
+        <div class="mb-3"><label class="form-label" for="{{ form.password.id_for_label }}">Senha</label>{{ form.password }}</div>
+        <button class="btn btn-primary w-100 py-2"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</button>
+      </form>
+      <p class="small text-secondary mt-3 mb-0">Esqueceu a senha? Solicite a redefinição à administração do sistema.</p>
+    </div>
+    <div class="card-footer text-center small text-secondary bg-white">CronoMed UNIPÊ — Desenvolvido por Prof. Rodrigo Niskier.</div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+name: Criar administrador (manual)
+
+# Executar uma única vez, em Actions > "Criar administrador (manual)" > Run workflow.
+# Requer os segredos DATABASE_URL, DJANGO_SECRET_KEY e ADMIN_PASSWORD.
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: E-mail do administrador
+        required: true
+      nome:
+        description: Nome completo
+        required: true
+
+jobs:
+  criar:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_SUPERUSER_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      DJANGO_SUPERUSER_EMAIL: ${{ inputs.email }}
+      DJANGO_SUPERUSER_NOME: ${{ inputs.nome }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python manage.py migrate --noinput
+      - run: python manage.py createsuperuser --noinput

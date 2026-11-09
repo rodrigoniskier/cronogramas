@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+{% block titulo %}Painel geral{% endblock %}
+{% block cabecalho %}Painel geral{% endblock %}
+{% block conteudo %}
+{% if pendencias %}
+<section class="card painel-pendencias mb-3" aria-labelledby="tit-pend">
+  <div class="card-body">
+    <h2 class="h6 fw-bold mb-2" id="tit-pend" style="color:var(--conflito)"><i class="bi bi-exclamation-triangle-fill"></i> Você tem {{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de horário pendente{{ n_minhas_pendencias|pluralize }}</h2>
+    <ul class="list-unstyled mb-2 small">
+      {% for c in pendencias %}
+      <li class="mb-1"><i class="bi bi-person-fill" aria-hidden="true"></i> <strong>{{ c.professor.nome }}</strong> — {{ c.data|date:"d/m/Y" }}, {{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}:
+        {{ c.encontro_a.componente.nome }} (Turma {{ c.encontro_a.componente.turma }}) × {{ c.encontro_b.componente.nome }} (Turma {{ c.encontro_b.componente.turma }})
+        · <a href="{% url 'conflito_detalhe' c.pk %}">ver e resolver</a></li>
+      {% endfor %}
+    </ul>
+    <a class="btn btn-sm btn-danger" href="{% url 'conflitos' %}?meus=1"><i class="bi bi-list-check"></i> Abrir minhas pendências na Central de Conflitos</a>
+  </div>
+</section>
+{% endif %}
+
+<form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <label class="fw-semibold" for="f-sem">Semestre</label>
+  <select id="f-sem" name="semestre" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+    <option value="">Todos</option>
+    {% for s in semestres %}<option value="{{ s.pk }}" {% if sem_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
+  </select>
+  <div class="form-check ms-2"><input class="form-check-input" type="checkbox" id="f-meus" name="meus" value="1" {% if so_meus %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="f-meus">Somente meus componentes</label></div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-journal-text"></i></div><div><div class="valor">{{ ind.componentes }}</div><div class="rotulo">Componentes cadastrados</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-people"></i></div><div><div class="valor">{{ ind.professores }}</div><div class="rotulo">Docentes</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-calendar-event"></i></div><div><div class="valor">{{ ind.encontros }}</div><div class="rotulo">Encontros previstos</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-pencil-square"></i></div><div><div class="valor">{{ ind.preenchidos }}</div><div class="rotulo">Encontros preenchidos</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-pie-chart"></i></div><div><div class="valor">{{ ind.pct }}%</div><div class="rotulo">Preenchimento</div></div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><a class="text-decoration-none text-body" href="{% url 'conflitos' %}"><div class="card indicador {% if ind.conflitos %}alerta{% else %}sucesso{% endif %}"><div class="icone"><i class="bi bi-exclamation-triangle"></i></div><div><div class="valor">{{ ind.conflitos }}</div><div class="rotulo">Conflitos ativos</div></div></div></a></div>
+  <div class="col-6 col-md-3"><div class="card indicador {% if ind.pendencias %}alerta{% endif %}"><div class="icone"><i class="bi bi-flag"></i></div><div><div class="valor">{{ ind.pendencias }}</div><div class="rotulo">Componentes com pendências</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card indicador atencao"><div class="icone"><i class="bi bi-hourglass-split"></i></div><div><div class="valor">{{ ind.prontos }}</div><div class="rotulo">Prontos para aprovação</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card indicador sucesso"><div class="icone"><i class="bi bi-check-circle"></i></div><div><div class="valor">{{ ind.aprovados }}</div><div class="rotulo">Aprovados / publicados</div></div></div></div>
+</div>
+
+{% if user.eh_coordenador and meus_coordenados %}
+<div class="card mb-3">
+  <div class="card-header"><i class="bi bi-person-badge"></i> Componentes sob sua coordenação</div>
+  <div class="card-body d-flex flex-wrap gap-2">
+    {% for c in meus_coordenados %}
+    <a class="btn btn-light border text-start" href="{% url 'cronograma' c.pk %}">
+      <strong>{{ c.nome }}</strong> · Turma {{ c.turma }}<br>
+      <span class="badge text-bg-{{ c.st.status_cor }}"><i class="bi {{ c.st.status_icone }}"></i> {{ c.st.status_rotulo }}</span>
+      <span class="small text-secondary">{{ c.st.pct }}% preenchido · {{ c.st.conflitos }} conflito{{ c.st.conflitos|pluralize }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header d-flex align-items-center"><span><i class="bi bi-table"></i> Componentes curriculares</span></div>
+  {% include "core/_tabela_componentes.html" %}
+</div>
+
+{% if avisar %}
+<div class="modal fade" id="modal-pendencias" tabindex="-1" aria-labelledby="mp-tit" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="mp-tit"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Pendências de horário</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+    <div class="modal-body">Há <strong>{{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de horário</strong> relacionado{{ n_minhas_pendencias|pluralize }} a você ou aos componentes em que atua. Você pode continuar usando o sistema normalmente e resolvê-los quando preferir.</div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Ver depois</button><a class="btn btn-danger" href="{% url 'conflitos' %}?meus=1">Ver minhas pendências</a></div>
+  </div></div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if avisar %}<script>new bootstrap.Modal('#modal-pendencias').show();</script>{% endif %}{% endblock %}

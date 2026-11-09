@@ -1,0 +1,133 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block titulo %}{{ comp.nome }} — Turma {{ comp.turma }}{% endblock %}
+{% block cabecalho %}Cronograma{% endblock %}
+{% block conteudo %}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-start gap-2">
+      <div>
+        <h2 class="h5 fw-bold mb-1" style="color:var(--unipe-azul)">{{ comp.nome }} <span class="text-secondary fw-normal">— Turma {{ comp.turma }}</span></h2>
+        <span id="selo-status"></span>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <label class="small text-secondary" for="nav-comp">Ir para</label>
+        <select id="nav-comp" class="form-select form-select-sm" style="max-width:280px" onchange="if(this.value)location.href=this.value">
+          {% for o in outros %}<option value="{% url 'cronograma' o.pk %}" {% if o.pk == comp.pk %}selected{% endif %}>{{ o.nome }} — T. {{ o.turma }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <table class="table table-sm table-bordered quadro-ident mt-2 mb-0" aria-label="Identificação do componente">
+      <tbody>
+        <tr><td colspan="4">1. CURSO: <strong>{{ comp.curso }}</strong></td></tr>
+        <tr><td>2. COMPONENTE CURRICULAR: <strong>{{ comp.nome }}</strong>{% if comp.codigo %} <span class="text-secondary">({{ comp.codigo }})</span>{% endif %}</td><td>CH: <strong>{{ comp.carga_horaria }}h/A</strong></td><td>Teórica: <strong>{{ comp.ch_teorica }}h/A</strong></td><td>Prática: <strong>{{ comp.ch_pratica }}h/A</strong></td></tr>
+        <tr><td>3. SEMESTRE: <strong>{{ comp.semestre.nome }}</strong></td><td>PERÍODO: <strong>{{ comp.periodo|default:"—" }}</strong></td><td colspan="2">TURMA: <strong>{{ comp.turma }}</strong> · {{ comp.get_turno_display }}</td></tr>
+        <tr><td colspan="4">4. COORDENADOR: <strong>{{ comp.coordenador.nome }}</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="row small g-2 mt-1">
+      <div class="col-md-7"><span class="text-secondary">Professores vinculados</span><br>{% for p in professores %}<span class="badge text-bg-light border fw-normal">{{ p.nome }}</span> {% empty %}—{% endfor %}</div>
+      <div class="col-md-5"><span class="text-secondary">Período e horários</span><br>{{ comp.data_inicio|date:"d/m/Y" }} a {{ comp.data_fim|date:"d/m/Y" }} · {% for h in horarios %}{{ h }}{% if not forloop.last %}; {% endif %}{% endfor %}</div>
+    </div>
+  </div>
+</div>
+
+{% if motivo %}<div class="alert alert-secondary d-flex align-items-center gap-2" role="status"><i class="bi bi-lock-fill"></i><div><strong>Modo consulta.</strong> {{ motivo }}</div></div>{% endif %}
+<div id="banner-conflitos" role="alert" aria-live="polite"></div>
+
+<div class="barra-editor mb-2 d-flex flex-wrap align-items-center gap-2">
+  {% if not motivo %}
+  <button class="btn btn-primary btn-sm" id="btn-salvar"><i class="bi bi-floppy"></i> Salvar</button>
+  <span class="estado-salvamento" id="indicador" role="status" aria-live="polite"></span>
+  {% endif %}
+  <span class="small text-secondary" id="ultima-edicao"></span>
+  <div class="ms-auto d-flex flex-wrap gap-2">
+    <button class="btn btn-destaque btn-sm" id="btn-validar"><i class="bi bi-clipboard-check"></i> Validar cronograma</button>
+    {% if gerencia %}
+      {% if comp.situacao == 'RASCUNHO' %}
+        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-novo"><i class="bi bi-plus-lg"></i> Encontro excepcional</button>
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'componente_editar' comp.pk %}"><i class="bi bi-pencil"></i> Cadastro</a>
+      {% elif comp.situacao == 'APROVADO' %}
+        <form method="post" action="{% url 'componente_transicao' comp.pk 'publicar' %}" data-confirmar="Publicar este cronograma aprovado?">{% csrf_token %}<button class="btn btn-success btn-sm"><i class="bi bi-megaphone"></i> Publicar</button></form>
+      {% endif %}
+      {% if comp.situacao != 'RASCUNHO' %}<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-reabrir"><i class="bi bi-arrow-counterclockwise"></i> Reabrir para revisão</button>{% endif %}
+    {% endif %}
+    <div class="btn-group btn-group-sm">
+      <a class="btn btn-outline-primary" href="{% url 'exportar' comp.pk 'docx' %}" id="exp-docx"><i class="bi bi-file-earmark-word"></i> DOCX</a>
+      <a class="btn btn-outline-primary" href="{% url 'exportar' comp.pk 'pdf' %}" id="exp-pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'historico' %}?componente={{ comp.pk }}"><i class="bi bi-clock-history"></i> Histórico</a>
+  </div>
+</div>
+{% if comp.situacao == 'RASCUNHO' %}<p class="small text-secondary mb-2"><i class="bi bi-info-circle"></i> Enquanto o cronograma não for aprovado, os arquivos exportados saem com a marca “NÃO APROVADO”.</p>{% endif %}
+
+<div class="card mb-2"><div class="card-body py-2">
+  <div class="row g-2 align-items-end small">
+    <div class="col-md-3"><label class="form-label mb-0" for="f-docente">Docente</label><select id="f-docente" class="form-select form-select-sm"><option value="">Todos</option><option value="0">— sem professor —</option></select></div>
+    <div class="col-6 col-md-2"><label class="form-label mb-0" for="f-de">De</label><input type="date" id="f-de" class="form-control form-control-sm"></div>
+    <div class="col-6 col-md-2"><label class="form-label mb-0" for="f-ate">Até</label><input type="date" id="f-ate" class="form-control form-control-sm"></div>
+    <div class="col-md-3"><label class="form-label mb-0" for="f-sit">Situação</label><select id="f-sit" class="form-select form-select-sm"><option value="">Todas</option><option value="completo">Preenchidos</option><option value="incompleto">Incompletos</option><option value="conflito">Com conflito</option></select></div>
+    <div class="col-md-2 d-flex align-items-center gap-2"><button class="btn btn-sm btn-outline-secondary" id="f-limpar">Limpar</button><span id="f-contagem" class="text-secondary"></span></div>
+  </div>
+</div></div>
+
+<div class="table-responsive border rounded">
+  <table class="table tabela-cronograma" id="tabela" aria-label="Cronograma do componente">
+    <colgroup><col style="width:{% if gerencia and not motivo %}142px{% else %}96px{% endif %}"><col style="width:{% if gerencia and not motivo %}124px{% else %}92px{% endif %}"><col style="width:17%"><col style="width:58px"><col style="width:15%"><col style="width:13%"><col style="width:10%"><col style="width:168px"><col style="width:52px"><col style="width:9%"><col style="width:9%"><col style="width:{% if gerencia and not motivo %}108px{% else %}46px{% endif %}"></colgroup>
+    <thead><tr><th scope="col">DATA</th><th scope="col">HORÁRIO</th><th scope="col">CONTEÚDO</th><th scope="col">Tipos</th><th scope="col">ATIVIDADES</th><th scope="col">RECURSOS</th><th scope="col">GRUPOS</th><th scope="col">DOCENTE</th><th scope="col">CH</th><th scope="col">LOCAL</th><th scope="col" title="Anotações internas — não aparecem no documento exportado">Obs. internas</th><th scope="col"><span class="visually-hidden">Ações</span></th></tr></thead>
+    <tbody id="corpo"></tbody>
+  </table>
+</div>
+<p class="small text-secondary mt-2"><i class="bi bi-keyboard"></i> Clique em uma célula para editar. Use Tab para avançar. Tipos: T = teórica, P = prática. Para mais de um docente na mesma aula, o coordenador usa o botão <i class="bi bi-person-plus"></i> da linha. As alterações são salvas automaticamente; conflitos não impedem o salvamento, apenas a aprovação.</p>
+
+<!-- Validação -->
+<div class="modal fade" id="modal-validar" tabindex="-1" aria-labelledby="mv-tit" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title h5" id="mv-tit"><i class="bi bi-clipboard-check"></i> Validação do cronograma</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+  <div class="modal-body" id="mv-corpo"></div>
+  <div class="modal-footer">
+    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+    <form method="post" action="{% url 'componente_transicao' comp.pk 'aprovar' %}" id="form-aprovar" hidden>{% csrf_token %}<button class="btn btn-success"><i class="bi bi-check-circle"></i> Aprovar cronograma</button></form>
+  </div>
+</div></div></div>
+
+<!-- Novo encontro -->
+<div class="modal fade" id="modal-novo" tabindex="-1" aria-labelledby="mn-tit" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
+  <form id="form-novo">
+  <div class="modal-header"><h2 class="modal-title h5" id="mn-tit">Inserir encontro excepcional</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+  <div class="modal-body"><div class="row g-2">
+    <div class="col-12"><label class="form-label" for="n-data">Data</label><input type="date" id="n-data" class="form-control" required></div>
+    <div class="col-6"><label class="form-label" for="n-ini">Início</label><input type="time" id="n-ini" class="form-control" required></div>
+    <div class="col-6"><label class="form-label" for="n-fim">Término</label><input type="time" id="n-fim" class="form-control" required></div>
+  </div><div class="text-danger small mt-2" id="n-erro" role="alert"></div></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary">Inserir</button></div>
+  </form>
+</div></div></div>
+
+<!-- Reabrir -->
+<div class="modal fade" id="modal-reabrir" tabindex="-1" aria-labelledby="mr-tit" aria-hidden="true"><div class="modal-dialog"><div class="modal-content">
+  <form method="post" action="{% url 'componente_transicao' comp.pk 'reabrir' %}">{% csrf_token %}
+  <div class="modal-header"><h2 class="modal-title h5" id="mr-tit">Reabrir para revisão</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+  <div class="modal-body"><p>O cronograma voltará à situação “em elaboração” e precisará ser aprovado novamente. A reabertura fica registrada no histórico.</p>
+    <label class="form-label" for="r-motivo">Motivo da revisão</label><input id="r-motivo" name="motivo" class="form-control" maxlength="300" required></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-warning">Reabrir</button></div>
+  </form>
+</div></div></div>
+
+<!-- Histórico do encontro -->
+<div class="modal fade" id="modal-hist" tabindex="-1" aria-labelledby="mh-tit" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title h5" id="mh-tit">Histórico do encontro</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
+  <div class="modal-body" id="mh-corpo"></div>
+</div></div></div>
+
+<!-- Edição concorrente -->
+<div class="modal fade" id="modal-concorrencia" tabindex="-1" data-bs-backdrop="static" aria-labelledby="mc-tit" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title h5" id="mc-tit"><i class="bi bi-people-fill text-warning"></i> Este encontro foi alterado por outra pessoa</h2></div>
+  <div class="modal-body" id="mc-corpo"></div>
+  <div class="modal-footer"><button class="btn btn-outline-primary" id="mc-manter">Manter o valor atual (descartar o meu)</button><button class="btn btn-primary" id="mc-meu">Substituir pelo meu valor</button></div>
+</div></div></div>
+
+{{ estado|json_script:"estado" }}
+{{ docentes|json_script:"docentes" }}
+<script id="cfg" type="application/json">{"compId": {{ comp.pk }}, "gerencia": {{ gerencia|yesno:"true,false" }}}</script>
+{% endblock %}
+{% block scripts %}<script src="{% static 'core/editor.js' %}"></script>{% endblock %}

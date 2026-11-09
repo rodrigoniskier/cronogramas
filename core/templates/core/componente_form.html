@@ -1,0 +1,50 @@
+{% extends "core/base.html" %}
+{% block titulo %}{% if comp %}Editar{% else %}Novo{% endif %} componente{% endblock %}
+{% block cabecalho %}{% if comp %}Editar componente{% else %}Novo componente curricular{% endif %}{% endblock %}
+{% block conteudo %}
+<form method="post" novalidate>{% csrf_token %}
+<div class="card mb-3"><div class="card-header"><i class="bi bi-journal-text"></i> Dados do componente</div>
+  <div class="card-body">{% include "core/_form.html" %}</div></div>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-clock"></i> Horários semanais</div>
+  <div class="card-body">
+    <p class="small text-secondary">Informe um ou mais horários por semana. Ao salvar, os encontros são gerados automaticamente entre a data inicial e a final, respeitando feriados e datas bloqueadas do semestre. Encontros já preenchidos nunca são apagados.</p>
+    {% for e in erros_h %}<div class="alert alert-danger py-2" role="alert">{{ e }}</div>{% endfor %}
+    <div id="horarios">
+      {% for d, i, f in horarios %}
+      <div class="row g-2 align-items-end mb-2 linha-horario">
+        <div class="col-md-4"><label class="form-label small mb-0">Dia da semana</label>
+          <select name="h_dia" class="form-select"><option value="">—</option>{% for n, nome in dias %}<option value="{{ n }}" {% if d == n %}selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+        <div class="col-5 col-md-3"><label class="form-label small mb-0">Início</label><input type="time" name="h_inicio" value="{{ i }}" class="form-control"></div>
+        <div class="col-5 col-md-3"><label class="form-label small mb-0">Término</label><input type="time" name="h_fim" value="{{ f }}" class="form-control"></div>
+        <div class="col-2"><button type="button" class="btn btn-outline-danger remover-horario" aria-label="Remover horário"><i class="bi bi-trash"></i></button></div>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="add-horario"><i class="bi bi-plus-lg"></i> Adicionar horário</button>
+  </div></div>
+<div class="d-flex gap-2">
+  <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar e gerar encontros</button>
+  <a class="btn btn-outline-secondary" href="{% if comp %}{% url 'cronograma' comp.pk %}{% else %}{% url 'componentes' %}{% endif %}">Cancelar</a>
+</div>
+</form>
+{% if comp %}
+<form method="post" action="{% url 'componente_excluir' comp.pk %}" class="mt-4" data-confirmar="Excluir este componente e todos os seus encontros? Esta ação não pode ser desfeita.">{% csrf_token %}
+  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Excluir componente</button></form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  new TomSelect('#id_professores', {plugins: ['remove_button'], maxOptions: 500, placeholder: 'Pesquise e selecione os docentes…'});
+  var cx = document.getElementById('horarios');
+  document.getElementById('add-horario').addEventListener('click', function () {
+    var nova = cx.querySelector('.linha-horario').cloneNode(true);
+    nova.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+    nova.querySelector('select').value = '';
+    cx.appendChild(nova);
+  });
+  cx.addEventListener('click', function (ev) {
+    var b = ev.target.closest('.remover-horario');
+    if (b && cx.querySelectorAll('.linha-horario').length > 1) b.closest('.linha-horario').remove();
+  });
+</script>
+{% endblock %}

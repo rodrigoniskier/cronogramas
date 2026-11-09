@@ -1,0 +1,44 @@
+name: Testes e migração
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+
+  # Aplica as migrações no banco de produção depois que os testes passam.
+  # Só executa se o segredo DATABASE_URL estiver cadastrado no repositório.
+  migrar:
+    needs: testes
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Migrar banco de produção
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Segredo DATABASE_URL não configurado: migração ignorada."
+          else
+            python manage.py migrate --noinput
+          fi

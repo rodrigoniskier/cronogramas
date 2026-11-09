@@ -1,0 +1,9 @@
+.venv
+db.sqlite3
+.secret_key
+media
+staticfiles
+__pycache__
+.github
+Dockerfile
+docker-compose.yml
