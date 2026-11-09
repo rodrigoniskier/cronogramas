@@ -18,7 +18,9 @@ python manage.py seed_demo          # dados FICTÍCIOS; a senha de demonstraçã
 python manage.py runserver
 ```
 
-Acesse <http://127.0.0.1:8000>. O login é feito por e-mail.
+Acesse <http://127.0.0.1:8000>. Em **Cadastre-se como professor**, informe nome e e-mail e escolha um nome de usuário e uma senha. A conta é ativada imediatamente com perfil de professor e o painel abre na mesma sessão. O login aceita nome de usuário ou e-mail. Contas criadas pela administração continuam entrando pelo e-mail.
+
+O autocadastro está disponível a quem consegue acessar a página de login. Professores recém-cadastrados podem consultar os cronogramas e ganham acesso de edição somente quando vinculados ao componente, conforme as regras do semestre.
 
 - Para definir você mesmo a senha de demonstração: `CRONOMED_DEMO_PASSWORD='sua-senha' python manage.py seed_demo`.
 - Para recriar os dados de demonstração: `python manage.py seed_demo --reset`.

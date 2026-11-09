@@ -6,6 +6,7 @@ from .forms import LoginForm
 
 urlpatterns = [
     path("entrar/", auth.LoginView.as_view(authentication_form=LoginForm, redirect_authenticated_user=True), name="login"),
+    path("cadastro/", views.cadastro_professor, name="cadastro_professor"),
     path("sair/", auth.LogoutView.as_view(), name="logout"),
     path("senha/", views.trocar_senha, name="trocar_senha"),
     path("logo/", views.logo, name="logo"),
