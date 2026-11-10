@@ -91,7 +91,9 @@ def _identificacao(comp):
 def _situacao_texto(comp, oficial):
     if not oficial:
         return f"{MARCA_RASCUNHO} · gerado em {timezone.localtime():%d/%m/%Y %H:%M}"
-    txt = f"Aprovado por {comp.aprovado_por.nome if comp.aprovado_por else '—'} em {timezone.localtime(comp.aprovado_em):%d/%m/%Y}"
+    txt = f"Aprovado por {comp.aprovado_por.nome if comp.aprovado_por else '—'}"
+    if comp.aprovado_em:
+        txt += f" em {timezone.localtime(comp.aprovado_em):%d/%m/%Y}"
     if comp.publicado_em:
         txt += f" · Publicado em {timezone.localtime(comp.publicado_em):%d/%m/%Y}"
     return txt

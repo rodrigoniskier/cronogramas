@@ -113,7 +113,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = Path("/tmp/staticfiles") if NO_VERCEL else BASE_DIR / "staticfiles"
+try:
+    STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 WHITENOISE_USE_FINDERS = True  # dispensa collectstatic na execução local
 WHITENOISE_AUTOREFRESH = DEBUG
 
@@ -124,15 +128,43 @@ MEDIA_ROOT = Path(os.environ.get("CRONOMED_MEDIA_ROOT", BASE_DIR / "media"))
 LOGO_PADRAO = BASE_DIR / "branding" / "logo.png"
 
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 60 * 60 * 10
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
 if _env_bool("DJANGO_HTTPS", False) or NO_VERCEL:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = _env_bool("DJANGO_SSL_REDIRECT", True)
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", 31536000))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool("DJANGO_HSTS_SUBDOMAINS", True)
+    SECURE_HSTS_PRELOAD = _env_bool("DJANGO_HSTS_PRELOAD", True)
 if _env_bool("DJANGO_HTTPS", False) or _env_bool("DJANGO_TRUST_PROXY", False) or NO_VERCEL:
     # Atrás de proxy reverso que termina o TLS e envia X-Forwarded-Proto.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Limites contra tentativas automatizadas em endpoints públicos (login e autocadastro).
+CRONOMED_LIMITE_LOGIN_TENTATIVAS = int(os.environ.get("CRONOMED_LIMITE_LOGIN_TENTATIVAS", 10))
+CRONOMED_LIMITE_LOGIN_JANELA = int(os.environ.get("CRONOMED_LIMITE_LOGIN_JANELA", 300))
+CRONOMED_LIMITE_CADASTRO_TENTATIVAS = int(os.environ.get("CRONOMED_LIMITE_CADASTRO_TENTATIVAS", 30))
+CRONOMED_LIMITE_CADASTRO_JANELA = int(os.environ.get("CRONOMED_LIMITE_CADASTRO_JANELA", 600))
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simples": {"format": "[{levelname}] {asctime} {name}: {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simples"},
+    },
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+    },
+}
 
 # No Vercel o sistema de arquivos é somente leitura: a logomarca vem de
 # branding/logo.png (versionada) e o envio pela tela fica desativado.

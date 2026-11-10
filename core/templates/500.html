@@ -1,0 +1,23 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erro interno · CronoMed UNIPÊ</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/icons/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/app.css' %}">
+</head>
+<body>
+<main class="login-fundo">
+  <div class="card login-card shadow-lg">
+    <div class="card-body p-4 text-center">
+      <div class="marca-texto mb-2">UNIPÊ<small>Centro Universitário de João Pessoa</small></div>
+      <h1 class="h5 fw-bold mb-2" style="color:var(--unipe-azul)">Erro inesperado no servidor</h1>
+      <p class="text-secondary small mb-3">Não foi possível concluir a sua solicitação no momento. Tente novamente em instantes.</p>
+      <a class="btn btn-primary w-100" href="/">Voltar ao painel</a>
+    </div>
+    <div class="card-footer text-center small text-secondary bg-white">CronoMed UNIPÊ — Desenvolvido por Prof. Rodrigo Niskier.</div>
+  </div>
+</main>
+</body>
+</html>

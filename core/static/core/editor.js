@@ -84,11 +84,15 @@
     });
     if (atual && !nomeDocente[atual]) sel.appendChild(el('option', {value: atual, text: 'Docente inativo'}));
     sel.value = atual;
+    var rotuloAria = sel.getAttribute('aria-label');
     L.ts = new TomSelect(sel, {
       maxOptions: 1000, allowEmptyOption: true, placeholder: 'Pesquisar docente…',
       dropdownParent: 'body',
       onChange: function () { sujar(L, 'professor_id'); agendar(L, 0); }
     });
+    if (L.ts.control_input && rotuloAria) {
+      L.ts.control_input.setAttribute('aria-label', rotuloAria);
+    }
     return L.ts;
   }
   function celulaTexto(L, campo) {
@@ -112,9 +116,9 @@
     var tdData = el('td', {class: 'fixo'});
     var tdHora = el('td', {class: 'fixo'});
     if (agenda) {
-      var d = el('input', {type: 'date', class: 'celula celula-agenda', 'data-campo': 'data', 'aria-label': 'Data'}); d.value = enc.data;
-      var i = el('input', {type: 'time', class: 'celula celula-agenda', 'data-campo': 'inicio', 'aria-label': 'Início'}); i.value = enc.inicio;
-      var f = el('input', {type: 'time', class: 'celula celula-agenda', 'data-campo': 'fim', 'aria-label': 'Término'}); f.value = enc.fim;
+      var d = el('input', {type: 'date', class: 'celula celula-agenda', 'data-campo': 'data', 'aria-label': 'Data — ' + enc.data_br}); d.value = enc.data;
+      var i = el('input', {type: 'time', class: 'celula celula-agenda', 'data-campo': 'inicio', 'aria-label': 'Início — ' + enc.data_br}); i.value = enc.inicio;
+      var f = el('input', {type: 'time', class: 'celula celula-agenda', 'data-campo': 'fim', 'aria-label': 'Término — ' + enc.data_br}); f.value = enc.fim;
       tdData.appendChild(d); tdHora.appendChild(i); tdHora.appendChild(f);
     } else {
       tdData.appendChild(el('span', {'data-txt': 'data'}));
@@ -229,7 +233,7 @@
       var depois = null;
       corpo.querySelectorAll('tr.linha-encontro').forEach(function (t) {
         var L = linhas.get(parseInt(t.id.split('-')[1], 10));
-        if (!depois && L && (L.dados.data > f.data || (L.dados.data === f.data && L.dados.inicio > f.inicio))) depois = t;
+        if (!depois && L && (L.dados.data > f.data || (L.dados.data === f.data && L.dados.inicio >= f.inicio))) depois = t;
       });
       if (depois) corpo.insertBefore(tr, depois); else corpo.appendChild(tr);
     });
@@ -379,6 +383,12 @@
     L.emConcorrencia = false;
     L.dados = concAtual.j.encontro;      // passa a partir da versão atual: a substituição é consciente
     modalConc.hide(); agendar(L, 0);
+  });
+  document.getElementById('modal-concorrencia').addEventListener('hidden.bs.modal', function () {
+    if (concAtual && concAtual.L && concAtual.L.emConcorrencia) {
+      concAtual.L.emConcorrencia = false;
+      atualizarIndicador();
+    }
   });
 
   // ------------------------------------------------------ eventos da tabela

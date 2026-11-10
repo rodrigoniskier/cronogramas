@@ -31,7 +31,7 @@ class UsuarioManager(BaseUserManager):
     use_in_migrations = True
 
     def _campo_login(self, identificador):
-        identificador = identificador.strip().lower()
+        identificador = (identificador or "").strip().lower()
         campo = self.model.USERNAME_FIELD if "@" in identificador else "username"
         return {campo: identificador}
 

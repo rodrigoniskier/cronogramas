@@ -7,9 +7,9 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, update_session_auth_hash, views as auth_views
 from django.contrib.auth.decorators import login_not_required
-from django.contrib.auth.forms import PasswordChangeForm
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
@@ -17,20 +17,24 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.http import content_disposition_header
+from django.utils.http import content_disposition_header, url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
-from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from . import exports
-from .forms import CadastroProfessorForm, ComponenteForm, ConfiguracaoForm, DataBloqueadaForm, SemestreForm, UsuarioForm
+from .forms import (
+    CadastroProfessorForm, ComponenteForm, ConfiguracaoForm, DataBloqueadaForm,
+    LoginForm, SemestreForm, TrocaSenhaForm, UsuarioForm,
+)
 from .models import (
     DIAS_SEMANA, Componente, Configuracao, Conflito, DataBloqueada, Encontro,
     HistoricoAlteracao, HorarioSemanal, ObservacaoConflito, Semestre, Usuario, ch_padrao,
 )
 from .services import (
-    conflitos_ativos, conflitos_do_usuario, estatisticas, feriados_do_componente, gerar_encontros, motivo_sem_edicao,
-    pode_editar, pode_gerenciar, problemas_para_aprovacao, registrar, sincronizar_conflitos,
+    STATUS, _encontro_vazio, _status, conflitos_ativos, conflitos_do_usuario, estatisticas,
+    feriados_do_componente, gerar_encontros, motivo_sem_edicao, pode_editar, pode_gerenciar,
+    problemas_para_aprovacao, registrar, sincronizar_conflitos, tem_vinculo,
 )
 
 
@@ -62,7 +66,7 @@ def _com_stats(componentes):
     return componentes
 
 
-def encontro_json(e):
+def encontro_json(e, ver_observacoes=True):
     return {
         "id": e.id,
         "data": e.data.isoformat(),
@@ -80,7 +84,7 @@ def encontro_json(e):
         "ch": e.ch,
         "local": e.local,
         "horario_modelo": e.horario_modelo,
-        "observacoes": e.observacoes,
+        "observacoes": e.observacoes if ver_observacoes else "",
         "excepcional": e.excepcional,
         "versao": e.versao,
         "atualizado_por": e.atualizado_por.nome if e.atualizado_por_id else "",
@@ -107,24 +111,42 @@ def _conflito_lado(c, meu, outro):
 
 
 def estado_json(componente, usuario):
+    vinculado = tem_vinculo(usuario, componente)
     encontros = list(componente.encontros.select_related("professor", "atualizado_por"))
     mapa = {}
+    conflitos_ids = set()
     for c in conflitos_ativos().filter(
         Q(encontro_a__componente=componente) | Q(encontro_b__componente=componente)
     ):
+        conflitos_ids.add(c.id)
         for meu, outro in ((c.encontro_a, c.encontro_b), (c.encontro_b, c.encontro_a)):
             if meu.componente_id == componente.id:
                 mapa.setdefault(meu.id, []).append(_conflito_lado(c, meu, outro))
     ultimo = max((e for e in encontros if e.atualizado_em), key=lambda e: e.atualizado_em, default=None)
+    total = len(encontros)
+    preenchidos = sum(1 for e in encontros if e.preenchido)
+    iniciados = sum(1 for e in encontros if not _encontro_vazio(e))
+    n_conf = len(conflitos_ids)
+    codigo = _status(componente, total, preenchidos, n_conf, iniciados=iniciados)
+    rotulo, cor, icone = STATUS[codigo]
     return {
-        "encontros": [encontro_json(e) for e in encontros],
+        "encontros": [encontro_json(e, ver_observacoes=vinculado) for e in encontros],
         "conflitos": mapa,
         "feriados": [
             {"data": f["data"].isoformat(), "data_br": f["data"].strftime("%d/%m/%Y"), "inicio": f["hora_inicio"].strftime("%H:%M"),
              "horario": f["horario"], "descricao": f["descricao"], "ch": f["ch"]}
             for f in feriados_do_componente(componente)
         ],
-        "stats": estatisticas([componente])[componente.id],
+        "stats": {
+            "total": total,
+            "preenchidos": preenchidos,
+            "pct": round(100 * preenchidos / total) if total else 0,
+            "conflitos": n_conf,
+            "status": codigo,
+            "status_rotulo": rotulo,
+            "status_cor": cor,
+            "status_icone": icone,
+        },
         "situacao": componente.situacao,
         "ultima_edicao": (
             {"por": ultimo.atualizado_por.nome if ultimo.atualizado_por_id else "—", "em": _local(ultimo.atualizado_em)}
@@ -196,9 +218,12 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     (valor atual != valor-base enviado), levanta ErroEdicao 409 em vez de
     sobrescrever. Alterações em campos diferentes são mescladas.
     """
+    if not isinstance(campos, dict) or (base is not None and not isinstance(base, dict)):
+        raise ErroEdicao("Requisição inválida.")
+
     try:
         e = Encontro.objects.select_for_update(of=("self",)).select_related(
-            "componente__semestre", "professor", "atualizado_por"
+            "componente__semestre", "componente__coordenador", "professor", "atualizado_por"
         ).get(pk=pk)
     except Encontro.DoesNotExist:
         raise ErroEdicao("Este encontro não existe mais (pode ter sido removido).", 404)
@@ -216,10 +241,11 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
             raise ErroEdicao(f"Você não tem permissão para alterar o campo “{ROTULOS.get(campo, campo)}”.", 403)
         novos[campo] = _normalizar(campo, valor)
 
-    if base is not None and versao != e.versao and not forcar:
+    if versao is not None and versao != e.versao and not forcar:
+        base = base or {}
         divergentes = [
             c for c, novo in novos.items()
-            if c in base and _valor_atual(e, c) != _normalizar(c, base[c]) and _valor_atual(e, c) != novo
+            if (c not in base or _valor_atual(e, c) != _normalizar(c, base[c])) and _valor_atual(e, c) != novo
         ]
         if divergentes:
             raise ErroEdicao(
@@ -270,9 +296,12 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
 
 def _json_corpo(request):
     try:
-        return json.loads(request.body or b"{}")
-    except json.JSONDecodeError:
+        dados = json.loads(request.body or b"{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
         raise ErroEdicao("Requisição inválida.")
+    if not isinstance(dados, dict):
+        raise ErroEdicao("Requisição inválida.")
+    return dados
 
 
 def _erro_json(err):
@@ -285,20 +314,22 @@ def api_encontro_salvar(request, pk):
         d = _json_corpo(request)
         try:
             e, _ = alterar_encontro(
-                request.user, pk, d.get("campos") or {}, d.get("base") or {}, d.get("versao"), bool(d.get("forcar"))
+                request.user, pk, d.get("campos") if "campos" in d else {}, d.get("base"), d.get("versao"), bool(d.get("forcar"))
             )
         except ErroEdicao as err:
             if err.status == 409:
-                atual = Encontro.objects.select_related("professor", "atualizado_por").get(pk=pk)
-                err.extra["encontro"] = encontro_json(atual)
+                atual = Encontro.objects.select_related("professor", "atualizado_por", "componente").get(pk=pk)
+                err.extra["encontro"] = encontro_json(atual, ver_observacoes=tem_vinculo(request.user, atual.componente))
             raise
     except ErroEdicao as err:
         return _erro_json(err)
-    e = Encontro.objects.select_related("professor", "atualizado_por", "componente__semestre").get(pk=e.pk)
-    return JsonResponse({"encontro": encontro_json(e), "estado": estado_json(e.componente, request.user)})
+    return JsonResponse({
+        "encontro": encontro_json(e, ver_observacoes=tem_vinculo(request.user, e.componente)),
+        "estado": estado_json(e.componente, request.user),
+    })
 
 
-@require_GET
+@require_safe
 def api_estado(request, pk):
     comp = get_object_or_404(_componentes(), pk=pk)
     return JsonResponse(estado_json(comp, request.user))
@@ -311,6 +342,8 @@ def api_encontro_criar(request, pk):
         return JsonResponse({"erro": "Apenas o coordenador responsável ou a administração podem inserir encontros."}, status=403)
     if comp.bloqueado:
         return JsonResponse({"erro": "Reabra o cronograma para revisão antes de inserir encontros."}, status=403)
+    if not request.user.eh_admin and not comp.semestre.preenchimento_liberado:
+        return JsonResponse({"erro": "O período de preenchimento deste semestre ainda não foi liberado pela administração."}, status=403)
     try:
         d = _json_corpo(request)
         dia = date.fromisoformat(_normalizar("data", d.get("data")))
@@ -321,12 +354,17 @@ def api_encontro_criar(request, pk):
         with transaction.atomic():
             # Copia o conteúdo de um encontro já existente no mesmo dia/horário:
             # é o caso de um segundo docente (ou grupo) na mesma aula.
-            irmao = comp.encontros.filter(data=dia, hora_inicio=ini).first()
+            irmao = (
+                comp.encontros.filter(data=dia, hora_inicio=ini, hora_fim=fim).first()
+                or comp.encontros.filter(data=dia, hora_inicio=ini).first()
+            )
             e = Encontro.objects.create(
                 componente=comp, data=dia, hora_inicio=ini, hora_fim=fim, excepcional=True,
-                local=irmao.local if irmao else comp.local_padrao, ch=ch_padrao(ini, fim),
+                local=irmao.local if irmao else comp.local_padrao,
+                ch=(irmao.ch or ch_padrao(ini, fim)) if irmao else ch_padrao(ini, fim),
                 conteudo=irmao.conteudo if irmao else "", tipo=irmao.tipo if irmao else "",
                 atividade=irmao.atividade if irmao else "", recursos=irmao.recursos if irmao else "",
+                grupos=irmao.grupos if irmao else "",
                 atualizado_por=request.user, atualizado_em=timezone.now(),
             )
             registrar(request.user, comp, "Encontro inserido", "", e.descricao, e)
@@ -343,6 +381,8 @@ def api_encontro_excluir(request, pk):
         return JsonResponse({"erro": "Apenas o coordenador responsável ou a administração podem remover encontros."}, status=403)
     if comp.bloqueado:
         return JsonResponse({"erro": "Reabra o cronograma para revisão antes de remover encontros."}, status=403)
+    if not request.user.eh_admin and not comp.semestre.preenchimento_liberado:
+        return JsonResponse({"erro": "O período de preenchimento deste semestre ainda não foi liberado pela administração."}, status=403)
     with transaction.atomic():
         prof = e.professor_id
         registrar(request.user, comp, "Encontro removido", f"{e.descricao} — {e.conteudo[:80]}", "")
@@ -351,9 +391,13 @@ def api_encontro_excluir(request, pk):
     return JsonResponse({"estado": estado_json(comp, request.user)})
 
 
-@require_GET
+@require_safe
 def api_encontro_historico(request, pk):
-    itens = HistoricoAlteracao.objects.filter(encontro_id=pk).select_related("usuario")[:100]
+    e = get_object_or_404(Encontro.objects.select_related("componente"), pk=pk)
+    qs = HistoricoAlteracao.objects.filter(encontro=e).select_related("usuario")
+    if not tem_vinculo(request.user, e.componente):
+        qs = qs.exclude(campo="Observações")
+    itens = qs[:100]
     return JsonResponse({"itens": [
         {"quando": _local(h.data_hora), "usuario": h.usuario.nome if h.usuario else "—",
          "campo": h.campo, "anterior": h.valor_anterior, "novo": h.valor_novo}
@@ -364,10 +408,61 @@ def api_encontro_historico(request, pk):
 # ---------------------------------------------------------------- acesso
 
 
+def _ip_cliente(request):
+    encaminhado = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if encaminhado:
+        return encaminhado.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "desconhecido")
+
+
+def _incrementar_tentativa(chave, janela):
+    atual = cache.get(chave, 0)
+    cache.set(chave, atual + 1, timeout=janela)
+
+
+_login_view = auth_views.LoginView.as_view(authentication_form=LoginForm, redirect_authenticated_user=True)
+
+
+def _erro_limite(form, mensagem: str) -> None:
+    """Registra erro de limite de tentativas sem executar validação pesada (ex.: hash de senha)."""
+    from django.forms.utils import ErrorDict
+
+    form._errors = ErrorDict()
+    form.cleaned_data = {}
+    form.add_error(None, mensagem)
+
+
 @login_not_required
 @sensitive_post_parameters()
 @never_cache
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET", "HEAD", "POST"])
+def entrar(request):
+    if request.method == "POST" and not request.user.is_authenticated:
+        ip = _ip_cliente(request)
+        ident = (request.POST.get("username") or "").strip().lower()[:150]
+        limite = getattr(settings, "CRONOMED_LIMITE_LOGIN_TENTATIVAS", 10)
+        janela = getattr(settings, "CRONOMED_LIMITE_LOGIN_JANELA", 300)
+        chave_ip = f"cronomed:login:ip:{ip}"
+        chave_id = f"cronomed:login:id:{ip}:{ident}" if ident else None
+        if cache.get(chave_ip, 0) >= limite * 3 or (chave_id and cache.get(chave_id, 0) >= limite):
+            form = LoginForm(request)
+            _erro_limite(form, "Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.")
+            return render(request, "registration/login.html", {"form": form, "next": request.POST.get("next", "")}, status=429)
+        resposta = _login_view(request)
+        if resposta.status_code == 200:
+            _incrementar_tentativa(chave_ip, janela)
+            if chave_id:
+                _incrementar_tentativa(chave_id, janela)
+        elif resposta.status_code in (301, 302) and chave_id:
+            cache.delete(chave_id)
+        return resposta
+    return _login_view(request)
+
+
+@login_not_required
+@sensitive_post_parameters()
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
 def cadastro_professor(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
@@ -376,6 +471,16 @@ def cadastro_professor(request):
         request.POST if request.method == "POST" else None,
         instance=Usuario(perfil=Usuario.Perfil.PROF),
     )
+    if request.method == "POST":
+        ip = _ip_cliente(request)
+        limite = getattr(settings, "CRONOMED_LIMITE_CADASTRO_TENTATIVAS", 30)
+        janela = getattr(settings, "CRONOMED_LIMITE_CADASTRO_JANELA", 600)
+        chave_ip = f"cronomed:cadastro:ip:{ip}"
+        if cache.get(chave_ip, 0) >= limite:
+            _erro_limite(form, "Muitas tentativas de cadastro a partir deste endereço. Aguarde alguns minutos.")
+            return render(request, "registration/cadastro.html", {"form": form}, status=429)
+        _incrementar_tentativa(chave_ip, janela)
+
     if form.is_valid():
         try:
             with transaction.atomic():
@@ -475,6 +580,13 @@ def _ler_horarios(post):
         erros.append("Informe ao menos um horário semanal.")
     if len({(d, i) for d, i, _ in horarios}) != len(horarios):
         erros.append("Há horários semanais repetidos.")
+    else:
+        por_dia = {}
+        for d, i, f in sorted(horarios):
+            if any(i < f_ant and i_ant < f for i_ant, f_ant in por_dia.get(d, [])):
+                erros.append("Há horários semanais sobrepostos no mesmo dia da semana.")
+                break
+            por_dia.setdefault(d, []).append((i, f))
     return horarios, erros
 
 
@@ -563,20 +675,25 @@ def cronograma(request, pk):
 def componente_validar(request, pk):
     comp = get_object_or_404(_componentes(), pk=pk)
     sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+    u = request.user
+    sem_liberado = u.eh_admin or comp.semestre.preenchimento_liberado
     return JsonResponse({
         "problemas": problemas_para_aprovacao(comp),
-        "estado": estado_json(comp, request.user),
-        "pode_aprovar": pode_gerenciar(request.user, comp) and comp.situacao == Componente.Situacao.RASCUNHO,
+        "estado": estado_json(comp, u),
+        "pode_aprovar": pode_gerenciar(u, comp) and sem_liberado and comp.situacao == Componente.Situacao.RASCUNHO,
     })
 
 
 @require_POST
 def componente_transicao(request, pk, acao):
     with transaction.atomic():
-        comp = get_object_or_404(Componente.objects.select_for_update(), pk=pk)
+        comp = get_object_or_404(Componente.objects.select_for_update(of=("self",)).select_related("semestre"), pk=pk)
         u = request.user
         if not pode_gerenciar(u, comp):
             raise PermissionDenied
+        if not u.eh_admin and not comp.semestre.preenchimento_liberado:
+            messages.error(request, "O período de preenchimento deste semestre ainda não foi liberado pela administração.")
+            return redirect("cronograma", pk=pk)
         S = Componente.Situacao
         agora = timezone.now()
         if acao == "aprovar" and comp.situacao == S.RASCUNHO:
@@ -662,7 +779,10 @@ def conflitos(request):
             Q(encontro_a__componente__coordenador_id=g["coordenador"]) | Q(encontro_b__componente__coordenador_id=g["coordenador"])
         )
     if g.get("semestre", "").isdigit():
-        qs = qs.filter(encontro_a__componente__semestre_id=g["semestre"])
+        qs = qs.filter(
+            Q(encontro_a__componente__semestre_id=g["semestre"])
+            | Q(encontro_b__componente__semestre_id=g["semestre"])
+        )
     if g.get("data"):
         try:
             qs = qs.filter(data=date.fromisoformat(g["data"]))
@@ -689,7 +809,12 @@ def conflitos_verificar(request):
     sincronizar_conflitos()
     n = Conflito.objects.filter(status=Conflito.Status.ATIVO).count()
     messages.info(request, f"Verificação concluída em toda a base: {n} conflito(s) ativo(s).")
-    return redirect(request.POST.get("proximo") or "conflitos")
+    proximo = request.POST.get("proximo") or ""
+    if not url_has_allowed_host_and_scheme(
+        proximo, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        proximo = "conflitos"
+    return redirect(proximo)
 
 
 def conflito_detalhe(request, pk):
@@ -701,9 +826,17 @@ def conflito_detalhe(request, pk):
         ), pk=pk,
     )
     u = request.user
+    pode_comentar = (
+        u.eh_admin
+        or u.id == c.professor_id
+        or tem_vinculo(u, c.encontro_a.componente)
+        or tem_vinculo(u, c.encontro_b.componente)
+    )
     if request.method == "POST":
         acao = request.POST.get("acao")
         if acao == "observacao":
+            if not pode_comentar:
+                raise PermissionDenied
             texto = request.POST.get("texto", "").strip()
             if texto:
                 ObservacaoConflito.objects.create(conflito=c, autor=u, texto=texto[:2000])
@@ -720,15 +853,26 @@ def conflito_detalhe(request, pk):
     _lados(c, u)
     historico = HistoricoAlteracao.objects.filter(
         encontro_id__in=[c.encontro_a_id, c.encontro_b_id]
-    ).select_related("usuario", "componente")[:50]
+    ).select_related("usuario", "componente")
+    if not u.eh_admin:
+        historico = historico.exclude(
+            ~Q(componente__professores=u) & ~Q(componente__coordenador=u),
+            campo="Observações",
+        )
     return render(request, "core/conflito_detalhe.html", {
-        "c": c, "historico": historico, "docentes": Usuario.docentes(),
+        "c": c, "historico": historico[:50], "docentes": Usuario.docentes(),
         "observacoes": c.observacoes.select_related("autor"),
+        "pode_comentar": pode_comentar,
     })
 
 
 def historico(request):
     qs = HistoricoAlteracao.objects.select_related("usuario", "componente")
+    if not request.user.eh_admin:
+        qs = qs.exclude(
+            ~Q(componente__professores=request.user) & ~Q(componente__coordenador=request.user),
+            campo="Observações",
+        ).distinct()
     comp_id = request.GET.get("componente", "")
     if comp_id.isdigit():
         qs = qs.filter(componente_id=comp_id)
@@ -760,20 +904,28 @@ def usuario_form(request, pk=None):
             form.add_error(None, "Você não pode desativar ou rebaixar o seu próprio usuário administrador.")
         else:
             obj.is_staff = obj.is_superuser = obj.perfil == Usuario.Perfil.ADMIN
+            senha = None
             if not alvo:
                 senha = _senha_temporaria()
                 obj.set_password(senha)
                 obj.precisa_trocar_senha = True
-                obj.save()
-                messages.success(
-                    request,
-                    f"Usuário criado. Senha temporária de {obj.email}: {senha} — anote e entregue ao usuário; "
-                    "ela não será exibida novamente e deverá ser trocada no primeiro acesso.",
-                )
+            try:
+                with transaction.atomic():
+                    obj.save()
+            except IntegrityError:
+                form.validate_unique()
+                if not form.errors:
+                    raise
             else:
-                obj.save()
-                messages.success(request, "Usuário atualizado.")
-            return redirect("usuarios")
+                if not alvo:
+                    messages.success(
+                        request,
+                        f"Usuário criado. Senha temporária de {obj.email}: {senha} — anote e entregue ao usuário; "
+                        "ela não será exibida novamente e deverá ser trocada no primeiro acesso.",
+                    )
+                else:
+                    messages.success(request, "Usuário atualizado.")
+                return redirect("usuarios")
     return render(request, "core/usuario_form.html", {"form": form, "alvo": alvo})
 
 
@@ -781,6 +933,9 @@ def usuario_form(request, pk=None):
 @require_POST
 def usuario_redefinir_senha(request, pk):
     alvo = get_object_or_404(Usuario, pk=pk)
+    if alvo.pk == request.user.pk:
+        messages.error(request, "Para alterar a sua própria senha, utilize a opção “Alterar senha” no menu do usuário.")
+        return redirect("usuarios")
     senha = _senha_temporaria()
     alvo.set_password(senha)
     alvo.precisa_trocar_senha = True
@@ -793,10 +948,11 @@ def usuario_redefinir_senha(request, pk):
     return redirect("usuarios")
 
 
+@sensitive_post_parameters()
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
 def trocar_senha(request):
-    form = PasswordChangeForm(request.user, request.POST or None)
-    for f in form.fields.values():
-        f.widget.attrs["class"] = "form-control"
+    form = TrocaSenhaForm(request.user, request.POST or None)
     if request.method == "POST" and form.is_valid():
         u = form.save()
         u.precisa_trocar_senha = False
@@ -858,9 +1014,11 @@ def semestre_detalhe(request, pk):
             else:
                 return render(request, "core/semestre_detalhe.html", {"sem": sem, "form": form})
         elif acao == "remover_data":
-            DataBloqueada.objects.filter(semestre=sem, pk=request.POST.get("id")).delete()
-            n = _regerar_semestre(sem)
-            messages.success(request, f"Data liberada. Encontros de {n} componente(s) em elaboração foram recalculados.")
+            data_id = request.POST.get("id", "")
+            if str(data_id).isdigit():
+                DataBloqueada.objects.filter(semestre=sem, pk=int(data_id)).delete()
+                n = _regerar_semestre(sem)
+                messages.success(request, f"Data liberada. Encontros de {n} componente(s) em elaboração foram recalculados.")
         return redirect("semestre_detalhe", pk=pk)
     return render(request, "core/semestre_detalhe.html", {"sem": sem, "form": form})
 

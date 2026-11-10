@@ -1,14 +1,15 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, BaseUserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, BaseUserCreationForm, PasswordChangeForm
+from django.db.models import Q
 
 from .models import Componente, Configuracao, DataBloqueada, Semestre, Usuario
 
 
 class _Bootstrap:
-    """Aplica classes do Bootstrap aos widgets."""
+    """Aplica classes do Bootstrap e atributos de acessibilidade aos widgets."""
 
     def _estilizar(self):
-        for campo in self.fields.values():
+        for nome, campo in self.fields.items():
             w = campo.widget
             if isinstance(w, (forms.CheckboxInput,)):
                 w.attrs.setdefault("class", "form-check-input")
@@ -16,13 +17,49 @@ class _Bootstrap:
                 w.attrs.setdefault("class", "form-select")
             else:
                 w.attrs.setdefault("class", "form-control")
+            if campo.help_text:
+                w.attrs.setdefault("aria-describedby", f"id_{nome}_helptext")
+
+    def full_clean(self):
+        super().full_clean()
+        if self.is_bound:
+            for nome in self.errors:
+                if nome in self.fields:
+                    w = self.fields[nome].widget
+                    cls = w.attrs.get("class", "")
+                    if "is-invalid" not in cls:
+                        w.attrs["class"] = f"{cls} is-invalid".strip()
+                    w.attrs["aria-invalid"] = "true"
+                    desc = w.attrs.get("aria-describedby", "")
+                    err_id = f"id_{nome}_errors"
+                    if err_id not in desc:
+                        w.attrs["aria-describedby"] = f"{desc} {err_id}".strip()
 
 
 class LoginForm(_Bootstrap, AuthenticationForm):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.fields["username"].label = "Nome de usuário ou e-mail"
+        self.fields["username"].widget.attrs.setdefault("autocomplete", "username")
+        self.fields["password"].widget.attrs.setdefault("autocomplete", "current-password")
         self._estilizar()
+
+
+class TrocaSenhaForm(_Bootstrap, PasswordChangeForm):
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.fields["old_password"].widget.attrs.setdefault("autocomplete", "current-password")
+        self.fields["new_password1"].widget.attrs.setdefault("autocomplete", "new-password")
+        self.fields["new_password2"].widget.attrs.setdefault("autocomplete", "new-password")
+        self._estilizar()
+
+    def clean(self):
+        dados = super().clean()
+        antiga = dados.get("old_password")
+        nova = dados.get("new_password2")
+        if antiga and nova and antiga == nova:
+            self.add_error("new_password2", "A nova senha deve ser diferente da senha atual.")
+        return dados
 
 
 class CadastroProfessorForm(_Bootstrap, BaseUserCreationForm):
@@ -73,6 +110,22 @@ class SemestreForm(_Bootstrap, forms.ModelForm):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self._estilizar()
+
+    def clean(self):
+        dados = super().clean()
+        ini, fim = dados.get("data_inicio"), dados.get("data_fim")
+        if ini and fim and self.instance.pk:
+            if self.instance.componentes.filter(Q(data_inicio__lt=ini) | Q(data_fim__gt=fim)).exists():
+                self.add_error(
+                    "data_inicio",
+                    "Há componentes deste semestre com período fora do novo intervalo informado.",
+                )
+            if self.instance.datas_bloqueadas.filter(Q(data__lt=ini) | Q(data__gt=fim)).exists():
+                self.add_error(
+                    "data_inicio",
+                    "Há datas bloqueadas deste semestre fora do novo intervalo informado.",
+                )
+        return dados
 
 
 class DataBloqueadaForm(_Bootstrap, forms.ModelForm):

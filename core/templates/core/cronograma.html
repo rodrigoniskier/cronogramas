@@ -45,7 +45,7 @@
     <button class="btn btn-destaque btn-sm" id="btn-validar"><i class="bi bi-clipboard-check"></i> Validar cronograma</button>
     {% if gerencia %}
       {% if comp.situacao == 'RASCUNHO' %}
-        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-novo"><i class="bi bi-plus-lg"></i> Encontro excepcional</button>
+        {% if not motivo %}<button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-novo"><i class="bi bi-plus-lg"></i> Encontro excepcional</button>{% endif %}
         <a class="btn btn-outline-primary btn-sm" href="{% url 'componente_editar' comp.pk %}"><i class="bi bi-pencil"></i> Cadastro</a>
       {% elif comp.situacao == 'APROVADO' %}
         <form method="post" action="{% url 'componente_transicao' comp.pk 'publicar' %}" data-confirmar="Publicar este cronograma aprovado?">{% csrf_token %}<button class="btn btn-success btn-sm"><i class="bi bi-megaphone"></i> Publicar</button></form>
@@ -120,7 +120,7 @@
 </div></div></div>
 
 <!-- Edição concorrente -->
-<div class="modal fade" id="modal-concorrencia" tabindex="-1" data-bs-backdrop="static" aria-labelledby="mc-tit" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content">
+<div class="modal fade" id="modal-concorrencia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="mc-tit" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content">
   <div class="modal-header"><h2 class="modal-title h5" id="mc-tit"><i class="bi bi-people-fill text-warning"></i> Este encontro foi alterado por outra pessoa</h2></div>
   <div class="modal-body" id="mc-corpo"></div>
   <div class="modal-footer"><button class="btn btn-outline-primary" id="mc-manter">Manter o valor atual (descartar o meu)</button><button class="btn btn-primary" id="mc-meu">Substituir pelo meu valor</button></div>

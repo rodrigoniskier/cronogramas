@@ -2,7 +2,9 @@
 
 {% block titulo %}Entrar{% endblock %}
 {% block formulario %}
-  {% if form.errors %}<div class="alert alert-danger" role="alert"><i class="bi bi-x-circle me-1"></i>Nome de usuário, e-mail ou senha incorretos. Verifique e tente novamente.</div>{% endif %}
+  {% if form.errors %}
+    <div class="alert alert-danger" role="alert"><i class="bi bi-x-circle me-1"></i>{% if 'Muitas tentativas' in form.non_field_errors|join:' ' %}{{ form.non_field_errors|join:' ' }}{% else %}Nome de usuário, e-mail ou senha incorretos. Verifique e tente novamente.{% endif %}</div>
+  {% endif %}
   <form method="post" novalidate>{% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
     <div class="mb-3"><label class="form-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>{{ form.username }}</div>

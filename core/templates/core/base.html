@@ -69,7 +69,9 @@
 <script src="{% static 'vendor/tom-select.complete.min.js' %}"></script>
 <script>
   document.querySelectorAll('select.pesquisavel').forEach(function (s) {
-    new TomSelect(s, {plugins: s.multiple ? ['remove_button'] : [], maxOptions: 500, allowEmptyOption: true});
+    var lbl = s.getAttribute('aria-label') || (s.id && document.querySelector('label[for="' + s.id + '"]') ? document.querySelector('label[for="' + s.id + '"]').textContent.trim() : '');
+    var ts = new TomSelect(s, {plugins: s.multiple ? ['remove_button'] : [], maxOptions: 500, allowEmptyOption: true});
+    if (ts.control_input && lbl) ts.control_input.setAttribute('aria-label', lbl);
   });
   document.querySelectorAll('form[data-confirmar]').forEach(function (f) {
     f.addEventListener('submit', function (ev) { if (!confirm(f.dataset.confirmar)) ev.preventDefault(); });

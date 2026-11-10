@@ -14,8 +14,11 @@
   --bs-link-color: #003a70;
   --bs-link-color-rgb: 0, 58, 112;
   --bs-link-hover-color: #002a52;
+  --bs-secondary-color: #4a5562;
+  --bs-secondary-rgb: 74, 85, 98;
 }
 body { background: var(--unipe-cinza); color: #1d2733; font-size: .925rem; }
+.text-secondary, .text-muted { color: #4a5562 !important; }
 .btn-primary { --bs-btn-bg: var(--unipe-azul); --bs-btn-border-color: var(--unipe-azul); --bs-btn-hover-bg: var(--unipe-azul-escuro); --bs-btn-hover-border-color: var(--unipe-azul-escuro); --bs-btn-active-bg: var(--unipe-azul-escuro); --bs-btn-disabled-bg: var(--unipe-azul); --bs-btn-disabled-border-color: var(--unipe-azul); }
 .btn-outline-primary { --bs-btn-color: var(--unipe-azul); --bs-btn-border-color: var(--unipe-azul); --bs-btn-hover-bg: var(--unipe-azul); --bs-btn-hover-border-color: var(--unipe-azul); --bs-btn-active-bg: var(--unipe-azul); }
 .btn-destaque { background: var(--unipe-amarelo); border-color: var(--unipe-amarelo); color: #1d2733; font-weight: 600; }
@@ -97,7 +100,7 @@ tr.linha-alerta td { background: #fff; padding: .5rem .7rem; border-left: 5px so
 .selo-excepcional { background: #fff5d1; color: #8a6400; }
 .acoes-linha { padding: .3rem; text-align: center; white-space: nowrap; }
 .acoes-linha .btn { padding: .1rem .35rem; }
-.meta-linha { font-size: .68rem; color: #6b7785; padding: 0 .5rem .3rem; }
+.meta-linha { font-size: .68rem; color: #4a5562; padding: 0 .5rem .3rem; }
 .toast-container { z-index: 1090; }
 @media print { .sidebar, .topbar, .barra-editor, .rodape { display: none !important; } }
 
@@ -106,7 +109,7 @@ tr.linha-alerta td { background: #fff; padding: .5rem .7rem; border-left: 5px so
 .principal { overflow-x: clip; }
 .tabela-cronograma td.fixo { white-space: nowrap; }
 .tabela-cronograma thead th { background: #405f91; color: #fff; text-align: center; text-transform: none; font-size: .8rem; letter-spacing: 0; }
-.dia-semana { font-size: .7rem; color: #6b7785; white-space: normal; }
+.dia-semana { font-size: .7rem; color: #4a5562; white-space: normal; }
 .celula-tipo { text-align: center; padding-left: .2rem; padding-right: .2rem; }
 tr.linha-feriado > td { background: #f1f3f6; padding: .45rem .5rem; color: #3b4652; }
 .quadro-ident td { font-size: .88rem; border-color: #2b2f36; padding: .3rem .5rem; }
