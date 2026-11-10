@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
-{% block titulo %}Painel geral{% endblock %}
-{% block cabecalho %}Painel geral{% endblock %}
+{% block titulo %}Cadastro do Cronograma{% endblock %}
+{% block cabecalho %}Cadastro do Cronograma de Aulas{% endblock %}
 {% block conteudo %}
 {% if pendencias %}
 <section class="card painel-pendencias mb-3" aria-labelledby="tit-pend">
@@ -18,46 +18,135 @@
 </section>
 {% endif %}
 
-<form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
-  <label class="fw-semibold" for="f-sem">Semestre</label>
-  <select id="f-sem" name="semestre" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-    <option value="">Todos</option>
-    {% for s in semestres %}<option value="{{ s.pk }}" {% if sem_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
-  </select>
-  <div class="form-check ms-2"><input class="form-check-input" type="checkbox" id="f-meus" name="meus" value="1" {% if so_meus %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="f-meus">Somente meus componentes</label></div>
-</form>
+<section class="card doc-institucional mb-4" aria-labelledby="tit-modelo-cadastro">
+  <div class="card-body p-3 p-md-4">
+    <div class="doc-topo d-flex justify-content-between align-items-end mb-2">
+      <div class="d-flex align-items-center gap-2">
+        {% if tem_logo %}<img src="{% url 'logo' %}" alt="UNIPÊ" class="doc-logo">{% endif %}
+        <span class="fw-bold small text-secondary">{{ config_inst.instituicao }}</span>
+      </div>
+      <div class="doc-coordenacao">Coordenação de Medicina</div>
+    </div>
 
-<div class="row g-3 mb-3">
-  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-journal-text"></i></div><div><div class="valor">{{ ind.componentes }}</div><div class="rotulo">Componentes cadastrados</div></div></div></div>
-  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-people"></i></div><div><div class="valor">{{ ind.professores }}</div><div class="rotulo">Docentes</div></div></div></div>
-  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-calendar-event"></i></div><div><div class="valor">{{ ind.encontros }}</div><div class="rotulo">Encontros previstos</div></div></div></div>
-  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-pencil-square"></i></div><div><div class="valor">{{ ind.preenchidos }}</div><div class="rotulo">Encontros preenchidos</div></div></div></div>
-  <div class="col-6 col-md-4 col-xl"><div class="card indicador"><div class="icone"><i class="bi bi-pie-chart"></i></div><div><div class="valor">{{ ind.pct }}%</div><div class="rotulo">Preenchimento</div></div></div></div>
-</div>
-<div class="row g-3 mb-3">
-  <div class="col-6 col-md-3"><a class="text-decoration-none text-body" href="{% url 'conflitos' %}"><div class="card indicador {% if ind.conflitos %}alerta{% else %}sucesso{% endif %}"><div class="icone"><i class="bi bi-exclamation-triangle"></i></div><div><div class="valor">{{ ind.conflitos }}</div><div class="rotulo">Conflitos ativos</div></div></div></a></div>
-  <div class="col-6 col-md-3"><div class="card indicador {% if ind.pendencias %}alerta{% endif %}"><div class="icone"><i class="bi bi-flag"></i></div><div><div class="valor">{{ ind.pendencias }}</div><div class="rotulo">Componentes com pendências</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card indicador atencao"><div class="icone"><i class="bi bi-hourglass-split"></i></div><div><div class="valor">{{ ind.prontos }}</div><div class="rotulo">Prontos para aprovação</div></div></div></div>
-  <div class="col-6 col-md-3"><div class="card indicador sucesso"><div class="icone"><i class="bi bi-check-circle"></i></div><div><div class="valor">{{ ind.aprovados }}</div><div class="rotulo">Aprovados / publicados</div></div></div></div>
-</div>
+    {% if erros_cadastro %}
+    <div class="alert alert-danger py-2 mb-3" role="alert">
+      {% for erro in erros_cadastro %}<div><i class="bi bi-exclamation-circle-fill"></i> {{ erro }}</div>{% endfor %}
+    </div>
+    {% endif %}
 
-{% if user.eh_coordenador and meus_coordenados %}
-<div class="card mb-3">
-  <div class="card-header"><i class="bi bi-person-badge"></i> Componentes sob sua coordenação</div>
-  <div class="card-body d-flex flex-wrap gap-2">
-    {% for c in meus_coordenados %}
-    <a class="btn btn-light border text-start" href="{% url 'cronograma' c.pk %}">
-      <strong>{{ c.nome }}</strong> · Turma {{ c.turma }}<br>
-      <span class="badge text-bg-{{ c.st.status_cor }}"><i class="bi {{ c.st.status_icone }}"></i> {{ c.st.status_rotulo }}</span>
-      <span class="small text-secondary">{{ c.st.pct }}% preenchido · {{ c.st.conflitos }} conflito{{ c.st.conflitos|pluralize }}</span>
-    </a>
-    {% endfor %}
+    <form method="post" action="{% url 'dashboard' %}" id="form-cadastro-cronograma">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-bordered quadro-ident-form mb-3">
+          <thead>
+            <tr>
+              <th colspan="4" id="tit-modelo-cadastro" class="faixa-titulo-cronograma text-center">CRONOGRAMA DE AULAS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4">
+                <label class="ident-inline-label" for="id-curso">
+                  <span class="ident-rotulo">1. CURSO:</span>
+                  <input type="text" id="id-curso" name="curso" class="ident-input" value="{{ dados_form.curso }}" placeholder="Medicina" required>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td style="width:48%">
+                <label class="ident-inline-label" for="id-nome">
+                  <span class="ident-rotulo">2. COMPONENTE CURRICULAR:</span>
+                  <input type="text" id="id-nome" name="nome" class="ident-input" value="{{ dados_form.nome }}" placeholder="Clique para digitar o componente (ex.: MAPD-II)" required autofocus>
+                </label>
+              </td>
+              <td style="width:16%">
+                <label class="ident-inline-label" for="id-ch">
+                  <span class="ident-rotulo">CH:</span>
+                  <input type="text" id="id-ch" name="carga_horaria" class="ident-input ident-input-curto" value="{{ dados_form.carga_horaria }}" placeholder="60" inputmode="numeric">
+                  <span class="ident-sufixo">h/A</span>
+                </label>
+              </td>
+              <td style="width:18%">
+                <label class="ident-inline-label" for="id-teorica">
+                  <span class="ident-rotulo">Teórica:</span>
+                  <input type="text" id="id-teorica" name="ch_teorica" class="ident-input ident-input-curto" value="{{ dados_form.ch_teorica }}" placeholder="30" inputmode="numeric">
+                  <span class="ident-sufixo">h/A</span>
+                </label>
+              </td>
+              <td style="width:18%">
+                <label class="ident-inline-label" for="id-pratica">
+                  <span class="ident-rotulo">Prática:</span>
+                  <input type="text" id="id-pratica" name="ch_pratica" class="ident-input ident-input-curto" value="{{ dados_form.ch_pratica }}" placeholder="30" inputmode="numeric">
+                  <span class="ident-sufixo">h/A</span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label class="ident-inline-label" for="id-semestre">
+                  <span class="ident-rotulo">3. SEMESTRE:</span>
+                  <input type="text" id="id-semestre" name="semestre_nome" list="lista-semestres" class="ident-input" value="{{ dados_form.semestre_nome }}" placeholder="Ex.: 2026/2" required>
+                  <datalist id="lista-semestres">
+                    {% for s in semestres %}<option value="{{ s.nome }}"></option>{% endfor %}
+                  </datalist>
+                </label>
+              </td>
+              <td>
+                <label class="ident-inline-label" for="id-periodo">
+                  <span class="ident-rotulo">PERÍODO:</span>
+                  <input type="text" id="id-periodo" name="periodo" class="ident-input ident-input-curto" value="{{ dados_form.periodo }}" placeholder="Ex.: 4º">
+                </label>
+              </td>
+              <td colspan="2">
+                <label class="ident-inline-label" for="id-turma">
+                  <span class="ident-rotulo">TURMA:</span>
+                  <input type="text" id="id-turma" name="turma" class="ident-input ident-input-curto" value="{{ dados_form.turma }}" placeholder="Ex.: A" required>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="4">
+                <label class="ident-inline-label" for="id-coordenador">
+                  <span class="ident-rotulo">4. COORDENADOR:</span>
+                  <select id="id-coordenador" name="coordenador" class="ident-select">
+                    {% for doc in docentes_ativos %}
+                    <option value="{{ doc.pk }}" {% if dados_form.coordenador == doc.pk|stringformat:"s" %}selected{% endif %}>{{ doc.nome }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="small text-secondary">
+          <i class="bi bi-info-circle"></i> Ao confirmar o cadastro acima, a estrutura completa do <strong>CRONOGRAMA</strong> será aberta em branco com as <strong>20 linhas de aulas</strong> (e seção de reposições) prontas para edição direta.
+        </span>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-table"></i> Cadastrar e abrir cronograma (20 aulas)
+        </button>
+      </div>
+    </form>
   </div>
-</div>
-{% endif %}
+</section>
 
 <div class="card">
-  <div class="card-header d-flex align-items-center"><span><i class="bi bi-table"></i> Componentes curriculares</span></div>
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="bi bi-folder2-open"></i> Cronogramas já cadastrados ({{ ind.componentes }})</span>
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center m-0">
+      <label class="small fw-semibold" for="f-sem">Semestre</label>
+      <select id="f-sem" name="semestre" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        {% for s in semestres %}<option value="{{ s.pk }}" {% if sem_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
+      </select>
+      <div class="form-check ms-1 mb-0">
+        <input class="form-check-input" type="checkbox" id="f-meus" name="meus" value="1" {% if so_meus %}checked{% endif %} onchange="this.form.submit()">
+        <label class="form-check-label small" for="f-meus">Somente meus componentes</label>
+      </div>
+    </form>
+  </div>
   {% include "core/_tabela_componentes.html" %}
 </div>
 

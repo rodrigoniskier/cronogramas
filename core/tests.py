@@ -552,3 +552,90 @@ class ExportacaoTests(Base):
         with self.assertNumQueries(2):
             stats = estatisticas(comps)
         self.assertEqual(set(stats.keys()), {c.id for c in comps})
+
+
+class DashboardEstruturaVinteAulasTests(Base):
+    def test_dashboard_cadastra_componente_e_abre_20_linhas_em_branco(self):
+        self.client.force_login(self.p1)
+        r = self.client.post("/", {
+            "curso": "Medicina",
+            "nome": "Mecanismos de Agressão e Defesa II (MAPD-II)",
+            "carga_horaria": "60",
+            "ch_teorica": "30",
+            "ch_pratica": "30",
+            "semestre_nome": "2026/2",
+            "periodo": "4º",
+            "turma": "A",
+            "coordenador": str(self.p1.id),
+        })
+        self.assertEqual(r.status_code, 302)
+        comp = Componente.objects.get(nome="Mecanismos de Agressão e Defesa II (MAPD-II)", turma="A")
+        self.assertRedirects(r, f"/componentes/{comp.pk}/cronograma/")
+        self.assertEqual(comp.encontros.filter(reposicao=False).count(), 20)
+        self.assertEqual(comp.encontros.filter(reposicao=True).count(), 3)
+        self.assertTrue(all(e.data is None and e.hora_inicio is None for e in comp.encontros.all()))
+
+        # Preenche diretamente uma linha em branco (data curta DD/MM, horário e múltiplos docentes via checkboxes)
+        primeira = comp.encontros.filter(reposicao=False, ordem=1).first()
+        r_save = self.client.post(
+            f"/api/encontros/{primeira.id}/",
+            json.dumps({
+                "campos": {
+                    "data": "03/08",
+                    "horario": "15h30-18h",
+                    "conteudo": "Apresentação do componente curricular e cronograma.",
+                    "tipo": "T",
+                    "atividade": "Exposição dialogada.",
+                    "recursos": "Projetor multimídia",
+                    "grupos": "Todos",
+                    "professor_ids": [self.p1.id, self.p2.id],
+                    "local": "Bloco R",
+                },
+                "versao": primeira.versao,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(r_save.status_code, 200)
+        dados = r_save.json()["encontro"]
+        self.assertEqual(dados["data_curta"], "03/08")
+        self.assertEqual(dados["horario_modelo"], "15h30-18h")
+        self.assertEqual(dados["ch"], "3h")
+        self.assertEqual(dados["professor_ids"], [self.p1.id, self.p2.id])
+        self.assertEqual(dados["professor_nome"], f"{self.p1.nome}, {self.p2.nome}")
+
+        # Exporta DOCX e PDF contendo ambos os docentes marcados na célula
+        r_docx = self.client.get(f"/componentes/{comp.pk}/exportar/docx/")
+        self.assertEqual(r_docx.status_code, 200)
+        doc = Document(io.BytesIO(r_docx.content))
+        texto_tabelas = "\n".join(cel.text for tab in doc.tables for lin in tab.rows for cel in lin.cells)
+        self.assertIn("Prof 1, Prof 2", texto_tabelas)
+        self.assertIn("03/08", texto_tabelas)
+
+        r_pdf = self.client.get(f"/componentes/{comp.pk}/exportar/pdf/")
+        self.assertEqual(r_pdf.status_code, 200)
+        self.assertTrue(r_pdf.content.startswith(b"%PDF"))
+
+    def test_multiplos_docentes_checkbox_detecta_conflito_para_segundo_docente(self):
+        # Em self.a, marca [p1, p2] na primeira aula (01/02 14:00-16:00)
+        e_a = self.a.encontros.first()
+        self.client.force_login(self.p1)
+        r1 = self.client.post(
+            f"/api/encontros/{e_a.id}/",
+            json.dumps({"campos": {"professor_ids": [self.p1.id, self.p2.id]}, "versao": e_a.versao}),
+            content_type="application/json",
+        )
+        self.assertEqual(r1.status_code, 200)
+
+        # Em self.b, no mesmo horário (01/02 15:00-17:00), aloca p2: deve gerar conflito para p2
+        e_b = self.b.encontros.first()
+        r2 = self.client.post(
+            f"/api/encontros/{e_b.id}/",
+            json.dumps({"campos": {"professor_ids": [self.p2.id]}, "versao": e_b.versao}),
+            content_type="application/json",
+        )
+        self.assertEqual(r2.status_code, 200)
+        self.assertTrue(
+            Conflito.objects.filter(
+                professor=self.p2, status=Conflito.Status.ATIVO
+            ).exists()
+        )

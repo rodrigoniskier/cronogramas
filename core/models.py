@@ -268,12 +268,17 @@ class HorarioSemanal(models.Model):
 
 class Encontro(models.Model):
     componente = models.ForeignKey(Componente, on_delete=models.CASCADE, related_name="encontros")
-    data = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_fim = models.TimeField()
+    ordem = models.PositiveSmallIntegerField(default=0)
+    reposicao = models.BooleanField(default=False)
+    data = models.DateField(null=True, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fim = models.TimeField(null=True, blank=True)
     conteudo = models.TextField("conteúdo programático", blank=True)
     professor = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="encontros"
+    )
+    professores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="encontros_alocados"
     )
     TIPOS = [("", "—"), ("T", "T — Teórica"), ("P", "P — Prática"), ("T/P", "T/P — Teórico-prática"), ("-", "- (sem aula)")]
     tipo = models.CharField(max_length=3, choices=TIPOS, blank=True)
@@ -292,12 +297,17 @@ class Encontro(models.Model):
     atualizado_em = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["data", "hora_inicio", "id"]
+        ordering = ["reposicao", "ordem", "data", "hora_inicio", "id"]
         # Mais de uma linha no mesmo dia/horário é permitida: o modelo institucional
         # prevê vários docentes (ou grupos) no mesmo encontro, um por linha.
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(hora_fim__gt=models.F("hora_inicio")), name="encontro_fim_apos_inicio"
+                condition=(
+                    models.Q(hora_inicio__isnull=True)
+                    | models.Q(hora_fim__isnull=True)
+                    | models.Q(hora_fim__gt=models.F("hora_inicio"))
+                ),
+                name="encontro_fim_apos_inicio",
             ),
         ]
         indexes = [models.Index(fields=["professor", "data"])]
@@ -307,19 +317,53 @@ class Encontro(models.Model):
 
     @property
     def descricao(self):
-        return f"{self.data:%d/%m/%Y} {self.hora_inicio:%H:%M}–{self.hora_fim:%H:%M}"
+        partes = []
+        if self.data:
+            partes.append(f"{self.data:%d/%m/%Y}")
+        elif self.reposicao:
+            partes.append(f"Reposição {self.ordem or ''}".strip())
+        elif self.ordem:
+            partes.append(f"Aula {self.ordem}")
+        else:
+            partes.append("Sem data")
+        if self.hora_inicio and self.hora_fim:
+            partes.append(f"{self.hora_inicio:%H:%M}–{self.hora_fim:%H:%M}")
+        return " ".join(partes)
 
     @property
     def horario_modelo(self):
+        if not self.hora_inicio or not self.hora_fim:
+            return ""
         return f"{hora_modelo(self.hora_inicio)}-{hora_modelo(self.hora_fim)}"
 
     @property
     def dia_semana(self):
-        return NOME_DIA[self.data.weekday()]
+        return NOME_DIA[self.data.weekday()] if self.data else ""
 
     @property
     def preenchido(self):
         return bool(self.professor_id and self.conteudo.strip())
+
+    def lista_professor_ids(self):
+        ids = []
+        if self.professor_id:
+            ids.append(self.professor_id)
+        for p in self.professores.all():
+            if p.id not in ids:
+                ids.append(p.id)
+        return ids
+
+    def nomes_professores(self):
+        nomes = []
+        vistos = set()
+        if self.professor_id and self.professor:
+            nomes.append(self.professor.nome)
+            vistos.add(self.professor_id)
+        for p in self.professores.all():
+            if p.id not in vistos:
+                nomes.append(p.nome)
+                vistos.add(p.id)
+        return ", ".join(nomes)
 
 
 class Conflito(models.Model):

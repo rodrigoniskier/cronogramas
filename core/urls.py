@@ -14,6 +14,7 @@ urlpatterns = [
     path("componentes/novo/", views.componente_form, name="componente_novo"),
     path("componentes/<int:pk>/editar/", views.componente_form, name="componente_editar"),
     path("componentes/<int:pk>/excluir/", views.componente_excluir, name="componente_excluir"),
+    path("componentes/<int:pk>/cabecalho/", views.componente_cabecalho_salvar, name="componente_cabecalho_salvar"),
     path("componentes/<int:pk>/cronograma/", views.cronograma, name="cronograma"),
     path("componentes/<int:pk>/validar/", views.componente_validar, name="componente_validar"),
     path("componentes/<int:pk>/exportar/<str:formato>/", views.exportar, name="exportar"),

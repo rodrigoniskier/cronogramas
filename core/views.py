@@ -32,9 +32,10 @@ from .models import (
     HistoricoAlteracao, HorarioSemanal, ObservacaoConflito, Semestre, Usuario, ch_padrao,
 )
 from .services import (
-    STATUS, _encontro_vazio, _status, conflitos_ativos, conflitos_do_usuario, estatisticas,
-    feriados_do_componente, gerar_encontros, motivo_sem_edicao, pode_editar, pode_gerenciar,
-    problemas_para_aprovacao, registrar, sincronizar_conflitos, tem_vinculo,
+    STATUS, _encontro_vazio, _status, conflitos_ativos, conflitos_do_usuario,
+    criar_estrutura_cronograma, estatisticas, feriados_do_componente, gerar_encontros,
+    motivo_sem_edicao, pode_editar, pode_gerenciar, problemas_para_aprovacao, registrar,
+    sincronizar_conflitos, tem_vinculo,
 )
 
 
@@ -69,20 +70,25 @@ def _com_stats(componentes):
 def encontro_json(e, ver_observacoes=True):
     return {
         "id": e.id,
-        "data": e.data.isoformat(),
-        "data_br": e.data.strftime("%d/%m/%Y"),
+        "ordem": e.ordem,
+        "reposicao": e.reposicao,
+        "data": e.data.isoformat() if e.data else "",
+        "data_br": e.data.strftime("%d/%m/%Y") if e.data else "",
+        "data_curta": e.data.strftime("%d/%m") if e.data else "",
         "dia": e.dia_semana,
-        "inicio": e.hora_inicio.strftime("%H:%M"),
-        "fim": e.hora_fim.strftime("%H:%M"),
+        "inicio": e.hora_inicio.strftime("%H:%M") if e.hora_inicio else "",
+        "fim": e.hora_fim.strftime("%H:%M") if e.hora_fim else "",
         "conteudo": e.conteudo,
         "professor_id": e.professor_id,
-        "professor_nome": e.professor.nome if e.professor_id else "",
+        "professor_ids": e.lista_professor_ids(),
+        "professor_nome": e.nomes_professores(),
         "tipo": e.tipo,
         "atividade": e.atividade,
         "recursos": e.recursos,
         "grupos": e.grupos,
         "ch": e.ch,
         "local": e.local,
+        "horario": e.horario_modelo,
         "horario_modelo": e.horario_modelo,
         "observacoes": e.observacoes if ver_observacoes else "",
         "excepcional": e.excepcional,
@@ -112,7 +118,9 @@ def _conflito_lado(c, meu, outro):
 
 def estado_json(componente, usuario):
     vinculado = tem_vinculo(usuario, componente)
-    encontros = list(componente.encontros.select_related("professor", "atualizado_por"))
+    encontros = list(
+        componente.encontros.select_related("professor", "atualizado_por").prefetch_related("professores")
+    )
     mapa = {}
     conflitos_ids = set()
     for c in conflitos_ativos().filter(
@@ -123,9 +131,10 @@ def estado_json(componente, usuario):
             if meu.componente_id == componente.id:
                 mapa.setdefault(meu.id, []).append(_conflito_lado(c, meu, outro))
     ultimo = max((e for e in encontros if e.atualizado_em), key=lambda e: e.atualizado_em, default=None)
-    total = len(encontros)
-    preenchidos = sum(1 for e in encontros if e.preenchido)
-    iniciados = sum(1 for e in encontros if not _encontro_vazio(e))
+    contaveis = [e for e in encontros if not e.reposicao or not _encontro_vazio(e)]
+    total = len(contaveis)
+    preenchidos = sum(1 for e in contaveis if e.preenchido)
+    iniciados = sum(1 for e in contaveis if not _encontro_vazio(e))
     n_conf = len(conflitos_ids)
     codigo = _status(componente, total, preenchidos, n_conf, iniciados=iniciados)
     rotulo, cor, icone = STATUS[codigo]
@@ -161,12 +170,12 @@ def estado_json(componente, usuario):
 CAMPOS_TEXTO = ("conteudo", "tipo", "atividade", "recursos", "grupos", "ch", "local", "observacoes")
 LIMITES = {"grupos": 300, "ch": 10, "local": 120}
 TIPOS_VALIDOS = {t for t, _ in Encontro.TIPOS}
-CAMPOS_AGENDA = ("data", "inicio", "fim")
+CAMPOS_AGENDA = ("data", "inicio", "fim", "horario")
 ROTULOS = {
     "conteudo": "Conteúdo", "tipo": "Tipo", "atividade": "Atividades", "recursos": "Recursos",
     "grupos": "Grupos", "ch": "CH", "local": "Local",
-    "observacoes": "Observações", "professor_id": "Professor", "data": "Data",
-    "inicio": "Início", "fim": "Término",
+    "observacoes": "Observações", "professor_id": "Professor", "professor_ids": "Docente(s)",
+    "data": "Data", "inicio": "Início", "fim": "Término", "horario": "Horário",
 }
 
 
@@ -175,19 +184,82 @@ class ErroEdicao(Exception):
         self.mensagem, self.status, self.extra = mensagem, status, extra or {}
 
 
+def _parse_data_flex(valor, ano_padrao=None):
+    if valor in (None, ""):
+        return ""
+    s = str(valor).strip()
+    if not s:
+        return ""
+    try:
+        return date.fromisoformat(s).isoformat()
+    except ValueError:
+        pass
+    m = re.fullmatch(r"(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?", s)
+    if m:
+        dia, mes, ano_s = int(m.group(1)), int(m.group(2)), m.group(3)
+        ano = (int(ano_s) + 2000 if len(ano_s) == 2 else int(ano_s)) if ano_s else (ano_padrao or date.today().year)
+        try:
+            return date(ano, mes, dia).isoformat()
+        except ValueError:
+            pass
+    raise ErroEdicao("Data: valor inválido (use DD/MM, DD/MM/AAAA ou AAAA-MM-DD).")
+
+
+def _parse_hora_flex(valor):
+    if valor in (None, ""):
+        return ""
+    s = str(valor).strip()
+    if not s:
+        return ""
+    m = re.fullmatch(r"(\d{1,2})(?:[:hH](\d{2})?)?", s)
+    if m:
+        try:
+            return time(int(m.group(1)), int(m.group(2) or 0)).strftime("%H:%M")
+        except ValueError:
+            pass
+    try:
+        return time.fromisoformat(s[:5]).strftime("%H:%M")
+    except ValueError:
+        raise ErroEdicao("Horário: valor inválido.")
+
+
+def _parse_horario_intervalo(valor):
+    if valor in (None, ""):
+        return ""
+    s = str(valor).strip()
+    if not s:
+        return ""
+    partes = re.split(r"\s*(?:[-–—/]|às|as|a)\s*", s, maxsplit=1)
+    if len(partes) != 2:
+        raise ErroEdicao("Horário: informe início e término (ex.: 15h30-18h ou 08h-12h).")
+    ini = _parse_hora_flex(partes[0])
+    fim = _parse_hora_flex(partes[1])
+    if not (ini and fim):
+        raise ErroEdicao("Horário: informe início e término (ex.: 15h30-18h).")
+    if time.fromisoformat(fim) <= time.fromisoformat(ini):
+        raise ErroEdicao("O horário de término deve ser posterior ao de início.")
+    return f"{ini}-{fim}"
+
+
 def _valor_atual(e, campo):
     if campo in CAMPOS_TEXTO:
         return getattr(e, campo)
     if campo == "professor_id":
         return e.professor_id
+    if campo == "professor_ids":
+        return e.lista_professor_ids()
     if campo == "data":
-        return e.data.isoformat()
+        return e.data.isoformat() if e.data else ""
     if campo == "inicio":
-        return e.hora_inicio.strftime("%H:%M")
-    return e.hora_fim.strftime("%H:%M")
+        return e.hora_inicio.strftime("%H:%M") if e.hora_inicio else ""
+    if campo == "fim":
+        return e.hora_fim.strftime("%H:%M") if e.hora_fim else ""
+    if campo == "horario":
+        return f"{e.hora_inicio:%H:%M}-{e.hora_fim:%H:%M}" if (e.hora_inicio and e.hora_fim) else ""
+    return ""
 
 
-def _normalizar(campo, valor):
+def _normalizar(campo, valor, ano_padrao=None):
     if campo in CAMPOS_TEXTO:
         valor = "" if valor is None else str(valor).strip()
         if campo == "tipo" and valor not in TIPOS_VALIDOS:
@@ -202,12 +274,27 @@ def _normalizar(campo, valor):
             return int(valor)
         except (TypeError, ValueError):
             raise ErroEdicao("Professor inválido.")
-    try:
-        if campo == "data":
-            return date.fromisoformat(str(valor)).isoformat()
-        return time.fromisoformat(str(valor)[:5]).strftime("%H:%M")
-    except ValueError:
-        raise ErroEdicao(f"{ROTULOS[campo]}: valor inválido.")
+    if campo == "professor_ids":
+        if valor in (None, ""):
+            return []
+        if not isinstance(valor, (list, tuple)):
+            raise ErroEdicao("Lista de docentes inválida.")
+        ids = []
+        for item in valor:
+            if item in (None, "", 0, "0"):
+                continue
+            try:
+                pid = int(item)
+            except (TypeError, ValueError):
+                raise ErroEdicao("Professor inválido.")
+            if pid not in ids:
+                ids.append(pid)
+        return ids
+    if campo == "data":
+        return _parse_data_flex(valor, ano_padrao=ano_padrao)
+    if campo == "horario":
+        return _parse_horario_intervalo(valor)
+    return _parse_hora_flex(valor)
 
 
 @transaction.atomic
@@ -224,7 +311,7 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     try:
         e = Encontro.objects.select_for_update(of=("self",)).select_related(
             "componente__semestre", "componente__coordenador", "professor", "atualizado_por"
-        ).get(pk=pk)
+        ).prefetch_related("professores").get(pk=pk)
     except Encontro.DoesNotExist:
         raise ErroEdicao("Este encontro não existe mais (pode ter sido removido).", 404)
     comp = e.componente
@@ -232,20 +319,28 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     if motivo:
         raise ErroEdicao(motivo, 403)
 
-    permitidos = set(CAMPOS_TEXTO) | {"professor_id"}
+    permitidos = set(CAMPOS_TEXTO) | {"professor_id", "professor_ids"}
     if pode_gerenciar(usuario, comp):
         permitidos |= set(CAMPOS_AGENDA)
+    else:
+        if e.data is None:
+            permitidos.add("data")
+        if e.hora_inicio is None or e.hora_fim is None:
+            permitidos |= {"horario", "inicio", "fim"}
+
+    ano_padrao = comp.data_inicio.year if comp.data_inicio else None
     novos = {}
     for campo, valor in campos.items():
         if campo not in permitidos:
             raise ErroEdicao(f"Você não tem permissão para alterar o campo “{ROTULOS.get(campo, campo)}”.", 403)
-        novos[campo] = _normalizar(campo, valor)
+        novos[campo] = _normalizar(campo, valor, ano_padrao=ano_padrao)
 
     if versao is not None and versao != e.versao and not forcar:
         base = base or {}
         divergentes = [
             c for c, novo in novos.items()
-            if (c not in base or _valor_atual(e, c) != _normalizar(c, base[c])) and _valor_atual(e, c) != novo
+            if (c not in base or _valor_atual(e, c) != _normalizar(c, base[c], ano_padrao=ano_padrao))
+            and _valor_atual(e, c) != novo
         ]
         if divergentes:
             raise ErroEdicao(
@@ -257,30 +352,52 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     if not mudancas:
         return e, False
 
-    docentes_afetados = {e.professor_id}
+    docentes_afetados = set(e.lista_professor_ids())
+    novos_profs_m2m = None
     for campo, novo in mudancas.items():
         anterior = _valor_atual(e, campo)
         if campo == "professor_id":
-            nome_ant = e.professor.nome if e.professor_id else ""
+            nome_ant = e.nomes_professores()
             if novo is not None:
                 prof = Usuario.docentes().filter(pk=novo).first()
                 if not prof:
                     raise ErroEdicao("Professor não encontrado no cadastro de docentes ativos.")
                 e.professor = prof
+                novos_profs_m2m = [prof]
             else:
                 e.professor = None
+                novos_profs_m2m = []
             registrar(usuario, comp, "Professor", nome_ant, e.professor.nome if e.professor else "", e)
+        elif campo == "professor_ids":
+            nome_ant = e.nomes_professores()
+            mapa_profs = {p.id: p for p in Usuario.docentes().filter(pk__in=novo)}
+            if len(mapa_profs) != len(novo):
+                raise ErroEdicao("Professor não encontrado no cadastro de docentes ativos.")
+            lista_profs = [mapa_profs[pid] for pid in novo]
+            e.professor = lista_profs[0] if lista_profs else None
+            novos_profs_m2m = lista_profs
+            registrar(usuario, comp, "Professor", nome_ant, ", ".join(p.nome for p in lista_profs), e)
         else:
             if campo == "data":
-                e.data = date.fromisoformat(novo)
+                e.data = date.fromisoformat(novo) if novo else None
             elif campo == "inicio":
-                e.hora_inicio = time.fromisoformat(novo)
+                e.hora_inicio = time.fromisoformat(novo) if novo else None
             elif campo == "fim":
-                e.hora_fim = time.fromisoformat(novo)
+                e.hora_fim = time.fromisoformat(novo) if novo else None
+            elif campo == "horario":
+                if novo:
+                    ini_s, fim_s = novo.split("-")
+                    e.hora_inicio = time.fromisoformat(ini_s)
+                    e.hora_fim = time.fromisoformat(fim_s)
+                    if not e.ch and "ch" not in mudancas:
+                        e.ch = ch_padrao(e.hora_inicio, e.hora_fim)
+                else:
+                    e.hora_inicio = None
+                    e.hora_fim = None
             else:
                 setattr(e, campo, novo)
             registrar(usuario, comp, ROTULOS[campo], anterior, novo, e)
-    if e.hora_fim <= e.hora_inicio:
+    if e.hora_inicio and e.hora_fim and e.hora_fim <= e.hora_inicio:
         raise ErroEdicao("O horário de término deve ser posterior ao de início.")
     if set(mudancas) & set(CAMPOS_AGENDA):
         e.excepcional = True
@@ -288,8 +405,11 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     e.atualizado_por = usuario
     e.atualizado_em = timezone.now()
     e.save()
-    docentes_afetados.add(e.professor_id)
-    if set(mudancas) & ({"professor_id"} | set(CAMPOS_AGENDA)):
+    if novos_profs_m2m is not None:
+        e.professores.set(novos_profs_m2m)
+        e._prefetched_objects_cache = {}
+    docentes_afetados.update(e.lista_professor_ids())
+    if set(mudancas) & ({"professor_id", "professor_ids"} | set(CAMPOS_AGENDA)):
         sincronizar_conflitos(docentes_afetados)
     return e, True
 
@@ -318,7 +438,9 @@ def api_encontro_salvar(request, pk):
             )
         except ErroEdicao as err:
             if err.status == 409:
-                atual = Encontro.objects.select_related("professor", "atualizado_por", "componente").get(pk=pk)
+                atual = Encontro.objects.select_related(
+                    "professor", "atualizado_por", "componente"
+                ).prefetch_related("professores").get(pk=pk)
                 err.extra["encontro"] = encontro_json(atual, ver_observacoes=tem_vinculo(request.user, atual.componente))
             raise
     except ErroEdicao as err:
@@ -346,9 +468,14 @@ def api_encontro_criar(request, pk):
         return JsonResponse({"erro": "O período de preenchimento deste semestre ainda não foi liberado pela administração."}, status=403)
     try:
         d = _json_corpo(request)
-        dia = date.fromisoformat(_normalizar("data", d.get("data")))
-        ini = time.fromisoformat(_normalizar("inicio", d.get("inicio")))
-        fim = time.fromisoformat(_normalizar("fim", d.get("fim")))
+        data_s = _normalizar("data", d.get("data"), ano_padrao=comp.data_inicio.year if comp.data_inicio else None)
+        ini_s = _normalizar("inicio", d.get("inicio"))
+        fim_s = _normalizar("fim", d.get("fim"))
+        if not (data_s and ini_s and fim_s):
+            raise ErroEdicao("Informe data, início e término.")
+        dia = date.fromisoformat(data_s)
+        ini = time.fromisoformat(ini_s)
+        fim = time.fromisoformat(fim_s)
         if fim <= ini:
             raise ErroEdicao("O horário de término deve ser posterior ao de início.")
         with transaction.atomic():
@@ -375,7 +502,10 @@ def api_encontro_criar(request, pk):
 
 @require_POST
 def api_encontro_excluir(request, pk):
-    e = get_object_or_404(Encontro.objects.select_related("componente__semestre", "componente__coordenador"), pk=pk)
+    e = get_object_or_404(
+        Encontro.objects.select_related("componente__semestre", "componente__coordenador").prefetch_related("professores"),
+        pk=pk,
+    )
     comp = e.componente
     if not pode_gerenciar(request.user, comp):
         return JsonResponse({"erro": "Apenas o coordenador responsável ou a administração podem remover encontros."}, status=403)
@@ -384,10 +514,10 @@ def api_encontro_excluir(request, pk):
     if not request.user.eh_admin and not comp.semestre.preenchimento_liberado:
         return JsonResponse({"erro": "O período de preenchimento deste semestre ainda não foi liberado pela administração."}, status=403)
     with transaction.atomic():
-        prof = e.professor_id
+        profs = set(e.lista_professor_ids())
         registrar(request.user, comp, "Encontro removido", f"{e.descricao} — {e.conteudo[:80]}", "")
         e.delete()
-        sincronizar_conflitos({prof})
+        sincronizar_conflitos(profs)
     return JsonResponse({"estado": estado_json(comp, request.user)})
 
 
@@ -499,14 +629,133 @@ def cadastro_professor(request):
 # ---------------------------------------------------------------- dashboard
 
 
+def _int_ch(valor, padrao=0):
+    if valor in (None, ""):
+        return padrao
+    m = re.search(r"\d+", str(valor))
+    if not m:
+        return padrao
+    return max(0, min(9999, int(m.group(0))))
+
+
+def _obter_ou_criar_semestre(nome_bruto):
+    nome = (nome_bruto or "").strip()[:40]
+    if not nome:
+        nome = f"{date.today().year}/2"
+    sem = Semestre.objects.filter(nome__iexact=nome).first()
+    if sem:
+        if not sem.preenchimento_liberado:
+            sem.preenchimento_liberado = True
+            sem.liberado_em = timezone.now()
+            sem.save(update_fields=["preenchimento_liberado", "liberado_em"])
+        return sem
+    m = re.search(r"(\d{4})\D*([12])?", nome)
+    ano = int(m.group(1)) if m else date.today().year
+    metade = m.group(2) if (m and m.group(2)) else "2"
+    if metade == "1":
+        ini, fim = date(ano, 2, 1), date(ano, 6, 30)
+    else:
+        ini, fim = date(ano, 8, 1), date(ano, 12, 18)
+    return Semestre.objects.create(
+        nome=nome,
+        data_inicio=ini,
+        data_fim=fim,
+        preenchimento_liberado=True,
+        liberado_em=timezone.now(),
+    )
+
+
+def _profs_componente(comp):
+    ids = set(comp.encontros.values_list("professor_id", flat=True))
+    ids.update(
+        Encontro.professores.through.objects.filter(encontro__componente=comp).values_list("usuario_id", flat=True)
+    )
+    return ids
+
+
+@require_http_methods(["GET", "HEAD", "POST"])
 def dashboard(request):
+    u = request.user
+    erros_cadastro = []
+    semestres = list(Semestre.objects.all())
+    semestre_padrao = semestres[0].nome if semestres else f"{date.today().year}/2"
+    dados_form = {
+        "curso": "Medicina",
+        "nome": "",
+        "carga_horaria": "",
+        "ch_teorica": "",
+        "ch_pratica": "",
+        "semestre_nome": semestre_padrao,
+        "periodo": "",
+        "turma": "",
+        "coordenador": str(u.id),
+    }
+
+    if request.method == "POST":
+        dados_form = {
+            "curso": (request.POST.get("curso") or "Medicina").strip()[:80] or "Medicina",
+            "nome": (request.POST.get("nome") or "").strip()[:150],
+            "carga_horaria": (request.POST.get("carga_horaria") or "").strip(),
+            "ch_teorica": (request.POST.get("ch_teorica") or "").strip(),
+            "ch_pratica": (request.POST.get("ch_pratica") or "").strip(),
+            "semestre_nome": (request.POST.get("semestre_nome") or "").strip()[:40],
+            "periodo": (request.POST.get("periodo") or "").strip()[:20],
+            "turma": (request.POST.get("turma") or "").strip()[:30],
+            "coordenador": (request.POST.get("coordenador") or str(u.id)).strip(),
+        }
+        if not dados_form["nome"]:
+            erros_cadastro.append("Informe o nome do Componente Curricular.")
+        if not dados_form["semestre_nome"]:
+            erros_cadastro.append("Informe o Semestre (ex.: 2026/2).")
+        if not dados_form["turma"]:
+            erros_cadastro.append("Informe a Turma (ex.: A).")
+
+        coord = u
+        if dados_form["coordenador"].isdigit():
+            coord_cand = Usuario.objects.filter(is_active=True, pk=int(dados_form["coordenador"])).first()
+            if coord_cand:
+                coord = coord_cand
+
+        if not erros_cadastro:
+            try:
+                with transaction.atomic():
+                    sem = _obter_ou_criar_semestre(dados_form["semestre_nome"])
+                    comp = Componente.objects.create(
+                        curso=dados_form["curso"],
+                        nome=dados_form["nome"],
+                        periodo=dados_form["periodo"],
+                        turma=dados_form["turma"],
+                        semestre=sem,
+                        carga_horaria=_int_ch(dados_form["carga_horaria"], 0),
+                        ch_teorica=_int_ch(dados_form["ch_teorica"], 0),
+                        ch_pratica=_int_ch(dados_form["ch_pratica"], 0),
+                        coordenador=coord,
+                        data_inicio=sem.data_inicio,
+                        data_fim=sem.data_fim,
+                    )
+                    comp.professores.add(u)
+                    if coord.id != u.id:
+                        comp.professores.add(coord)
+                    criar_estrutura_cronograma(comp, total_aulas=20, total_reposicoes=3)
+                    registrar(
+                        u, comp, "Cadastro do componente", "",
+                        "Componente criado com estrutura de 20 aulas",
+                    )
+            except IntegrityError:
+                erros_cadastro.append("Já existe este componente para a mesma turma e semestre.")
+            else:
+                messages.success(
+                    request,
+                    "Informações básicas cadastradas. Preencha abaixo as 20 linhas do cronograma clicando diretamente nos campos.",
+                )
+                return redirect("cronograma", pk=comp.pk)
+
     semestres = Semestre.objects.all()
     sem_id = request.GET.get("semestre", "")
     qs = _componentes()
     if sem_id.isdigit():
         qs = qs.filter(semestre_id=sem_id)
     componentes = _com_stats(qs)
-    u = request.user
     meus_ids = set(u.componentes_vinculados.values_list("id", flat=True)) | set(
         u.componentes_coordenados.values_list("id", flat=True)
     )
@@ -530,6 +779,9 @@ def dashboard(request):
         "semestres": semestres,
         "sem_id": sem_id,
         "so_meus": request.GET.get("meus") == "1",
+        "dados_form": dados_form,
+        "erros_cadastro": erros_cadastro,
+        "docentes_ativos": Usuario.objects.filter(is_active=True).order_by("nome"),
         "ind": {
             "componentes": len(componentes),
             "professores": Usuario.docentes().count(),
@@ -545,6 +797,48 @@ def dashboard(request):
         "avisar": bool(request.session.pop("avisar_pendencias", False)) and bool(pendencias),
         "meus_coordenados": [c for c in componentes if c.coordenador_id == u.id],
     })
+
+
+@require_POST
+def componente_cabecalho_salvar(request, pk):
+    comp = get_object_or_404(_componentes(), pk=pk)
+    u = request.user
+    if not pode_editar(u, comp):
+        messages.error(request, motivo_sem_edicao(u, comp) or "Sem permissão para alterar este cronograma.")
+        return redirect("cronograma", pk=comp.pk)
+    curso = (request.POST.get("curso") or comp.curso or "Medicina").strip()[:80]
+    nome = (request.POST.get("nome") or comp.nome).strip()[:150]
+    periodo = (request.POST.get("periodo") or "").strip()[:20]
+    turma = (request.POST.get("turma") or comp.turma).strip()[:30]
+    semestre_nome = (request.POST.get("semestre_nome") or comp.semestre.nome).strip()[:40]
+    carga_horaria = _int_ch(request.POST.get("carga_horaria"), comp.carga_horaria)
+    ch_teorica = _int_ch(request.POST.get("ch_teorica"), comp.ch_teorica)
+    ch_pratica = _int_ch(request.POST.get("ch_pratica"), comp.ch_pratica)
+    coord_id = (request.POST.get("coordenador") or "").strip()
+
+    try:
+        with transaction.atomic():
+            sem = _obter_ou_criar_semestre(semestre_nome) if semestre_nome else comp.semestre
+            comp.curso = curso
+            comp.nome = nome
+            comp.periodo = periodo
+            comp.turma = turma
+            comp.semestre = sem
+            comp.carga_horaria = carga_horaria
+            comp.ch_teorica = ch_teorica
+            comp.ch_pratica = ch_pratica
+            if coord_id.isdigit() and pode_gerenciar(u, comp):
+                novo_coord = Usuario.objects.filter(is_active=True, pk=int(coord_id)).first()
+                if novo_coord:
+                    comp.coordenador = novo_coord
+                    comp.professores.add(novo_coord)
+            comp.save()
+            registrar(u, comp, "Cabeçalho do componente", "", f"{comp.nome} — Turma {comp.turma} ({comp.semestre.nome})")
+    except IntegrityError:
+        messages.error(request, "Já existe um componente com este nome, turma e semestre.")
+    else:
+        messages.success(request, "Informações básicas do componente atualizadas.")
+    return redirect("cronograma", pk=comp.pk)
 
 
 # --------------------------------------------------------------- componentes
@@ -644,7 +938,7 @@ def componente_excluir(request, pk):
         messages.error(request, "Componentes aprovados ou publicados não podem ser excluídos.")
         return redirect("cronograma", pk=pk)
     with transaction.atomic():
-        profs = set(comp.encontros.values_list("professor_id", flat=True))
+        profs = _profs_componente(comp)
         nome = str(comp)
         comp.delete()
         sincronizar_conflitos(profs)
@@ -665,7 +959,9 @@ def cronograma(request, pk):
         "horarios": comp.horarios.all(),
         "estado": estado_json(comp, u),
         "docentes": docentes,
+        "docentes_ativos": Usuario.objects.filter(is_active=True).order_by("nome"),
         "gerencia": pode_gerenciar(u, comp),
+        "pode_editar_cronograma": pode_editar(u, comp),
         "motivo": motivo_sem_edicao(u, comp),
         "outros": _componentes().filter(semestre=comp.semestre),
     })
@@ -674,7 +970,7 @@ def cronograma(request, pk):
 @require_POST
 def componente_validar(request, pk):
     comp = get_object_or_404(_componentes(), pk=pk)
-    sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+    sincronizar_conflitos(_profs_componente(comp))
     u = request.user
     sem_liberado = u.eh_admin or comp.semestre.preenchimento_liberado
     return JsonResponse({
@@ -697,7 +993,7 @@ def componente_transicao(request, pk, acao):
         S = Componente.Situacao
         agora = timezone.now()
         if acao == "aprovar" and comp.situacao == S.RASCUNHO:
-            sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+            sincronizar_conflitos(_profs_componente(comp))
             problemas = problemas_para_aprovacao(comp)
             if problemas:
                 messages.error(request, f"Aprovação impedida: {len(problemas)} pendência(s). Use “Validar cronograma” para ver a lista.")
