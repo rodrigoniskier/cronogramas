@@ -25,6 +25,9 @@ jobs:
     needs: testes
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    concurrency:
+      group: migrar-producao
+      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}

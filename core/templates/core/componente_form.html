@@ -13,9 +13,9 @@
       {% for d, i, f in horarios %}
       <div class="row g-2 align-items-end mb-2 linha-horario">
         <div class="col-md-4"><label class="form-label small mb-0">Dia da semana</label>
-          <select name="h_dia" class="form-select"><option value="">—</option>{% for n, nome in dias %}<option value="{{ n }}" {% if d == n %}selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
-        <div class="col-5 col-md-3"><label class="form-label small mb-0">Início</label><input type="time" name="h_inicio" value="{{ i }}" class="form-control"></div>
-        <div class="col-5 col-md-3"><label class="form-label small mb-0">Término</label><input type="time" name="h_fim" value="{{ f }}" class="form-control"></div>
+          <select name="h_dia" class="form-select" aria-label="Dia da semana"><option value="">—</option>{% for n, nome in dias %}<option value="{{ n }}" {% if d == n %}selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+        <div class="col-5 col-md-3"><label class="form-label small mb-0">Início</label><input type="time" name="h_inicio" value="{{ i }}" class="form-control" aria-label="Horário de início"></div>
+        <div class="col-5 col-md-3"><label class="form-label small mb-0">Término</label><input type="time" name="h_fim" value="{{ f }}" class="form-control" aria-label="Horário de término"></div>
         <div class="col-2"><button type="button" class="btn btn-outline-danger remover-horario" aria-label="Remover horário"><i class="bi bi-trash"></i></button></div>
       </div>
       {% endfor %}
@@ -34,7 +34,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
-  new TomSelect('#id_professores', {plugins: ['remove_button'], maxOptions: 500, placeholder: 'Pesquise e selecione os docentes…'});
+  var tsProf = new TomSelect('#id_professores', {plugins: ['remove_button'], maxOptions: 500, placeholder: 'Pesquise e selecione os docentes…'});
+  if (tsProf.control_input) tsProf.control_input.setAttribute('aria-label', 'Professores vinculados');
   var cx = document.getElementById('horarios');
   document.getElementById('add-horario').addEventListener('click', function () {
     var nova = cx.querySelector('.linha-horario').cloneNode(true);

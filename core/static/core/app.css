@@ -14,8 +14,11 @@
   --bs-link-color: #003a70;
   --bs-link-color-rgb: 0, 58, 112;
   --bs-link-hover-color: #002a52;
+  --bs-secondary-color: #4a5562;
+  --bs-secondary-rgb: 74, 85, 98;
 }
 body { background: var(--unipe-cinza); color: #1d2733; font-size: .925rem; }
+.text-secondary, .text-muted { color: #4a5562 !important; }
 .btn-primary { --bs-btn-bg: var(--unipe-azul); --bs-btn-border-color: var(--unipe-azul); --bs-btn-hover-bg: var(--unipe-azul-escuro); --bs-btn-hover-border-color: var(--unipe-azul-escuro); --bs-btn-active-bg: var(--unipe-azul-escuro); --bs-btn-disabled-bg: var(--unipe-azul); --bs-btn-disabled-border-color: var(--unipe-azul); }
 .btn-outline-primary { --bs-btn-color: var(--unipe-azul); --bs-btn-border-color: var(--unipe-azul); --bs-btn-hover-bg: var(--unipe-azul); --bs-btn-hover-border-color: var(--unipe-azul); --bs-btn-active-bg: var(--unipe-azul); }
 .btn-destaque { background: var(--unipe-amarelo); border-color: var(--unipe-amarelo); color: #1d2733; font-weight: 600; }
@@ -97,7 +100,7 @@ tr.linha-alerta td { background: #fff; padding: .5rem .7rem; border-left: 5px so
 .selo-excepcional { background: #fff5d1; color: #8a6400; }
 .acoes-linha { padding: .3rem; text-align: center; white-space: nowrap; }
 .acoes-linha .btn { padding: .1rem .35rem; }
-.meta-linha { font-size: .68rem; color: #6b7785; padding: 0 .5rem .3rem; }
+.meta-linha { font-size: .68rem; color: #4a5562; padding: 0 .5rem .3rem; }
 .toast-container { z-index: 1090; }
 @media print { .sidebar, .topbar, .barra-editor, .rodape { display: none !important; } }
 
@@ -106,8 +109,158 @@ tr.linha-alerta td { background: #fff; padding: .5rem .7rem; border-left: 5px so
 .principal { overflow-x: clip; }
 .tabela-cronograma td.fixo { white-space: nowrap; }
 .tabela-cronograma thead th { background: #405f91; color: #fff; text-align: center; text-transform: none; font-size: .8rem; letter-spacing: 0; }
-.dia-semana { font-size: .7rem; color: #6b7785; white-space: normal; }
+.dia-semana { font-size: .7rem; color: #4a5562; white-space: normal; }
 .celula-tipo { text-align: center; padding-left: .2rem; padding-right: .2rem; }
 tr.linha-feriado > td { background: #f1f3f6; padding: .45rem .5rem; color: #3b4652; }
 .quadro-ident td { font-size: .88rem; border-color: #2b2f36; padding: .3rem .5rem; }
 .quadro-ident { border-color: #2b2f36; }
+
+/* Modelo institucional UNIPÊ (Quadro de Identificação + Cronograma) */
+.doc-institucional { background: #fff; border: 1px solid #c9d2dc; }
+.doc-logo { max-height: 46px; width: auto; height: auto; }
+.doc-coordenacao { font-style: italic; font-size: 1rem; color: #1d2733; font-weight: 500; }
+.faixa-titulo-cronograma {
+  background: #8db3e2 !important;
+  color: #000 !important;
+  font-size: 1.02rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em !important;
+  padding: .5rem .75rem !important;
+  border-color: #2b2f36 !important;
+  text-transform: uppercase;
+}
+.quadro-ident-form, .quadro-ident-form th, .quadro-ident-form td {
+  border: 1px solid #2b2f36 !important;
+  padding: .35rem .6rem;
+  background: #fff;
+}
+.ident-inline-label {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  width: 100%;
+  margin: 0;
+  cursor: text;
+}
+.ident-rotulo {
+  font-weight: 700;
+  white-space: nowrap;
+  color: #1d2733;
+  font-size: .88rem;
+}
+.ident-sufixo {
+  white-space: nowrap;
+  color: #1d2733;
+  font-size: .88rem;
+  font-weight: 600;
+}
+.ident-input, .ident-select {
+  border: 0;
+  border-bottom: 1px dashed #8a99ad;
+  background: transparent;
+  padding: .15rem .3rem;
+  font-size: .92rem;
+  font-weight: 600;
+  color: #002a52;
+  width: 100%;
+  min-width: 0;
+}
+.ident-input:focus, .ident-select:focus {
+  background: #fffbe8;
+  border-bottom-color: var(--unipe-azul);
+  outline: 2px solid var(--unipe-amarelo);
+  outline-offset: 1px;
+}
+.ident-input-curto { max-width: 90px; text-align: center; }
+.titulo-secao-cronograma {
+  font-size: 1.05rem;
+  letter-spacing: .03em;
+  color: #000;
+}
+.tabela-cronograma td.celula-td-agenda {
+  padding: 0;
+  background: #fff;
+  text-align: center;
+}
+.celula-agenda-texto {
+  min-height: 2.2rem;
+  padding: .4rem .3rem;
+  font-size: .84rem;
+  text-align: center;
+}
+.tabela-cronograma td.celula-td-agenda .dia-semana {
+  font-size: .68rem;
+  padding: 0 .2rem .2rem;
+}
+tr.linha-secao-reposicao > td.celula-secao-reposicao {
+  background: #e9eef5;
+  color: #1d2733;
+  font-weight: 700;
+  text-align: center;
+  padding: .4rem .5rem;
+  font-size: .86rem;
+}
+
+/* Dropdown de docentes com checkboxes */
+.celula-td-docente { position: relative; overflow: visible !important; }
+.dropdown-docentes { position: relative; width: 100%; min-height: 2.2rem; }
+.dropdown-docentes.suja { box-shadow: inset 3px 0 0 var(--unipe-amarelo); }
+.btn-dropdown-docentes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .35rem;
+  text-align: left;
+  cursor: pointer !important;
+  white-space: normal;
+  min-height: 2.2rem;
+  line-height: 1.25;
+}
+.btn-dropdown-docentes .docentes-resumo {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .83rem;
+}
+.btn-dropdown-docentes .seta-dropdown {
+  font-size: .72rem;
+  color: #4a5562;
+  flex-shrink: 0;
+}
+.menu-dropdown-docentes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1070;
+  min-width: 260px;
+  max-width: 340px;
+  background: #fff;
+  border: 1px solid #8a99ad;
+  border-radius: .4rem;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, .18);
+  padding: .45rem;
+}
+.lista-docentes-check {
+  max-height: 210px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.item-docente-check {
+  display: flex;
+  align-items: center;
+  padding: .28rem .4rem;
+  border-radius: .25rem;
+  cursor: pointer;
+  font-size: .83rem;
+  margin: 0;
+  user-select: none;
+}
+.item-docente-check:hover { background: #eef4fb; }
+.item-docente-check input.check-docente {
+  cursor: pointer;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+.contenedor-tabela-cronograma { padding-bottom: 140px; }

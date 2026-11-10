@@ -2,10 +2,9 @@ from django.contrib.auth import views as auth
 from django.urls import path
 
 from . import views
-from .forms import LoginForm
 
 urlpatterns = [
-    path("entrar/", auth.LoginView.as_view(authentication_form=LoginForm, redirect_authenticated_user=True), name="login"),
+    path("entrar/", views.entrar, name="login"),
     path("cadastro/", views.cadastro_professor, name="cadastro_professor"),
     path("sair/", auth.LogoutView.as_view(), name="logout"),
     path("senha/", views.trocar_senha, name="trocar_senha"),
@@ -15,6 +14,7 @@ urlpatterns = [
     path("componentes/novo/", views.componente_form, name="componente_novo"),
     path("componentes/<int:pk>/editar/", views.componente_form, name="componente_editar"),
     path("componentes/<int:pk>/excluir/", views.componente_excluir, name="componente_excluir"),
+    path("componentes/<int:pk>/cabecalho/", views.componente_cabecalho_salvar, name="componente_cabecalho_salvar"),
     path("componentes/<int:pk>/cronograma/", views.cronograma, name="cronograma"),
     path("componentes/<int:pk>/validar/", views.componente_validar, name="componente_validar"),
     path("componentes/<int:pk>/exportar/<str:formato>/", views.exportar, name="exportar"),

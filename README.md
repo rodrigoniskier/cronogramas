@@ -18,9 +18,9 @@ python manage.py seed_demo          # dados FICTÍCIOS; a senha de demonstraçã
 python manage.py runserver
 ```
 
-Acesse <http://127.0.0.1:8000>. Em **Cadastre-se como professor**, informe nome e e-mail e escolha um nome de usuário e uma senha. A conta é ativada imediatamente com perfil de professor e o painel abre na mesma sessão. O login aceita nome de usuário ou e-mail. Contas criadas pela administração continuam entrando pelo e-mail.
+Acesse <http://127.0.0.1:8000>. Em **Criar conta de professor**, informe nome, e-mail institucional (`@unipe.edu.br`), nome de usuário, código de convite (`primeiro-ano`) e senha. A conta é ativada imediatamente com perfil de professor e o painel abre na mesma sessão. O login aceita nome de usuário ou e-mail. Contas criadas pela administração continuam entrando pelo e-mail.
 
-O autocadastro está disponível a quem consegue acessar a página de login. Professores recém-cadastrados podem consultar os cronogramas e ganham acesso de edição somente quando vinculados ao componente, conforme as regras do semestre.
+O autocadastro exige e-mail institucional `@unipe.edu.br` e código de convite da coordenação. Professores recém-cadastrados podem consultar os cronogramas (sem acesso a anotações internas de outros componentes) e ganham acesso de edição somente quando vinculados ao componente, conforme as regras do semestre.
 
 - Para definir você mesmo a senha de demonstração: `CRONOMED_DEMO_PASSWORD='sua-senha' python manage.py seed_demo`.
 - Para recriar os dados de demonstração: `python manage.py seed_demo --reset`.
@@ -58,6 +58,8 @@ O `Dockerfile`/`docker-compose.yml` não puderam ser executados no ambiente de d
 | `DATABASE_URL` | Ex.: `postgres://usuario:senha@host:5432/banco`. Sem ela, usa SQLite. |
 | `CRONOMED_MEDIA_ROOT` | Pasta dos arquivos enviados (logomarca). |
 | `CRONOMED_DEMO_PASSWORD` | Senha dos usuários fictícios do `seed_demo`. |
+| `CRONOMED_DOMINIOS_CADASTRO` | Domínios aceitos no autocadastro (padrão `unipe.edu.br`). |
+| `CRONOMED_CODIGO_CONVITE` | Código de convite exigido no autocadastro (padrão `primeiro-ano`). |
 
 ## 2.1 Implantação no Vercel (usuários reais)
 

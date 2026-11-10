@@ -35,18 +35,48 @@ COLUNAS_MESCLAVEIS = [0, 1, 2, 3, 4, 5, 6, 9]   # tudo, menos DOCENTE e CH (uma 
 LARGURAS_IDENT_CM = [9.4, 3.0, 3.3, 3.3]
 
 
+from datetime import date as _date, time as _time
+
+
+DATA_MAX = _date(9999, 12, 31)
+HORA_MAX = _time(23, 59)
+
+
 def linhas_cronograma(comp):
     """Linhas do cronograma na ordem do documento: encontros e feriados."""
     linhas = []
-    for e in comp.encontros.select_related("professor"):
+    for e in comp.encontros.select_related("professor").prefetch_related("professores"):
+        chave = (e.data, e.hora_inicio, e.hora_fim) if (e.data and e.hora_inicio and e.hora_fim and not e.reposicao) else None
         linhas.append({
-            "ordem": (e.data, e.hora_inicio, 1, e.id), "chave": (e.data, e.hora_inicio, e.hora_fim), "feriado": False,
-            "celulas": [e.data.strftime("%d/%m"), e.horario_modelo, e.conteudo, e.tipo, e.atividade, e.recursos,
-                        e.grupos, e.professor.nome if e.professor_id else "", e.ch, e.local],
+            "ordem": (
+                1 if e.reposicao else 0,
+                0 if e.data else 1,
+                e.data or DATA_MAX,
+                e.ordem or 0,
+                e.hora_inicio or HORA_MAX,
+                1,
+                e.id,
+            ),
+            "chave": chave,
+            "feriado": False,
+            "celulas": [
+                e.data.strftime("%d/%m") if e.data else "",
+                e.horario_modelo,
+                e.conteudo,
+                e.tipo,
+                e.atividade,
+                e.recursos,
+                e.grupos,
+                e.nomes_professores(),
+                e.ch,
+                e.local,
+            ],
         })
     for f in feriados_do_componente(comp):
         linhas.append({
-            "ordem": (f["data"], f["hora_inicio"], 0, 0), "chave": None, "feriado": True,
+            "ordem": (0, 0, f["data"], 0, f["hora_inicio"], 0, 0),
+            "chave": None,
+            "feriado": True,
             "celulas": [f["data"].strftime("%d/%m"), f["horario"], f["descricao"], "-", "-", "-", "", "", f["ch"], ""],
         })
     linhas.sort(key=lambda l: l["ordem"])
@@ -55,7 +85,8 @@ def linhas_cronograma(comp):
     for i, l in enumerate(linhas):
         ant = linhas[i - 1] if i else None
         l["continua"] = bool(
-            ant and not l["feriado"] and not ant["feriado"] and l["chave"] == ant["chave"]
+            ant and not l["feriado"] and not ant["feriado"]
+            and l["chave"] is not None and l["chave"] == ant["chave"]
             and all(l["celulas"][c] == ant["celulas"][c] for c in COLUNAS_MESCLAVEIS)
         )
     return linhas
@@ -91,7 +122,9 @@ def _identificacao(comp):
 def _situacao_texto(comp, oficial):
     if not oficial:
         return f"{MARCA_RASCUNHO} · gerado em {timezone.localtime():%d/%m/%Y %H:%M}"
-    txt = f"Aprovado por {comp.aprovado_por.nome if comp.aprovado_por else '—'} em {timezone.localtime(comp.aprovado_em):%d/%m/%Y}"
+    txt = f"Aprovado por {comp.aprovado_por.nome if comp.aprovado_por else '—'}"
+    if comp.aprovado_em:
+        txt += f" em {timezone.localtime(comp.aprovado_em):%d/%m/%Y}"
     if comp.publicado_em:
         txt += f" · Publicado em {timezone.localtime(comp.publicado_em):%d/%m/%Y}"
     return txt

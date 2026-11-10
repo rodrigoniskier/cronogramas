@@ -13,7 +13,7 @@ from .models import Componente, Conflito, DataBloqueada, Encontro, HistoricoAlte
 
 def pode_gerenciar(usuario, componente):
     """Cadastro, encontros excepcionais, aprovação, publicação e revisão."""
-    return usuario.eh_admin or (usuario.eh_coordenador and componente.coordenador_id == usuario.id)
+    return usuario.eh_admin or componente.coordenador_id == usuario.id
 
 
 def tem_vinculo(usuario, componente):
@@ -74,6 +74,44 @@ def datas_previstas(componente):
     return previstas
 
 
+def _encontro_vazio(enc):
+    return not (
+        enc.conteudo or enc.professor_id or enc.tipo or enc.atividade
+        or enc.recursos or enc.grupos or enc.observacoes
+    )
+
+
+@transaction.atomic
+def criar_estrutura_cronograma(componente, total_aulas=20, total_reposicoes=3):
+    """Cria as 20 linhas em branco de aulas e as linhas de reposição do modelo institucional."""
+    existentes_reg = componente.encontros.filter(reposicao=False).count()
+    novos = []
+    for ordem in range(existentes_reg + 1, total_aulas + 1):
+        novos.append(
+            Encontro(
+                componente=componente,
+                ordem=ordem,
+                reposicao=False,
+                excepcional=True,
+                local=componente.local_padrao,
+            )
+        )
+    existentes_rep = componente.encontros.filter(reposicao=True).count()
+    for ordem in range(existentes_rep + 1, total_reposicoes + 1):
+        novos.append(
+            Encontro(
+                componente=componente,
+                ordem=ordem,
+                reposicao=True,
+                excepcional=True,
+                local=componente.local_padrao,
+            )
+        )
+    if novos:
+        Encontro.objects.bulk_create(novos)
+    return len(novos)
+
+
 @transaction.atomic
 def gerar_encontros(componente):
     """Sincroniza os encontros regulares com a grade semanal e o calendário.
@@ -86,18 +124,33 @@ def gerar_encontros(componente):
     previstas = datas_previstas(componente)
     todos = list(componente.encontros.all())
     chaves_previstas = {(d, i): f for d, i, f in previstas}
+    por_chave = defaultdict(int)
+    for enc in todos:
+        if enc.data and enc.hora_inicio and not enc.reposicao:
+            por_chave[(enc.data, enc.hora_inicio)] += 1
     regulares = set()
     criados = removidos = preservados = 0
     docentes_afetados = set()
 
     for enc in todos:
-        if enc.excepcional:
+        if enc.reposicao:
+            continue
+        if enc.data is None or enc.hora_inicio is None:
+            if previstas and _encontro_vazio(enc):
+                enc.delete()
+                removidos += 1
             continue
         chave = (enc.data, enc.hora_inicio)
         fim = chaves_previstas.get(chave)
+        if enc.excepcional:
+            if fim is not None:
+                regulares.add(chave)
+                if enc.hora_fim == fim and por_chave[chave] == 1:
+                    enc.excepcional = False
+                    enc.save(update_fields=["excepcional"])
+            continue
         if fim is None:
-            vazio = not (enc.conteudo or enc.professor_id or enc.atividade or enc.recursos or enc.observacoes)
-            if vazio:
+            if _encontro_vazio(enc):
                 enc.delete()
                 removidos += 1
             else:
@@ -107,9 +160,14 @@ def gerar_encontros(componente):
             continue
         regulares.add(chave)
         if fim != enc.hora_fim:
+            ch_antiga = ch_padrao(enc.hora_inicio, enc.hora_fim)
             enc.hora_fim = fim
             enc.versao += 1
-            enc.save(update_fields=["hora_fim", "versao"])
+            campos_salvar = ["hora_fim", "versao"]
+            if not enc.ch or enc.ch == ch_antiga:
+                enc.ch = ch_padrao(enc.hora_inicio, fim)
+                campos_salvar.append("ch")
+            enc.save(update_fields=campos_salvar)
             docentes_afetados.add(enc.professor_id)
 
     novos = [
@@ -140,18 +198,45 @@ def sincronizar_conflitos(professor_ids=None):
     `professor_ids`, limita o recálculo aos docentes afetados por uma alteração;
     sem argumento, verifica toda a base.
     """
-    encontros = Encontro.objects.filter(professor__isnull=False)
+    base_valida = Encontro.objects.filter(
+        data__isnull=False, hora_inicio__isnull=False, hora_fim__isnull=False
+    )
     existentes = Conflito.objects.all()
+    through = Encontro.professores.through
+
     if professor_ids is not None:
         ids = {p for p in professor_ids if p}
         if not ids:
             return
-        encontros = encontros.filter(professor_id__in=ids)
+        encontros_qs = base_valida.filter(
+            Q(professor_id__in=ids) | Q(professores__id__in=ids)
+        ).distinct()
         existentes = existentes.filter(professor_id__in=ids)
+    else:
+        ids = None
+        encontros_qs = base_valida.filter(
+            Q(professor__isnull=False) | Q(professores__isnull=False)
+        ).distinct()
+
+    encontros_map = {
+        e.id: e
+        for e in encontros_qs.only("id", "professor_id", "data", "hora_inicio", "hora_fim")
+    }
+    alocacoes = set()
+    for e in encontros_map.values():
+        if e.professor_id and (ids is None or e.professor_id in ids):
+            alocacoes.add((e.professor_id, e.id))
+    if encontros_map:
+        m2m_qs = through.objects.filter(encontro_id__in=encontros_map.keys())
+        if ids is not None:
+            m2m_qs = m2m_qs.filter(usuario_id__in=ids)
+        for enc_id, prof_id in m2m_qs.values_list("encontro_id", "usuario_id"):
+            alocacoes.add((prof_id, enc_id))
 
     por_docente_dia = defaultdict(list)
-    for e in encontros.only("id", "professor_id", "data", "hora_inicio", "hora_fim"):
-        por_docente_dia[(e.professor_id, e.data)].append(e)
+    for prof_id, enc_id in alocacoes:
+        e = encontros_map[enc_id]
+        por_docente_dia[(prof_id, e.data)].append(e)
 
     atuais = {}
     for (prof_id, data), lista in por_docente_dia.items():
@@ -206,6 +291,7 @@ def conflitos_ativos():
         "encontro_a__componente__coordenador",
         "encontro_b__componente__coordenador",
         "encontro_a__componente__semestre",
+        "encontro_b__componente__semestre",
     )
 
 
@@ -233,7 +319,7 @@ STATUS = {
 }
 
 
-def _status(componente, total, preenchidos, conflitos):
+def _status(componente, total, preenchidos, conflitos, iniciados=None):
     if componente.situacao == Componente.Situacao.PUBLICADO:
         return "PUBLICADO"
     if componente.situacao == Componente.Situacao.APROVADO:
@@ -241,10 +327,12 @@ def _status(componente, total, preenchidos, conflitos):
     if conflitos:
         return "COM_PENDENCIAS"
     if total == 0 or preenchidos == 0:
-        iniciado = total and componente.encontros.exclude(
-            conteudo="", professor__isnull=True, atividade="", recursos="", observacoes=""
-        ).exists()
-        return "EM_PREENCHIMENTO" if iniciado else "NAO_INICIADO"
+        if iniciados is None:
+            iniciados = total and componente.encontros.exclude(
+                conteudo="", professor__isnull=True, tipo="", atividade="",
+                recursos="", grupos="", observacoes="",
+            ).exists()
+        return "EM_PREENCHIMENTO" if iniciados else "NAO_INICIADO"
     if preenchidos == total:
         return "PRONTO"
     return "EM_PREENCHIMENTO"
@@ -253,27 +341,37 @@ def _status(componente, total, preenchidos, conflitos):
 def estatisticas(componentes):
     """{componente_id: dict(total, preenchidos, pct, conflitos, status, ...)}."""
     componentes = list(componentes)
+    if not componentes:
+        return {}
     ids = [c.id for c in componentes]
+    filtro_iniciado = ~Q(
+        conteudo="", professor__isnull=True, tipo="", atividade="",
+        recursos="", grupos="", observacoes="",
+    )
     contagem = {
         r["componente"]: r
         for r in Encontro.objects.filter(componente__in=ids)
+        .filter(Q(reposicao=False) | filtro_iniciado)
         .values("componente")
         .annotate(
             total=Count("id"),
             preenchidos=Count("id", filter=Q(professor__isnull=False) & ~Q(conteudo="")),
+            iniciados=Count("id", filter=filtro_iniciado),
         )
     }
     conf = defaultdict(int)
-    for a, b in Conflito.objects.filter(status=Conflito.Status.ATIVO).values_list(
-        "encontro_a__componente", "encontro_b__componente"
-    ):
+    for a, b in Conflito.objects.filter(
+        status=Conflito.Status.ATIVO,
+    ).filter(
+        Q(encontro_a__componente__in=ids) | Q(encontro_b__componente__in=ids)
+    ).values_list("encontro_a__componente", "encontro_b__componente"):
         for cid in {a, b}:
             conf[cid] += 1
     saida = {}
     for c in componentes:
-        r = contagem.get(c.id, {"total": 0, "preenchidos": 0})
-        total, preench = r["total"], r["preenchidos"]
-        codigo = _status(c, total, preench, conf[c.id])
+        r = contagem.get(c.id, {"total": 0, "preenchidos": 0, "iniciados": 0})
+        total, preench, inic = r["total"], r["preenchidos"], r["iniciados"]
+        codigo = _status(c, total, preench, conf[c.id], iniciados=inic)
         rotulo, cor, icone = STATUS[codigo]
         saida[c.id] = {
             "total": total,
@@ -295,6 +393,8 @@ def problemas_para_aprovacao(componente):
     if not encontros:
         problemas.append({"tipo": "estrutura", "mensagem": "O componente não possui encontros cadastrados.", "encontro_id": None})
     for e in encontros:
+        if e.reposicao and _encontro_vazio(e) and not e.data:
+            continue
         faltas = []
         if not e.conteudo.strip():
             faltas.append("conteúdo programático")

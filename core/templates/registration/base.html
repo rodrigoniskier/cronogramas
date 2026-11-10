@@ -17,6 +17,9 @@
       </div>
       <h1 class="h4 text-center fw-bold mb-0" style="color:var(--unipe-azul)">CronoMed</h1>
       <p class="text-center text-secondary small mb-4">Cronogramas acadêmicos colaborativos</p>
+      {% for m in messages %}
+      <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %}" role="alert">{{ m }}</div>
+      {% endfor %}
       {% block formulario %}{% endblock %}
     </div>
     <div class="card-footer text-center small text-secondary bg-white">CronoMed UNIPÊ — Desenvolvido por Prof. Rodrigo Niskier.</div>
