@@ -1,4 +1,7 @@
+import hmac
+
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm, BaseUserCreationForm, PasswordChangeForm
 from django.db.models import Q
 
@@ -63,6 +66,13 @@ class TrocaSenhaForm(_Bootstrap, PasswordChangeForm):
 
 
 class CadastroProfessorForm(_Bootstrap, BaseUserCreationForm):
+    codigo_convite = forms.CharField(
+        label="Código de convite",
+        max_length=80,
+        help_text="Código fornecido pela coordenação do curso.",
+        widget=forms.TextInput(attrs={"autocomplete": "off", "autocapitalize": "none"}),
+    )
+
     class Meta:
         model = Usuario
         fields = ["nome", "email", "username"]
@@ -72,16 +82,36 @@ class CadastroProfessorForm(_Bootstrap, BaseUserCreationForm):
             "username": forms.TextInput(attrs={"autocomplete": "username", "autocapitalize": "none"}),
         }
 
+    field_order = ["nome", "email", "username", "codigo_convite", "password1", "password2"]
+
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.fields["username"].required = True
+        dominios = getattr(settings, "CRONOMED_DOMINIOS_CADASTRO", ("unipe.edu.br",))
+        if dominios:
+            lista = ", ".join(f"@{d}" for d in dominios)
+            self.fields["email"].help_text = f"Utilize o seu e-mail institucional ({lista})."
         self._estilizar()
 
     def clean_email(self):
-        return self.cleaned_data["email"].lower()
+        email = self.cleaned_data["email"].strip().lower()
+        dominios = getattr(settings, "CRONOMED_DOMINIOS_CADASTRO", ("unipe.edu.br",))
+        if dominios:
+            dominio = email.partition("@")[2]
+            if dominio not in dominios:
+                lista = ", ".join(f"@{d}" for d in dominios)
+                raise forms.ValidationError(f"O autocadastro é restrito ao domínio institucional ({lista}).")
+        return email
 
     def clean_username(self):
         return self.cleaned_data["username"].lower()
+
+    def clean_codigo_convite(self):
+        informado = (self.cleaned_data.get("codigo_convite") or "").strip()
+        esperado = (getattr(settings, "CRONOMED_CODIGO_CONVITE", "primeiro-ano") or "").strip()
+        if esperado and not hmac.compare_digest(informado.encode("utf-8"), esperado.encode("utf-8")):
+            raise forms.ValidationError("Código de convite inválido. Solicite o código à coordenação.")
+        return informado
 
 
 class UsuarioForm(_Bootstrap, forms.ModelForm):

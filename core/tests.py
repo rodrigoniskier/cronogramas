@@ -248,8 +248,9 @@ class CadastroProfessorTests(Base):
     def dados(self, **alteracoes):
         return {
             "nome": "Maria Oliveira",
-            "email": "Maria@t.example",
+            "email": "Maria@unipe.edu.br",
             "username": "Maria.Docente",
+            "codigo_convite": "primeiro-ano",
             "password1": self.senha,
             "password2": self.senha,
             **alteracoes,
@@ -277,7 +278,7 @@ class CadastroProfessorTests(Base):
         )
         self.assertRedirects(resposta, reverse("dashboard"))
         usuario = Usuario.objects.get(username="maria.docente")
-        self.assertEqual(usuario.email, "maria@t.example")
+        self.assertEqual(usuario.email, "maria@unipe.edu.br")
         self.assertEqual(usuario.perfil, Usuario.Perfil.PROF)
         self.assertTrue(usuario.is_active)
         self.assertFalse(usuario.is_staff or usuario.is_superuser or usuario.precisa_trocar_senha)
@@ -297,7 +298,7 @@ class CadastroProfessorTests(Base):
     def test_reentrada_por_nome_de_usuario_e_email(self):
         self.cadastrar()
         usuario = Usuario.objects.get(username="maria.docente")
-        for login in (" Maria.DOCENTE ", "MARIA@T.EXAMPLE"):
+        for login in (" Maria.DOCENTE ", "MARIA@UNIPE.EDU.BR"):
             with self.subTest(login=login):
                 self.client.post(reverse("logout"))
                 self.assertNotIn(SESSION_KEY, self.client.session)
@@ -333,6 +334,12 @@ class CadastroProfessorTests(Base):
             ("username", {"username": "maria@exemplo.com"}),
             ("username", {"username": ""}),
             ("email", {"email": "sem-arroba"}),
+            ("email", {"email": "maria@gmail.com"}),
+            ("email", {"email": "maria@unipe.edu.br.evil.com"}),
+            ("email", {"email": "maria@sub.unipe.edu.br"}),
+            ("codigo_convite", {"codigo_convite": ""}),
+            ("codigo_convite", {"codigo_convite": "segundo-ano"}),
+            ("codigo_convite", {"codigo_convite": "PRIMEIRO-ANO"}),
         )
         for campo, dados in casos:
             with self.subTest(dados=dados):
@@ -346,15 +353,15 @@ class CadastroProfessorTests(Base):
         self.cadastrar()
         self.client.post(reverse("logout"))
         quantidade = Usuario.objects.count()
-        resposta = self.cadastrar(username="MARIA.Docente", email="outro@t.example")
+        resposta = self.cadastrar(username="MARIA.Docente", email="outro@unipe.edu.br")
         self.assertIn("username", resposta.context["form"].errors)
-        resposta = self.cadastrar(username="outro", email=self.admin.email.upper())
+        resposta = self.cadastrar(username="outro", email="MARIA@UNIPE.EDU.BR")
         self.assertIn("email", resposta.context["form"].errors)
         self.assertEqual(Usuario.objects.count(), quantidade)
         self.assertNotIn(SESSION_KEY, self.client.session)
 
     def test_colisao_detectada_no_banco_retorna_erro_no_formulario(self):
-        Usuario.objects.create_user("outro@t.example", self.senha, nome="Outra docente", username="maria.docente")
+        Usuario.objects.create_user("outro@unipe.edu.br", self.senha, nome="Outra docente", username="maria.docente")
         validar_real = CadastroProfessorForm.validate_unique
 
         # Simula uma conta concorrente que ainda não aparecia na primeira validação.
@@ -366,7 +373,7 @@ class CadastroProfessorTests(Base):
             validar.side_effect = validar_apos_colisao
             resposta = self.cadastrar()
         self.assertIn("username", resposta.context["form"].errors)
-        self.assertFalse(Usuario.objects.filter(email="maria@t.example").exists())
+        self.assertFalse(Usuario.objects.filter(email="maria@unipe.edu.br").exists())
 
     def test_sessao_ativa_nao_abre_novo_cadastro(self):
         self.client.force_login(self.p1)

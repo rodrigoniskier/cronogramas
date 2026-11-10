@@ -151,6 +151,14 @@ CRONOMED_LIMITE_LOGIN_JANELA = int(os.environ.get("CRONOMED_LIMITE_LOGIN_JANELA"
 CRONOMED_LIMITE_CADASTRO_TENTATIVAS = int(os.environ.get("CRONOMED_LIMITE_CADASTRO_TENTATIVAS", 30))
 CRONOMED_LIMITE_CADASTRO_JANELA = int(os.environ.get("CRONOMED_LIMITE_CADASTRO_JANELA", 600))
 
+# Restrições do autocadastro de professores (domínio institucional e código de convite).
+CRONOMED_DOMINIOS_CADASTRO = tuple(
+    d.strip().lower().lstrip("@")
+    for d in os.environ.get("CRONOMED_DOMINIOS_CADASTRO", "unipe.edu.br").split(",")
+    if d.strip()
+)
+CRONOMED_CODIGO_CONVITE = os.environ.get("CRONOMED_CODIGO_CONVITE", "primeiro-ano")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
