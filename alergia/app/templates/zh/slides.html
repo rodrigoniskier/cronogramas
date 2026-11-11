@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block titulo %}幻灯片 — {{ titulo_site }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="pagina-conteudo">
+    <h1>📊 幻灯片演示——附讲稿</h1>
+
+    <div class="box box-info">
+        <p>共15张幻灯片，每张均配有面向教师的<strong>详细讲稿</strong>（黄色框）。学习目标依据修订版布鲁姆分类学（Anderson &amp; Krathwohl，2001）制定。与2025年DCN（CNE/CES第3/2025号决议）保持一致。</p>
+    </div>
+</div>
+
+<!-- SLIDE 0: 封面 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <div style="background:linear-gradient(135deg,#1a5490,#2a7ab5);color:#fff;text-align:center;padding:40px 30px;border-radius:10px">
+        <h1 style="color:#fff;border:none;font-size:2em;margin-bottom:8px">过敏的免疫学机制</h1>
+        <p style="font-size:1.1em;opacity:.92;margin-bottom:6px">病理生理学、分类与临床思路</p>
+        <p style="font-size:.95em;opacity:.85">医学本科课程 • 基层医疗/SUS背景</p>
+        <p style="font-size:.85em;opacity:.8;border-top:1px solid rgba(255,255,255,.3);padding-top:12px;margin-top:12px">依据医学DCN（CNE/CES第3/2025号决议） • 国际最佳教学实践</p>
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>大家好。今天我们来学习过敏的免疫学机制——这是医疗实践中的核心主题，尤其是在基层卫生保健中。本课与2025年医学国家课程指南保持一致，该指南由2025年9月30日CNE/CES第3号决议颁布，旨在培养具备整体性照护能力的医生，在SUS各个复杂程度的层面上，以个人、家庭和社区为中心提供照护。</p>
+    </div>
+</div>
+
+<!-- SLIDE 1: 目标 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 1 — 本课目标</h2>
+    <h3>学完本课后，你将能够：</h3>
+    <ul>
+        <li><strong>描述</strong> Coombs 与 Gell 分类（I–IV型）</li>
+        <li><strong>解释</strong>各型超敏反应的细胞与分子机制</li>
+        <li><strong>识别</strong>2型反应的炎症介质和细胞因子</li>
+        <li><strong>联系</strong>免疫学机制与临床表现</li>
+        <li><strong>应用</strong>所学知识于基层医疗的临床思路，包括过敏反应</li>
+    </ul>
+    <div class="box box-info">
+        <strong>修订版布鲁姆分类学（Anderson &amp; Krathwohl，2001）：</strong>这些动词对应认知层次——记忆、理解、应用、分析、评价、创造。
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>我按修订版布鲁姆分类学来介绍本课目标。请注意，这不仅仅是记住分类——我们希望大家理解机制、分析介质，更重要的是把这些知识应用于临床实践，尤其是识别过敏反应。</p>
+    </div>
+</div>
+
+<!-- SLIDE 2: 为什么重要 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 2 — 为什么这很重要？</h2>
+    <div class="box box-alerta">
+        <strong>流行病学：</strong>全球有数亿人受过敏性疾病影响，且呈上升趋势 <sup>[1]</sup>。
+    </div>
+    <ul>
+        <li>在巴西，<strong>ISAAC</strong>研究显示哮喘、鼻炎和湿疹的患病率较高 <sup>[2]</sup></li>
+        <li>过敏性疾病在<strong>基层医疗中很常见</strong>——家庭健康策略</li>
+        <li><strong>过敏反应</strong>是可能危及生命的急症——早期识别可以挽救生命 <sup>[4]</sup></li>
+    </ul>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>过敏性疾病是全球性的公共卫生问题。在巴西，ISAAC研究表明我们属于患病率最高的国家之一。作为未来的医生，你们会非常频繁地遇到这类疾病，特别是在基层医疗中。过敏反应是需要立即识别的急症——分秒必争。</p>
+    </div>
+</div>
+
+<!-- SLIDE 3: 概念 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 3 — 基本概念</h2>
+    <h3>超敏反应 × 过敏</h3>
+    <div class="box box-info">
+        <p><strong>超敏反应：</strong>造成<strong>组织损伤</strong>的免疫应答，表现为过度/不恰当 <sup>[6]</sup>。</p>
+        <p><strong>过敏（WAO）：</strong>由特定机制介导、可导致可重复症状的免疫应答 <sup>[1]</sup>。</p>
+        <p><strong>关系：</strong>所有过敏都是超敏反应，但并非所有超敏反应在临床上都是“过敏”。</p>
+    </div>
+    <p>健康的免疫系统是<strong>受调节的、相称的、可自限的</strong>。在超敏反应中，应答是<strong>过度的、不恰当的或持续过久的</strong> <sup>[6,9]</sup>。</p>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>在进入分类之前，需要先区分两个概念。超敏反应是更宽泛的概念——凡是造成损伤的免疫应答都属于它。过敏，按WAO现代临床意义，指由特定机制介导的应答。实际上，鼻炎、过敏性哮喘和过敏反应都属于IgE介导的过敏——即I型。</p>
+    </div>
+</div>
+
+<!-- SLIDE 4: 分类 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 4 — Coombs 与 Gell 分类（1963年）</h2>
+    <table>
+        <tr><th>类型</th><th>机制</th><th>效应成分</th><th>时间</th><th>实例</th></tr>
+        <tr><td><strong>I</strong></td><td>速发型</td><td>IgE、肥大细胞</td><td>数分钟</td><td>过敏反应、鼻炎</td></tr>
+        <tr><td><strong>II</strong></td><td>细胞毒型</td><td>IgG、IgM、补体</td><td>分钟–小时</td><td>溶血性贫血</td></tr>
+        <tr><td><strong>III</strong></td><td>免疫复合物型</td><td>IgG、补体、PMN</td><td>3–8 h</td><td>血清病</td></tr>
+        <tr><td><strong>IV</strong></td><td>迟发型，细胞介导</td><td>T细胞（Th1/CTL）</td><td>24–72 h</td><td>接触性皮炎、PPD</td></tr>
+    </table>
+    <div class="box box-info">
+        <strong>记忆小技巧：</strong>I型（1）最<strong>迅速</strong>（Imediato，速发）；II型作用于<strong>细胞</strong>；III型有<strong>3</strong>个要素（抗原 + 抗体 + 沉积）；IV型最迟发。
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>1963年，Gell和Coombs提出了这一至今仍在使用的分类。四种类型在三个维度上有所不同：免疫类型（I、II、III型为体液免疫，IV型为细胞免疫）、主要效应成分，以及反应出现的时间。接下来我们逐一详细讲解。</p>
+    </div>
+</div>
+
+<!-- SLIDE 5: I型阶段 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 5 — I型：IgE介导反应的阶段</h2>
+    <h3>致敏阶段（首次接触——无症状）</h3>
+    <ul>
+        <li>变应原 → 抗原提呈细胞 → 初始CD4+ T淋巴细胞</li>
+        <li>分化为<strong>Th2</strong>（由IL-4诱导） <sup>[6,11]</sup></li>
+        <li>Th2产生<strong>IL-4/IL-13</strong> → B细胞类别转换为<strong>IgE</strong></li>
+        <li>Th2产生<strong>IL-5</strong> → 嗜酸性粒细胞 <sup>[6]</sup></li>
+        <li>IgE与肥大细胞/嗜碱性粒细胞上的<strong>FcεRI</strong>结合 → <strong>致敏</strong> <sup>[7,10]</sup></li>
+    </ul>
+    <h3>效应阶段（再次接触——数分钟内出现症状）</h3>
+    <ul>
+        <li>变应原<strong>交联（crosslink）</strong>结合于FcεRI的IgE <sup>[7,10]</sup></li>
+        <li><strong>脱颗粒</strong> → 释放介质 <sup>[6,10]</sup></li>
+    </ul>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>这是本课的核心。首次接触时没有症状——发生的是致敏。在易感人群中，初始T淋巴细胞分化为Th2，产生IL-4和IL-13（类别转换为IgE）以及IL-5（嗜酸性粒细胞）。IgE与肥大细胞上的FcεRI结合。再次接触时，变应原交联两个或多个IgE，触发脱颗粒。请注意：关键信号正是交联（crosslink）。</p>
+    </div>
+</div>
+
+<!-- SLIDE 6: 介质 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 6 — I型：介质与晚期反应</h2>
+    <table>
+        <tr><th>类别</th><th>介质</th><th>作用</th></tr>
+        <tr><td><strong>预先合成</strong></td><td>组胺、类胰蛋白酶、肝素</td><td>血管扩张、↑通透性、支气管收缩、瘙痒 <sup>[6]</sup></td></tr>
+        <tr><td><strong>脂类</strong></td><td>白三烯、PGD2、PAF</td><td>强烈的支气管收缩、分泌增加 <sup>[6]</sup></td></tr>
+        <tr><td><strong>细胞因子</strong></td><td>IL-4、IL-5、IL-13、TNF-α</td><td>放大反应、慢性炎症 <sup>[6,11]</sup></td></tr>
+    </table>
+    <div class="box box-info">
+        <p><strong>速发反应：</strong>5–30分钟——由组胺/白三烯介导 <sup>[6]</sup></p>
+        <p><strong>晚期反应：</strong>2–24小时——由细胞因子和嗜酸性粒细胞介导 <sup>[6,7]</sup></p>
+    </div>
+    <div class="box box-clinico">
+        <strong>治疗靶点：</strong>抗组胺药、白三烯拮抗剂、糖皮质激素、<strong>生物制剂</strong>（IL-4Rα、IL-5、IgE） <sup>[8,12]</sup>
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>介质分为三类。预先合成的介质（如组胺）引起早期反应的症状。脂类介质（如白三烯）引起强烈的支气管收缩。细胞因子则维持2至24小时之后的晚期反应，并维持慢性炎症。这就是为什么在持续性哮喘中我们使用糖皮质激素，而在重症病例中使用生物制剂。</p>
+    </div>
+</div>
+
+<!-- SLIDE 7: II和III型 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 7 — II型和III型：速览</h2>
+    <h3>II型——细胞毒型</h3>
+    <ul>
+        <li><strong>IgG/IgM</strong>抗体与<strong>细胞表面</strong>的抗原结合 <sup>[6]</sup></li>
+        <li>破坏方式：<strong>补体（MAC）</strong>、<strong>ADCC</strong>、<strong>调理作用</strong> <sup>[6]</sup></li>
+        <li>实例：自身免疫性溶血性贫血、新生儿溶血病、ABO输血反应 <sup>[6]</sup></li>
+    </ul>
+    <h3>III型——免疫复合物型</h3>
+    <ul>
+        <li><strong>抗原–抗体</strong>复合物沉积于组织 → 激活补体 → 募集PMN <sup>[6]</sup></li>
+        <li>时间：<strong>3–8小时</strong> <sup>[6]</sup></li>
+        <li>实例：血清病、肾小球肾炎、狼疮性肾炎 <sup>[6]</sup></li>
+    </ul>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>II型和III型同样涉及抗体，但机制不同。在II型中，抗体与细胞表面的抗原结合并破坏细胞。在III型中，形成免疫复合物并沉积于组织，激活补体，募集中性粒细胞并造成损伤。虽然日常中不称其为“过敏”，但它们对理解免疫介导的疾病至关重要。</p>
+    </div>
+</div>
+
+<!-- SLIDE 8: IV型 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 8 — IV型：迟发型（细胞介导）超敏反应</h2>
+    <ul>
+        <li><strong>由T细胞介导</strong>（Th1、Th17、CTL）——<strong>无抗体参与</strong> <sup>[6,7,13]</sup></li>
+        <li>时间：<strong>24–72小时</strong> <sup>[6,13]</sup></li>
+        <li>机制：抗原提呈细胞 → 致敏T细胞活化 → 细胞因子（IFN-γ）→ 巨噬细胞 → 炎症 <sup>[6,13]</sup></li>
+    </ul>
+    <table>
+        <tr><th>亚型</th><th>细胞因子</th><th>实例</th></tr>
+        <tr><td>接触型</td><td>IFN-γ</td><td>接触性皮炎（镍） <sup>[13]</sup></td></tr>
+        <tr><td>结核菌素型</td><td>IFN-γ</td><td>PPD试验（结核病） <sup>[6]</sup></td></tr>
+        <tr><td>肉芽肿型</td><td>IFN-γ、TNF-α</td><td>结核病、结节病 <sup>[6]</sup></td></tr>
+    </table>
+    <div class="box box-clinico">
+        <strong>基层医疗应用：</strong>结核菌素试验（PPD）——于48–72小时判读——属于IV型超敏反应。对巴西的结核病防控至关重要。
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>IV型是唯一的细胞介导型——不涉及抗体。它由既往已致敏的T淋巴细胞介导，释放γ干扰素，募集巨噬细胞，需要24至72小时。最相关的临床应用是结核菌素试验即PPD：对于接触过结核杆菌的人，皮内注射会产生硬结，于48至72小时判读。</p>
+    </div>
+</div>
+
+<!-- SLIDE 9: 2型炎症 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 9 — 整合性概念：2型炎症</h2>
+    <div class="box box-info">
+        <p><strong>2型炎症</strong> = 由<strong>Th2</strong>和<strong>ILC2</strong>介导的应答，特征为<strong>IL-4、IL-5、IL-13</strong> <sup>[11]</sup>。</p>
+        <p>接触变应原的上皮释放<strong>警报素</strong>（TSLP、IL-25、IL-33）→ 激活ILC2 → 放大Th2 <sup>[11]</sup></p>
+    </div>
+    <div class="box box-clinico">
+        <strong>生物制剂：</strong>奥马珠单抗（抗IgE）、美泊利珠单抗（抗IL-5）、度普利尤单抗（抗IL-4Rα） <sup>[8,12]</sup>
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>这是一个现代的整合性概念：2型炎症。IgE介导的过敏性疾病——哮喘、鼻炎、特应性皮炎——具有共同的基础：由Th2和ILC2产生的IL-4、IL-5和IL-13。一切始于上皮识别变应原并释放警报素。这正是生物制剂革命的基础。GINA已采纳这一概念。</p>
+    </div>
+</div>
+
+<!-- SLIDE 10: 过敏反应 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 10 — ⚠ 过敏反应：I型急症</h2>
+    <div class="box box-alerta">
+        <strong>定义：</strong>起病迅速（数分钟）的全身性I型超敏反应，可能危及生命。介质全身性释放 → 血管扩张、气道水肿、支气管收缩、低血压、休克 <sup>[4,15]</sup>。
+    </div>
+    <h3>诊断标准（NIAID/FAAN，WAO采纳） <sup>[4,15]</sup></h3>
+    <ul>
+        <li>接触可能的变应原后<strong>数分钟内出现症状</strong>，<strong>并且</strong>符合下列之一：</li>
+        <li><strong>皮肤/黏膜</strong>受累 + 呼吸系统受累<strong>或</strong>血压下降</li>
+        <li><strong>或</strong>下列任意 ≥ 2项：皮肤/黏膜、呼吸系统、血压降低、持续性胃肠道症状</li>
+        <li><strong>或</strong>接触已知变应原后血压下降</li>
+    </ul>
+    <div class="box box-alerta">
+        <strong>一线治疗：肌内注射肾上腺素（epinephrine）</strong>——大腿前外侧 <sup>[4]</sup>
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>这里请格外注意。过敏反应是I型超敏反应最严重的表现，是一种急症。WAO采纳的NIAID/FAAN标准有助于识别。一线治疗只有一个：在大腿前外侧肌内注射肾上腺素。不要首先等待抗组胺药或糖皮质激素。WAO提醒，肾上腺素在全球的使用并不理想。</p>
+    </div>
+</div>
+
+<!-- SLIDE 11: APS -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 11 — 基层医疗/SUS中的处理思路</h2>
+    <h3>家庭健康策略中的措施 <sup>[3,5]</sup></h3>
+    <table>
+        <tr><th>重点</th><th>措施</th></tr>
+        <tr><td>接诊/诊断</td><td>鼻炎、轻中度哮喘、特应性皮炎</td></tr>
+        <tr><td>健康教育</td><td>诱因、吸入技术、行动计划</td></tr>
+        <tr><td>随访</td><td>长期、依从性、控制情况</td></tr>
+        <tr><td>过敏反应</td><td>识别、肾上腺素、自动注射器、转诊 <sup>[4]</sup></td></tr>
+        <tr><td>转诊</td><td>重症病例、生物制剂、变态反应科</td></tr>
+    </table>
+    <div class="box box-clinico">
+        <strong>过敏反应行动计划（WAO 2020） <sup>[4]</sup>：</strong>教育患者/家属，处方肾上腺素自动注射器，书面计划，识别诱因，转诊专科。
+    </div>
+    <div class="box box-info">
+        <strong>2025年医学DCN：</strong>毕业生应具备<strong>整体性</strong>，在<strong>所有复杂程度的层面</strong>开展工作，强调<strong>以基层医疗作为照护协调者</strong>（第VI项），并认识<strong>社会决定因素</strong>（第XV项） <sup>[5]</sup>。
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>大多数过敏性疾病患者是在家庭健康策略中接受诊治的。对于过敏反应，我们遵循WAO的建议。所有这些都与2025年DCN一致，该指南倡导在SUS所有复杂程度的层面开展整体性工作，强调以基层医疗作为照护协调者，并理解社会和环境决定因素。</p>
+    </div>
+</div>
+
+<!-- SLIDE 12: 总结 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 12 — 本课总结</h2>
+    <div class="box box-info">
+        <p><strong>I型</strong>（数分钟）——IgE、肥大细胞——过敏反应、哮喘、鼻炎</p>
+        <p><strong>II型</strong>（分钟–小时）——IgG/IgM、细胞——溶血</p>
+        <p><strong>III型</strong>（3–8 h）——免疫复合物——血清病</p>
+        <p><strong>IV型</strong>（24–72 h）——T细胞——接触性皮炎、PPD</p>
+        <p><strong>2型炎症</strong>（IL-4、IL-5、IL-13）——过敏的共同基础 → 生物制剂的靶点</p>
+    </div>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>总结一下：四种类型的超敏反应。I型是速发的、IgE介导的，就是我们经典的过敏。II型和III型涉及针对细胞的抗体或形成复合物的抗体。IV型是细胞介导的迟发型。而在这一切之上，是现代的2型炎症概念，它是共同的基础，也是生物制剂的靶点。</p>
+    </div>
+</div>
+
+<!-- SLIDE 13: 后续活动 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 13 — 活动与后续步骤</h2>
+    <ul>
+        <li>📝 <strong>图文讲义</strong>——完整的补充阅读</li>
+        <li>📋 <strong>练习题清单</strong>——3道例题 + 10道巩固题 + 5道深入题（答案附于文末）</li>
+        <li>🏥 <strong>临床病例研究</strong>——在基层医疗中的应用</li>
+        <li>📚 <strong>推荐阅读：</strong>Abbas（超敏反应）；Janeway，第12章 <sup>[6,7]</sup></li>
+        <li>🌐 <strong>指南：</strong>GINA（哮喘）、WAO（过敏反应） <sup>[4,8]</sup></li>
+    </ul>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>为巩固所学，你们有三份补充材料：讲义、练习题清单和一个临床病例研究。若想深入，我推荐阅读Abbas和Janeway中关于超敏反应的章节，以及GINA和WAO的指南。所有材料均按科学诚信协议编写。</p>
+    </div>
+</div>
+
+<!-- SLIDE 14: 参考文献 -->
+<div class="pagina-conteudo" style="margin-top:16px">
+    <h2 style="margin-top:0">幻灯片 14 — 主要参考文献</h2>
+    <ol style="font-size:.88em">
+        <li>Pawankar R, et al. WAO White Book on Allergy. <sup>[1]</sup></li>
+        <li>Solé D, et al. 巴西ISAAC研究。 <sup>[2]</sup></li>
+        <li>巴西卫生部。国家基层医疗政策。 <sup>[3]</sup></li>
+        <li>Cardona V, et al. WAO Anaphylaxis Guidance 2020. <em>WAOJ.</em> 2020. <sup>[4]</sup></li>
+        <li>巴西 MEC/CNE。CNE/CES第3/2025号决议（医学DCN）。 <sup>[5]</sup></li>
+        <li>Abbas AK, et al. <em>Cellular and Molecular Immunology</em>（《细胞与分子免疫学》）. 第10版. Elsevier; 2022. <sup>[6]</sup></li>
+        <li>Murphy K, Weaver C. <em>Janeway's Immunobiology.</em> 第10版. Garland; 2022. <sup>[7]</sup></li>
+        <li>GINA. Global Strategy for Asthma Management and Prevention. 2023. <sup>[8]</sup></li>
+        <li>Wynn TA. Type 2 cytokines. <em>Nat Rev Drug Discov.</em> 2015. <sup>[11]</sup></li>
+        <li>Sampson HA, et al. Definition of anaphylaxis. <em>Ann Emerg Med.</em> 2006. <sup>[15]</sup></li>
+    </ol>
+    <div class="box box-destaque">
+        <strong>讲稿：</strong>
+        <p>这些是主要参考文献。它们都是经核实的来源：参考教科书、学术团体指南、同行评审论文和官方规范性文件——包括2025年新版医学DCN全文。感谢大家的聆听。现在让我们进入活动环节。</p>
+    </div>
+</div>
+
+{% endblock %}

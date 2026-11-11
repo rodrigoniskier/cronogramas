@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudo de Caso Clínico — Alergias na APS</title>
+<style>
+  :root{--azul:#1a5490;--verde:#2e8b57;--vermelho:#c0392b;--laranja:#d97a1f;--roxo:#6c3483}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Georgia','Times New Roman',serif;color:#222;line-height:1.65;background:#eef1f4;max-width:920px;margin:0 auto;padding:20px}
+  .cab{background:linear-gradient(135deg,#1a5490,#2a7ab5);color:#fff;padding:28px;border-radius:10px;text-align:center;margin-bottom:20px}
+  .cab h1{font-family:'Helvetica',sans-serif;font-size:1.5em;margin-bottom:6px}
+  .cab p{font-size:.92em;opacity:.92}
+  section{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:22px 26px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  h2{font-family:'Helvetica',sans-serif;color:var(--azul);font-size:1.3em;border-bottom:3px solid #2a7ab5;padding-bottom:6px;margin-bottom:14px}
+  h3{font-family:'Helvetica',sans-serif;color:var(--verde);font-size:1.1em;margin:14px 0 6px}
+  h4{font-family:'Helvetica',sans-serif;color:var(--roxo);font-size:1em;margin:10px 0 4px}
+  p{margin-bottom:8px;text-align:justify}
+  .caso{background:#e7f3fe;border-left:5px solid #2a7ab5;padding:16px 20px;margin:14px 0;border-radius:0 8px 8px 0}
+  .caso b{color:#1a5490}
+  .alerta{background:#fdecea;border-left:5px solid var(--vermelho);padding:14px 18px;margin:12px 0;border-radius:0 8px 8px 0}
+  .alerta b{color:var(--vermelho)}
+  .disc{background:#eafaf1;border-left:5px solid var(--verde);padding:14px 18px;margin:12px 0;border-radius:0 8px 8px 0}
+  .disc b{color:var(--verde)}
+  .resol{background:#fffde7;border-left:5px solid var(--laranja);padding:14px 18px;margin:12px 0;border-radius:0 8px 8px 0}
+  .resol b{color:var(--laranja)}
+  .passo{margin-left:18px;margin-bottom:5px}
+  .passo::before{content:"▸ ";color:var(--verde);font-weight:bold}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9em;font-family:'Helvetica',sans-serif}
+  th{background:var(--azul);color:#fff;padding:7px 9px;text-align:left}
+  td{border:1px solid #d0d7de;padding:7px 9px;vertical-align:top}
+  tr:nth-child(even) td{background:#f4f6f8}
+  .guia{background:#f3e8f9;border:1px solid #c39bd3;border-radius:8px;padding:14px 18px;margin:12px 0}
+  .guia h4{color:var(--roxo);margin-top:0}
+  .guia ol{margin-left:20px}
+  .guia li{margin-bottom:5px}
+  .cron{font-family:'Helvetica',sans-serif;font-size:.88em}
+  .cron td:first-child{font-weight:bold;color:var(--azul);width:110px}
+  .ref{font-size:.82em;color:#666;border-top:1px solid #d0d7de;padding-top:8px;margin-top:16px}
+  .aviso{background:#fff3cd;border:1px solid #ffe08a;border-radius:6px;padding:10px 14px;margin:12px 0;font-size:.9em}
+</style>
+</head>
+<body>
+
+<div class="cab">
+<h1>Estudo de Caso Clínico</h1>
+<p>Anafilaxia e Asma Alérgica no Contexto da Atenção Primária à Saúde (APS) — Brasil</p>
+<p>Roteiro de aplicação + Resolução comentada</p>
+</div>
+
+<div class="aviso">
+<b>Contexto:</b> Este caso foi elaborado para aplicar o conhecimento sobre mecanismos imunológicos das alergias em um cenário realista da <b>Atenção Primária à Saúde</b> no Brasil (Estratégia Saúde da Família), alinhado às <b>DCN de Medicina 2025</b> (Resolução CNE/CES nº 3/2025) <sup>[5]</sup> e às recomendações da <b>WAO</b> <sup>[4]</sup> e <b>GINA</b> <sup>[8]</sup>. O caso integra diagnóstico, mecanismo imunológico, manejo agudo, manejo crônico e ações de saúde pública, contemplando competências como raciocínio clínico baseado em evidências, integralidade do cuidado com ênfase na APS como coordenadora, determinantes sociais, atuação em emergências e cuidado a populações vulnerabilizadas.
+</div>
+
+<!-- ===================== PARTE 1: O CASO ===================== -->
+<section>
+<h2>Parte 1 — Apresentação do Caso</h2>
+
+<div class="caso">
+<p><b>Paciente:</b> J.S.S., feminino, 34 anos, dona de casa, moradora de bairro periférico de município de médio porte no Nordeste brasileiro. Atendida na Unidade Básica de Saúde (UBS) do bairro, vinculada à Estratégia Saúde da Família.</p>
+
+<p><b>História da doença atual:</b> J.S.S. procura a UBS em um dia de plantão da manhã, relatando ter sido <b>"picada por uma vespa"</b> no quintal de casa há aproximadamente <b>40 minutos</b>. Refere que "começou a coçar todo o corpo", percebeu <b>"vergões vermelhos"</b> (urticária), <b>"incharam os lábios e os olhos"</b> (angioedema) e começou a sentir <b>"falta de ar com chiado no peito"</b>. Relata ainda <b>"tontura e visão escurecida"</b> ao chegar à unidade.</p>
+
+<p><b>Antecedentes:</b> Asma desde a infância, com internação aos 12 anos; rinite alérgica perene; dois episódios prévios de reação local intensa após picada de himenópteros (vespa), sem ter procurado atendimento. Mãe com asma; irmã com rinite. <b>Não faz uso regular de medicação.</b> Refere "comprar bombinha na farmácia quando dá crise".</p>
+
+<p><b>Exame físico na chegada à UBS:</b></p>
+<table>
+<tr><th>Parâmetro</th><th>Achado</th></tr>
+<tr><td>PA</td><td>78/48 mmHg</td></tr>
+<tr><td>FC</td><td>118 bpm</td></tr>
+<tr><td>FR</td><td>28 irpm, com uso de musculatura acessória, sibilos difusos</td></tr>
+<tr><td>SpO₂ (ar ambiente)</td><td>90%</td></tr>
+<tr><td>Pele</td><td>Urticária generalizada, angioedema de lábios e pálpebras</td></tr>
+<tr><td>Consciência</td><td>Letárgica, porém responsiva</td></tr>
+</table>
+</div>
+
+<div class="alerta">
+<b>Cenário clínico:</b> Quadro de início rápido (minutos) após picada de vespa, com envolvimento cutâneo, respiratório e cardiovascular (hipotensão).
+</div>
+</section>
+
+<!-- ===================== PARTE 2: GUIA DE APLICAÇÃO ===================== -->
+<section>
+<h2>Parte 2 — Roteiro de Aplicação do Caso (para o docente)</h2>
+
+<div class="guia">
+<h4>Como conduzir a atividade</h4>
+<p>O caso deve ser trabalhado em <b>pequenos grupos</b> (4–6 estudantes), com metodologia ativa (problematização), em sessão de aproximadamente <b>90–120 minutos</b>. Recomenda-se:</p>
+<ol>
+<li><b>Distribuição do caso em etapas</b> (Parte 1, depois questões, depois resolução) — o caso é "fatiado" para estimular o raciocínio progressivo.</li>
+<li><b>Discussão guiada</b> com perguntas-chave após cada etapa (ver Parte 3).</li>
+<li><b>Tempo para discussão em grupo</b>: 15 min por bloco de questões.</li>
+<li><b>Plenária</b>: cada grupo apresenta suas conclusões; o docente contrasta com a resolução comentada.</li>
+<li><b>Síntese final</b>: o docente recapitula os mecanismos imunológicos, o manejo e as ações de saúde pública.</li>
+</ol>
+<p>O caso é deliberadamente <b>desafiador</b> e <b>contextualizado</b>: aborda uma emergência real (anafilaxia) em um ambiente de recursos limitados (UBS), com coexistência de asma e atopia, exigindo integração entre conhecimento imunológico, clínica e saúde coletiva.</p>
+</div>
+
+<h3>Objetivos de aprendizagem do caso</h3>
+<ul>
+<li><b>Reconhecer</b> os critérios diagnósticos de anafilaxia em ambiente de APS.</li>
+<li><b>Identificar</b> o mecanismo imunológico (hipersensibilidade tipo I, IgE-mediada) e relacioná-lo com os achados clínicos.</li>
+<li><b>Aplicar</b> o tratamento de primeira linha (adrenalina IM) e justificar com base fisiopatológica.</li>
+<li><b>Planejar</b> o manejo crônico: plano de ação, autoinjetor, encaminhamento, imunoterapia.</li>
+<li><b>Articular</b> ações de saúde pública na APS (educação, vigilância, integralidade do cuidado).</li>
+</ul>
+</section>
+
+<!-- ===================== PARTE 3: QUESTÕES ===================== -->
+<section>
+<h2>Parte 3 — Questões para Discussão em Grupo</h2>
+
+<div class="disc">
+<h4>Bloco A — Diagnóstico e mecanismo (15 min)</h4>
+<p><b>A1.</b> Qual o diagnóstico sindrômico deste caso? Justifique com base nos critérios clínicos.</p>
+<p><b>A2.</b> Qual o tipo de hipersensibilidade envolvido e qual o mecanismo imunológico passo a passo (da sensibilização à manifestação clínica)?</p>
+<p><b>A3.</b> Por que a paciente, que já teve reações locais intensas antes, não havia apresentado anafilaxia nos episódios anteriores? O que isso revela sobre a resposta imune?</p>
+</div>
+
+<div class="disc">
+<h4>Bloco B — Manejo agudo (15 min)</h4>
+<p><b>B1.</b> Qual a primeira ação terapêutica a ser tomada, imediatamente, na UBS? Especifique a via, a dose aproximada e o local de administração.</p>
+<p><b>B2.</b> Por que antihistamínicos e corticoides <b>não</b> são a primeira medida? Qual o papel deles?</p>
+<p><b>B3.</b> Na UBS, sem leito de observação avançado, quais as medidas de suporte adicionais (reposição, oxigênio, posição) e qual o fluxo de encaminhamento?</p>
+</div>
+
+<div class="disc">
+<h4>Bloco C — Manejo crônico e saúde pública (15 min)</h4>
+<p><b>C1.</b> Após a estabilização e o encaminhamento, quais as recomendações de seguimento, conforme a WAO (2020), para prevenir recidivas?</p>
+<p><b>C2.</b> A paciente tem asma mal controlada. Como integrar o manejo da asma com o seguimento pós-anafilaxia na APS, conforme a GINA?</p>
+<p><b>C3.</b> Quais ações de educação em saúde e vigilância podem ser desenvolvidas na comunidade pela equipe da ESF, considerando o contexto local?</p>
+</div>
+</section>
+
+<!-- ===================== PARTE 4: RESOLUÇÃO COMENTADA ===================== -->
+<section>
+<h2>Parte 4 — Resolução Comentada do Caso</h2>
+
+<h3>Bloco A — Diagnóstico e mecanismo</h3>
+
+<div class="resol">
+<p><b>A1. Diagnóstico: ANAFILAXIA.</b></p>
+<div class="passo">A paciente apresenta <b>início rápido</b> (minutos, dentro de 40 min) após exposição a um alérgeno conhecido (picada de vespa).</div>
+<div class="passo">Critérios NIAID/FAAN (adotados pela WAO): envolvimento de <b>pele/mucosa</b> (urticária + angioedema) <b>+</b> comprometimento <b>respiratório</b> (sibilos, dispneia, SpO₂ 90%) <b>+</b> <b>queda da PA</b> (78/48 mmHg) → preenche os critérios diagnósticos de anafilaxia <sup>[4,15]</sup>.</div>
+<div class="passo">A hipotensão (PA sistólica &lt; 90 mmHg ou queda &gt; 30% da basal) configura <b>choque anafilático</b> — forma grave.</div>
+</div>
+
+<div class="resol">
+<p><b>A2. Tipo de hipersensibilidade: TIPO I (imediata, IgE-mediada).</b></p>
+<p><b>Mecanismo passo a passo:</b></p>
+<div class="passo"><b>Sensibilização prévia:</b> em episódios anteriores com picadas de vespa, o veneno (contendo alérgenos como a fosfolipase A2 e a hialuronidase) foi processado por células apresentadoras de antígeno e apresentado a linfócitos T CD4+ naive, que se diferenciaram em <b>Th2</b> <sup>[6]</sup>.</div>
+<div class="passo">As células Th2 produziram <b>IL-4 e IL-13</b>, que induziram a <b>mudança de classe</b> dos linfócitos B para a produção de <b>IgE anti-veneno</b> <sup>[6,11]</sup>.</div>
+<div class="passo">A IgE ligou-se, pela porção Fc, aos <b>receptores FcεRI</b> na superfície dos <b>mastócitos</b> (tecidos) e <b>basófilos</b> (circulação) → paciente <b>sensibilizada</b> <sup>[7,10]</sup>.</div>
+<div class="passo"><b>Reexposição (evento atual):</b> o veneno da vespa, ao entrar na circulação, <b>cruza (crosslink)</b> múltiplas IgE ligadas aos FcεRI nos mastócitos <sup>[7,10]</sup>.</div>
+<div class="passo">O crosslink dispara a <b>degranulação mastocitária sistêmica</b>, com liberação <b>massiva</b> de mediadores: <b>histamina</b> (pré-formada), <b>leucotrienos</b>, <b>prostaglandinas</b>, <b>PAF</b> e <b>citocinas</b> (IL-4, IL-5, IL-13, TNF-α) <sup>[6]</sup>.</div>
+<div class="passo"><b>Consequências sistêmicas dos mediadores:</b> vasodilatação e ↑ permeabilidade → <b>hipotensão</b> e <b>urticária/angioedema</b>; broncoconstrição → <b>sibilos e dispneia</b>; ↑ secreção mucosa. A liberação <b>sistêmica</b> (não local) diferencia a anafilaxia de uma reação local <sup>[4,6]</sup>.</div>
+</div>
+
+<div class="resol">
+<p><b>A3. Por que anafilaxia agora e não antes?</b></p>
+<div class="passo">A resposta alérgica tipo I é <b>dependente da dose</b> e da <b>sensibilização acumulada</b>. As reações locais intensas prévias indicavam que a paciente <b>já estava sensibilizada</b> (com IgE específica), mas a quantidade de veneno injetada e/ou a via de absorção não foram suficientes para gerar uma ativação mastocitária <b>sistêmica</b>.</div>
+<div class="passo">A <b>repetição</b> da exposição ao alérgeno tende a <b>amplificar</b> a resposta (booster de memória imunológica) — cada nova exposição reforça a produção de IgE específica e o número de mastócitos sensibilizados <sup>[6]</sup>.</div>
+<div class="passo">Assim, a anafilaxia pode ocorrer em uma <b>exposição subsequente</b>, mesmo que as anteriores tenham sido apenas locais. Isso é uma lição clínica crucial: <b>reação local intensa prévia é fator de risco</b> para anafilaxia futura e justifica o encaminhamento e a prescrição de autoinjetor <sup>[4]</sup>.</div>
+</div>
+
+<h3>Bloco B — Manejo agudo</h3>
+
+<div class="resol">
+<p><b>B1. Primeira ação: ADRENALINA (epinefrina) INTRAMUSCULAR.</b></p>
+<div class="passo"><b>Via:</b> intramuscular (IM) — NÃO subcutânea (a IM tem absorção mais rápida e previsível, especialmente em pacientes com hipotensão/edema, que reduzem a absorção subcutânea) <sup>[4]</sup>.</div>
+<div class="passo"><b>Local:</b> face <b>anterolateral da coxa</b> (m. vasto lateral) — não na nádega (absorção lenta e irregular) <sup>[4]</sup>.</div>
+<div class="passo"><b>Dose adulto:</b> 0,3 a 0,5 mg de cloridrato de epinefrina (concentração 1 mg/mL = 1:1000), ou seja, 0,3 a 0,5 mL IM. Pode ser repetida a cada 5–15 min se não houver resposta <sup>[4]</sup>.</div>
+<div class="passo">A adrenalina atua sobre os <b>receptores α1</b> (vasoconstrição → ↑ PA), <b>β1</b> (cronotropismo/inotropismo) e <b>β2</b> (broncodilatação, estabilização dos mastócitos) — revertendo os três componentes críticos da anafilaxia <sup>[4]</sup>.</div>
+<div class="passo"><b>Esta é a medida que salva a vida.</b> Cada minuto de atraso na administração aumenta o risco de evolução fatal <sup>[4]</sup>.</div>
+</div>
+
+<div class="resol">
+<p><b>B2. Por que antihistamínicos e corticoides não são a primeira medida?</b></p>
+<div class="passo"><b>Antihistamínicos</b> bloqueiam apenas os receptores H1 da histamina — não atuam sobre os leucotrienos, prostaglandinas, PAF nem sobre a hipotensão refratária. Têm <b>início de ação mais lento</b> e não revertem o broncoespasmo nem o choque. São <b>adjuntos</b> para prurido/urticária residual <sup>[4]</sup>.</div>
+<div class="passo"><b>Corticoides</b> (ex.: hidrocortisona IV) têm <b>início de ação em horas</b> (efeito genômico) e não revertem a fase aguda. Seu papel é prevenir a <b>resposta tardia</b> e a recidiva (biphasic reaction), não tratar o choque imediato <sup>[4]</sup>.</div>
+<div class="passo">A <b>adrenalina</b> é o <b>único</b> medicamento com ação rápida sobre todos os componentes da anafilaxia. Usar antihistamínico ou corticoide em vez de adrenalina é um <b>erro frequente</b> e perigoso — é por isso que a WAO alerta que o uso da adrenalina é <b>subótimo</b> globalmente <sup>[4]</sup>.</div>
+</div>
+
+<div class="resol">
+<p><b>B3. Medidas de suporte e fluxo na UBS.</b></p>
+<table>
+<tr><th>Medida</th><th>Justificativa</th></tr>
+<tr><td><b>Adrenalina IM</b> (primeira!) </td><td>Reverte o quadro — já detalhado <sup>[4]</sup></td></tr>
+<tr><td>Posição <b>de Trendelenburg</b> / decúbito dorsal com elevação de MMII</td><td>Combate a hipotensão pelo <b>retorno venoso</b>; a paciente hipotensa não deve ficar em pé (risco de "anafilaxia fatal postural") <sup>[4]</sup></td></tr>
+<tr><td><b>Oxigenoterapia</b> (máscara, O₂ alto fluxo)</td><td>Corrige hipoxemia (SpO₂ 90%); a hipoxemia agrava o broncoespasmo <sup>[4]</sup></td></tr>
+<tr><td><b>Reposição volêmica</b> (cristaloide IV — Ringer lactato ou SF 0,9%, bolus)</td><td>A vasodilatação e o escape capilar causam <b>hipovolemia relativa</b> massiva; a adrenalina sozinha pode não bastar <sup>[4]</sup></td></tr>
+<tr><td><b>Broncodilatador</b> (salbutamol/nebulização) após adrenalina</td><td>Adjunto para broncoespasmo refratário <sup>[4]</sup></td></tr>
+<tr><td><b>Antihistamínico</b> (ex.: dexclorfeniramina ou cetirizina) + <b>corticoide</b> (hidrocortisona IV)</td><td>Adjuntos — prurido e prevenção da resposta tardia/bifásica <sup>[4]</sup></td></tr>
+</table>
+<p><b>Fluxo de encaminhamento:</b> após estabilização inicial (ou <b>concomitantemente</b>, se possível), acionar o <b>Serviço de Atendimento Móvel de Urgência (SAMU/192)</b> para transporte monitorizado para um <b>serviço de urgência/hospitalar</b>. A anafilaxia, mesmo após melhora inicial, exige <b>observação</b> (6–24 h) pelo risco de <b>reação bifásica</b> (recorrência em até 72 h, sem reexposição) <sup>[4]</sup>.</p>
+</div>
+
+<h3>Bloco C — Manejo crônico e saúde pública</h3>
+
+<div class="resol">
+<p><b>C1. Recomendações de seguimento pós-anafilaxia (WAO 2020) <sup>[4]</sup>:</b></p>
+<div class="passo"><b>Encaminhamento a alergologia</b> para investigação etiológica (história, testes cutâneos, IgE específica para veneno de himenópteros, eventualmente BAT — teste de ativação de basófilos).</div>
+<div class="passo"><b>Confirmação do gatilho</b>: veneno de vespa — implica avaliação para <b>imunoterapia específica com veneno</b>, que é altamente eficaz na prevenção de recidivas em anafilaxia por himenópteros <sup>[4]</sup>.</div>
+<div class="passo"><b>Prescrição de autoinjetor de adrenalina</b> (ex.: 0,3 mg) e <b>treinamento</b> do paciente e da família para uso correto.</div>
+<div class="passo"><b>Plano de ação escrito</b>, com linguagem acessível, identificando os sinais de alarme e os passos a seguir.</div>
+<div class="passo"><b>Educação</b>: evitar áreas de risco, uso de roupas protetivas, não andar descalça, cuidado com ninhos.</div>
+<div class="passo"><b>Cartão de identificação</b> de risco de anafilaxia.</div>
+</div>
+
+<div class="resol">
+<p><b>C2. Integração com o manejo da asma (GINA) <sup>[8]</sup>:</b></p>
+<div class="passo">A paciente tem <b>asma não controlada</b> (uso de "bombinha sob demanda" = apenas broncodilatador de resgate, sem anti-inflamatório de manutenção) — isso configura <b>risco elevado</b> de exacerbções e agrava a gravidade da anafilaxia (o broncoespasmo anafilático soma-se ao da asma).</div>
+<div class="passo">Conforme a GINA, o tratamento de manutenção da asma deve incluir <b>corticoide inalatório (CI)</b>, com ou sem broncodilatador de longa ação (LABA), em <b>todos os pacientes</b> com asma persistente — o uso isolado de broncodilatador de curta ação (SABA) sem CI é <b>desencorajado</b> <sup>[8]</sup>.</div>
+<div class="passo">Deve-se avaliar a <b>adesão</b>, a <b>técnica inalatória</b>, os <b>gatilhos</b> (rinite coexistente deve ser tratada — "via aérea unificada") e o <b>controle</b> (questionário ACQ ou ACT).</div>
+<div class="passo">A inflamação tipo 2 é o <b>substrato comum</b> da asma alérgica e da sensibilização ao veneno — em caso de asma grave não controlada apesar de CI/LABA e adesão, o paciente deve ser referenciado para avaliação de <b>fenotipagem</b> e eventual <b>biológico</b> (ex.: omalizumabe, que trata tanto a asma alérgica grave quanto reduz o risco de anafilaxia por veneno durante a imunoterapia) <sup>[8,12]</sup>.</div>
+<div class="passo">Na APS, garantir acesso aos medicamentos (lista do SUS), <b>plano de ação escrito para asma</b>, e agendar <b>acompanhamento</b> regular.</div>
+</div>
+
+<div class="resol">
+<p><b>C3. Ações de saúde pública e educação na ESF <sup>[3,5]</sup>:</b></p>
+<table>
+<tr><th>Ação</th><th>Detalhamento</th></tr>
+<tr><td><b>Educação em saúde domiciliar/comunitária</b></td><td>Visita domiciliar da ACS: identificar ninhos de himenópteros nas proximidades; orientar a família sobre os sinais de anafilaxia e o uso do autoinjetor.</td></tr>
+<tr><td><b>Grupo de educação em asma</b></td><td>Reuniões na UBS com pacientes asmáticos: técnica inalatória, plano de ação, reconhecimento de exacerbções, importância do CI.</td></tr>
+<tr><td><b>Busca ativa de pacientes de risco</b></td><td>Identificar na comunidade outros pacientes com reações alérgicas prévias ou asma não controlada; garantir acolhimento e seguimento.</td></tr>
+<tr><td><b>Vigilância em saúde</b></td><td>Notificar reações adversas graves (alergias medicamentosas e outras) ao sistema de vigilância (Medidas de farmacovigilância / VigiMed, quando aplicável); registrar a anafilaxia no prontuário.</td></tr>
+<tr><td><b>Integralidade do cuidado</b></td><td>O médico da ESF, o enfermeiro e o ACS atuam em conjunto: do diagnóstico ao seguimento crônico, da educação à referência — conforme as DCN <sup>[5]</sup>.</td></tr>
+<tr><td><b>Acesso a medicamentos</b></td><td>Garantir a disponibilização de adrenalina na UBS e orientar a obtenção do autoinjetor (componente do manejo pós-evento).</td></tr>
+<tr><td><b>Educação ambiental</b></td><td>Orientações sobre controle ambiental (ácaros, mofo), relevante para a rinite e asma.</td></tr>
+</table>
+</div>
+
+<!-- ===================== PARTE 5: CRONOLOGIA E SÍNTESE ===================== -->
+<section>
+<h2>Parte 5 — Cronologia Resumo e Síntese</h2>
+
+<table class="cron">
+<tr><td>0 min</td><td>Picada de vespa no quintal</td></tr>
+<tr><td>~5 min</td><td>Início da urticária e prurido</td></tr>
+<tr><td>~10–15 min</td><td>Angioedema (lábios, pálpebras); dispneia com sibilos</td></tr>
+<tr><td>~30–40 min</td><td>Chegada à UBS: hipotensão (78/48), letargia → <b>anafilaxia/choque anafilático</b></td></tr>
+<tr><td>Imediato</td><td><b>Adrenalina IM</b> + O₂ + reposição + Trendelenburg; acionar SAMU</td></tr>
+<tr><td>Estabilização</td><td>Encaminhamento hospitalar; observação 6–24 h (risco bifásico)</td></tr>
+<tr><td>Alta → APS</td><td>Encaminhamento à alergologia, autoinjetor, plano de ação, imunoterapia, manejo da asma (CI), educação comunitária</td></tr>
+</table>
+
+<div class="disc">
+<b>Síntese dos aprendizados do caso:</b>
+<ul>
+<li>A anafilaxia é uma <b>emergência tipo I</b> e a <b>adrenalina IM é o tratamento de primeira linha</b> — não há justificativa para adiá-la.</li>
+<li>O mecanismo é <b>IgE-mediado</b>: sensibilização prévia → crosslink → degranulação mastocitária sistêmica.</li>
+<li>Reações locais intensas prévias são <b>fator de risco</b> para anafilaxia futura.</li>
+<li>A <b>coexistência de asma não controlada</b> agrava o quadro e deve ser tratada (CI, conforme GINA).</li>
+<li>A APS tem papel central no <b>seguimento</b>, na <b>educação</b> e na <b>integralidade do cuidado</b>, conforme as DCN e o SUS.</li>
+</ul>
+</div>
+</section>
+
+<!-- ===================== REFERÊNCIAS ===================== -->
+<section>
+<h2>Referências (Citações)</h2>
+<div class="ref">
+<p>[3] Brasil. MS. Política Nacional de Atenção Básica / Estratégia Saúde da Família.</p>
+<p>[4] Cardona V, et al. WAO Anaphylaxis Guidance 2020. <i>World Allergy Organ J.</i> 2020;13(10):100607.</p>
+<p>[5] Brasil. MEC/CNE. Resolução CNE/CES nº 3/2025 (DCN Medicina). DOU 1º out. 2025.</p>
+<p>[6] Abbas AK, Lichtman AH, Pillai S. <i>Imunologia Celular e Molecular.</i> 10ª ed. Elsevier; 2022.</p>
+<p>[7] Murphy K, Weaver C. <i>Janeway's Immunobiology.</i> 10ª ed. Garland; 2022.</p>
+<p>[8] GINA. Global Strategy for Asthma Management and Prevention. 2023.</p>
+<p>[10] Thermo Fisher. Mast Cell Overview (conteúdo científico revisado).</p>
+<p>[11] Wynn TA. Type 2 cytokines. <i>Nat Rev Drug Discov.</i> 2015;14(11):739–753.</p>
+<p>[12] Bousquet J, et al. Care pathways for biological treatment of severe asthma. <i>Allergy.</i></p>
+<p>[15] Sampson HA, et al. Definition and management of anaphylaxis. <i>Ann Emerg Med.</i> 2006;47(4):373–380.</p>
+</div>
+</section>
+
+</body>
+</html>

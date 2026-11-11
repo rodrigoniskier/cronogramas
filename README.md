@@ -1,5 +1,7 @@
 # CronoMed UNIPÊ
 
+> **Plataforma Alergias (trilíngue PT/EN/中文):** ver a pasta [`alergia/`](alergia/README.md), com guia de deploy no PythonAnywhere.
+
 Plataforma web multiusuário para construção colaborativa de cronogramas acadêmicos, com detecção automática de conflitos de horário docente.
 
 **Créditos:** Prof. Rodrigo Niskier · Metodologia ADS-Niskier Fast MVP.

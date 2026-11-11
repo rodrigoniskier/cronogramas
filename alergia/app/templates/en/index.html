@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block titulo %}Home — {{ titulo_site }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="hero">
+    <div class="hero-conteudo">
+        <span class="hero-badge">Medicine DCN 2025 • CNE/CES Res. No. 3/2025</span>
+        <h1>Immunological Mechanisms of Allergies</h1>
+        <p class="subtitulo">Pathophysiology, Classification and Clinical Approach in the Context of Primary Care/SUS</p>
+        <p class="contexto">Interactive teaching platform for undergraduate Medicine — illustrated handout, slides with speaking notes, interactive exercises and a clinical case study</p>
+        <div class="hero-botoes">
+            <a href="{{ url_for('apostila') }}" class="btn btn-primary">📚 Study the Handout</a>
+            <a href="{{ url_for('exercicios') }}" class="btn btn-secondary">✍️ Solve the Exercises</a>
+        </div>
+    </div>
+</div>
+
+<div class="dcn-banner">
+    <h3>🇧🇷 Alignment with the 2025 Brazilian National Curriculum Guidelines</h3>
+    <p>
+        This material has been updated in line with <strong>CNE/CES Resolution No. 3 of 30 September 2025</strong>,
+        which establishes the new National Curriculum Guidelines (DCN) for the Undergraduate Medicine Course (revoking the 2014 DCN). The new framework sets out
+        <strong>27 competencies</strong> (Art. 8), with emphasis on: comprehensive care with primary care as care coordinator
+        (item VI), evidence-based medicine (item X), social determinants and climate change (item XV),
+        digital technologies and AI in health (item VII), action in emergencies (item XIV) and care for
+        vulnerable populations (item XI).
+    </p>
+</div>
+
+<div class="cards-grid">
+    <a href="{{ url_for('apostila') }}" class="card-nav">
+        <div class="icone-card">📖</div>
+        <h3>Illustrated Handout</h3>
+        <p>Complete theoretical content: Coombs &amp; Gell classification (types I–IV), cellular and molecular mechanisms, type 2 inflammation, anaphylaxis, approach in primary care. SVG figures and 15 audited references.</p>
+        <span class="tag">Theory</span>
+    </a>
+
+    <a href="{{ url_for('slides') }}" class="card-nav amarelo">
+        <div class="icone-card">📊</div>
+        <h3>Slides + Speaking Notes</h3>
+        <p>15 slides with detailed speaking notes for the instructor on every slide. Objectives structured by the revised Bloom's Taxonomy (Anderson &amp; Krathwohl).</p>
+        <span class="tag">Presentation</span>
+    </a>
+
+    <a href="{{ url_for('exercicios') }}" class="card-nav">
+        <div class="icone-card">📝</div>
+        <h3>Interactive Exercises</h3>
+        <p>18 questions in 3 blocks: 3 solved step by step, 10 practice questions (multiple choice with instant checking) and 5 in-depth questions. Annotated answer key for all.</p>
+        <span class="tag">Interactive</span>
+    </a>
+
+    <a href="{{ url_for('estudo_caso') }}" class="card-nav amarelo">
+        <div class="icone-card">🏥</div>
+        <h3>Clinical Case Study</h3>
+        <p>A challenging case of wasp-sting anaphylaxis + uncontrolled asthma in a primary care unit (UBS/ESF). Teaching guide for the instructor + complete annotated solution with tabbed navigation.</p>
+        <span class="tag">Clinical case</span>
+    </a>
+
+    <a href="{{ url_for('sobre') }}" class="card-nav">
+        <div class="icone-card">🔬</div>
+        <h3>About the Material</h3>
+        <p>Scientific integrity protocol applied, audited sources, alignment with the 2025 DCN and international best teaching practices.</p>
+        <span class="tag">Information</span>
+    </a>
+</div>
+
+<div class="separador-visual"></div>
+
+<div class="pagina-conteudo">
+    <h1>Content Summary</h1>
+
+    <div class="box box-info">
+        <p><strong>Coombs &amp; Gell classification (1963):</strong> four types of hypersensitivity reactions, based on the type of immunity (humoral × cellular), the predominant effector and the time of onset.</p>
+    </div>
+
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Mechanism</th>
+            <th>Antibody/Cell</th>
+            <th>Time</th>
+            <th>Clinical examples</th>
+        </tr>
+        <tr>
+            <td><strong>I</strong></td>
+            <td>Immediate, IgE-mediated</td>
+            <td>IgE, mast cells, basophils</td>
+            <td>Minutes</td>
+            <td>Anaphylaxis, allergic asthma, allergic rhinitis</td>
+        </tr>
+        <tr>
+            <td><strong>II</strong></td>
+            <td>Cytotoxic / cytolytic</td>
+            <td>IgG, IgM, complement</td>
+            <td>Minutes to hours</td>
+            <td>Autoimmune hemolytic anemia, hemolytic disease of the newborn</td>
+        </tr>
+        <tr>
+            <td><strong>III</strong></td>
+            <td>Immune complexes</td>
+            <td>IgG, IgM, complement</td>
+            <td>3–8 hours</td>
+            <td>Serum sickness, glomerulonephritis</td>
+        </tr>
+        <tr>
+            <td><strong>IV</strong></td>
+            <td>Delayed, cell-mediated</td>
+            <td>T cells (Th1, Th17, CTL)</td>
+            <td>24–72 hours</td>
+            <td>Contact dermatitis, tuberculin test</td>
+        </tr>
+    </table>
+
+    <div class="box box-destaque">
+        <p><strong>Integrating concept — Type 2 Inflammation:</strong> IgE-mediated allergic diseases (asthma, rhinitis, atopic dermatitis) share a common substrate: the production of the cytokines <strong>IL-4, IL-5 and IL-13</strong> by <strong>Th2</strong> lymphocytes and <strong>ILC2</strong>. This concept underpins the development of <strong>biologics</strong> (omalizumab, mepolizumab, dupilumab).</p>
+    </div>
+
+    <h2>Best Teaching Practices Applied</h2>
+    <ul>
+        <li><strong>Revised Bloom's Taxonomy</strong> (Anderson &amp; Krathwohl, 2001): objectives structured by cognitive level — Remember, Understand, Apply, Analyze, Evaluate, Create.</li>
+        <li><strong>Active methodologies</strong> (DCN 2025, Art. 18): case study with problematization, in small groups, with progressive ("sliced") reasoning.</li>
+        <li><strong>Programmatic assessment</strong> (DCN 2025, Art. 36): continuous feedback, covering the three domains of competence — cognitive, psychomotor and attitudinal.</li>
+        <li><strong>Teaching–service–community integration</strong> (DCN 2025, Art. 22): clinical case set in primary care/ESF, with public health actions.</li>
+    </ul>
+</div>
+
+{% endblock %}

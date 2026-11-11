@@ -1,0 +1,229 @@
+{
+  "blocos": [
+    {
+      "id": "bloco1",
+      "titulo": "Questões Resolvidas Passo a Passo",
+      "quantidade": 3,
+      "questoes": [
+        {
+          "id": "q1",
+          "tipo": "resolvida",
+          "badge": "b1",
+          "badge_texto": "Tipo I",
+          "enunciado": "Um paciente de 28 anos, após ingestão de camarão, apresenta, em 10 minutos, urticária generalizada, edema de lábios, dispneia com sibilos e hipotensão (PA 80/50 mmHg). Qual o mecanismo imunológico predominante, e qual o tratamento de primeira linha?",
+          "resposta": "<b>Resolução passo a passo:</b><div class='passo'>Identificar o quadro clínico: início em <b>minutos</b> após exposição a alérgeno (camarão), com envolvimento de <b>pele</b> (urticária, angioedema), <b>respiratório</b> (sibilos, dispneia) e <b>cardiovascular</b> (hipotensão) → preenche critérios de <b>anafilaxia</b> [4,15].</div><div class='passo'>Mecanismo: <b>hipersensibilidade tipo I (imediata, IgE-mediada)</b>. IgE ligada a FcεRI em mastócitos. Na reexposição, o alérgeno cruza (crosslink) as IgE, causando degranulação massiva [6,7,10].</div><div class='passo'>Consequência: vasodilatação (hipotensão), ↑ permeabilidade (edema, urticária), broncoconstrição (sibilos) [6].</div><div class='passo'><b>Tratamento de primeira linha: ADRENALINA (epinefrina) INTRAMUSCULAR</b>, na face anterolateral da coxa [4].</div><div class='passo'>Medidas complementares: oxigênio, reposição volêmica, Trendelenburg; antihistamínicos e corticoides são <b>adjuntos</b> [4].</div><p style='margin-top:8px'><b>Resposta:</b> Hipersensibilidade tipo I (IgE-mediada) → anafilaxia. Tratamento: <b>adrenalina IM</b>.</p>"
+        },
+        {
+          "id": "q2",
+          "tipo": "resolvida",
+          "badge": "b2",
+          "badge_texto": "Tipo II",
+          "enunciado": "Uma paciente apresenta anemia (Hb 7,2 g/dL), bilirrubina indireta elevada e teste de Coombs direto positivo. Qual o tipo de hipersensibilidade e quais os três mecanismos de destruição celular envolvidos?",
+          "resposta": "<b>Resolução passo a passo:</b><div class='passo'>Interpretar: anemia + bilirrubina indireta ↑ (hemólise) + Coombs direto positivo (anticorpos ligados à superfície do eritrócito) → <b>anemia hemolítica autoimune</b> [6].</div><div class='passo'>Classificação: <b>hipersensibilidade tipo II (citotóxica/citolítica)</b> — anticorpos (IgG/IgM) ligam-se a antígenos na superfície das células [6].</div><div class='passo'>Mecanismo 1 — <b>Ativação do complemento</b>: via clássica → complexo de ataque à membrana (MAC) → lise celular [6].</div><div class='passo'>Mecanismo 2 — <b>ADCC</b>: células com receptores Fc (NK, macrófagos) reconhecem o Fc do anticorpo e destroem a célula-alvo [6].</div><div class='passo'>Mecanismo 3 — <b>Opsonização/fagocitose</b>: anticorpos e C3b revestem a célula, facilitando a fagocitose por macrófagos [6].</div><p style='margin-top:8px'><b>Resposta:</b> Tipo II (citotóxica). Mecanismos: (1) complemento/MAC, (2) ADCC, (3) opsonização/fagocitose.</p>"
+        },
+        {
+          "id": "q3",
+          "tipo": "resolvida",
+          "badge": "b4",
+          "badge_texto": "Tipo IV",
+          "enunciado": "Um trabalhador de construção civil desenvolve, 48 horas após o uso de luvas de borracha, um eczema eritematoso e vesiculoso nas mãos, pruriginoso. Teste de contato (patch test) é positivo para tiurans. Qual o tipo de hipersensibilidade e qual a célula e a citocina predominantes?",
+          "resposta": "<b>Resolução passo a passo:</b><div class='passo'>Analisar o tempo: surgimento em <b>48 horas</b> → reação <b>tardia</b> [6,13].</div><div class='passo'>Patch test positivo confirma <b>dermatite de contato alérgica</b> [13].</div><div class='passo'>Classificação: <b>hipersensibilidade tipo IV (tardia, celular)</b> — não envolve anticorpos [6,7,13].</div><div class='passo'>Célula predominante: <b>linfócito T CD4+ Th1</b> previamente sensibilizado ao antígeno (hapteno da borracha) [6,13].</div><div class='passo'>Citocina predominante: <b>IFN-γ (interferon-gama)</b>, que recruta e ativa macrófagos [6,13].</div><p style='margin-top:8px'><b>Resposta:</b> Tipo IV (tardia, celular). Célula: Th1 (CD4+). Citocina: IFN-γ.</p>"
+        }
+      ]
+    },
+    {
+      "id": "bloco2",
+      "titulo": "Questões de Fixação",
+      "quantidade": 10,
+      "questoes": [
+        {
+          "id": "q4",
+          "tipo": "multipla_escolha",
+          "enunciado": "A classificação de Coombs e Gell divide as reações de hipersensibilidade em quatro tipos com base principalmente em:",
+          "alternativas": [
+            {"letra": "A", "texto": "A gravidade clínica da reação."},
+            {"letra": "B", "texto": "O tipo de imunidade (humoral/celular), o efetor e o tempo de aparecimento."},
+            {"letra": "C", "texto": "A idade do paciente."},
+            {"letra": "D", "texto": "A dose do alérgeno."},
+            {"letra": "E", "texto": "A via de exposição."}
+          ],
+          "gabarito": "B",
+          "comentario": "A classificação de Coombs e Gell (1963) baseia-se no tipo de imunidade (humoral nos tipos I–III, celular no IV), no efetor predominante e no tempo até a reação [6,7]."
+        },
+        {
+          "id": "q5",
+          "tipo": "multipla_escolha",
+          "enunciado": "Na fase de sensibilização da hipersensibilidade tipo I, qual citocina é responsável pela mudança de classe (class switch) dos linfócitos B para a produção de IgE?",
+          "alternativas": [
+            {"letra": "A", "texto": "IFN-γ"},
+            {"letra": "B", "texto": "IL-2"},
+            {"letra": "C", "texto": "IL-4 (e IL-13)"},
+            {"letra": "D", "texto": "TNF-α"},
+            {"letra": "E", "texto": "IL-8"}
+          ],
+          "gabarito": "C",
+          "comentario": "A IL-4 (e a IL-13) produzida pelos linfócitos Th2 promove a mudança de classe dos linfócitos B para a produção de IgE [6,11]. O IFN-γ, ao contrário, inibe a produção de IgE."
+        },
+        {
+          "id": "q6",
+          "tipo": "multipla_escolha",
+          "enunciado": "O receptor de alta afinidade para IgE, presente na superfície dos mastócitos, denomina-se:",
+          "alternativas": [
+            {"letra": "A", "texto": "FcγRI"},
+            {"letra": "B", "texto": "FcεRI"},
+            {"letra": "C", "texto": "FcμR"},
+            {"letra": "D", "texto": "TCR"},
+            {"letra": "E", "texto": "BCR"}
+          ],
+          "gabarito": "B",
+          "comentario": "O FcεRI é o receptor de alta afinidade para a porção Fc da IgE, presente em mastócitos e basófilos. O cruzamento (crosslink) das IgE ligadas aos FcεRI pelo alérgeno dispara a degranulação [7,10]."
+        },
+        {
+          "id": "q7",
+          "tipo": "multipla_escolha",
+          "enunciado": "Qual dos seguintes mediadores é pré-formado e armazenado nos grânulos dos mastócitos?",
+          "alternativas": [
+            {"letra": "A", "texto": "Leucotrieno LTC4"},
+            {"letra": "B", "texto": "Prostaglandina D2"},
+            {"letra": "C", "texto": "Histamina"},
+            {"letra": "D", "texto": "Fator ativador de plaquetas (PAF)"},
+            {"letra": "E", "texto": "IL-4"}
+          ],
+          "gabarito": "C",
+          "comentario": "A histamina é um mediador pré-formado, armazenado nos grânulos. Os leucotrienos, prostaglandinas, PAF e citocinas são sintetizados de novo durante a reação [6,10]."
+        },
+        {
+          "id": "q8",
+          "tipo": "multipla_escolha",
+          "enunciado": "A hipersensibilidade tipo III caracteriza-se por:",
+          "alternativas": [
+            {"letra": "A", "texto": "Destruição celular por anticorpos ligados à superfície."},
+            {"letra": "B", "texto": "Formação e depósito de imunocomplexos ativando complemento."},
+            {"letra": "C", "texto": "Reação mediada por IgE e mastócitos."},
+            {"letra": "D", "texto": "Reação tardia mediada por células T."},
+            {"letra": "E", "texto": "Ativação direta de neutrófilos por haptenos."}
+          ],
+          "gabarito": "B",
+          "comentario": "Na tipo III, complexos antígeno-anticorpo (imunocomplexos) formam-se em excesso de antígeno, depositam-se nos tecidos, ativam o complemento e recrutam neutrófilos, que causam dano tecidual [6]."
+        },
+        {
+          "id": "q9",
+          "tipo": "multipla_escolha",
+          "enunciado": "O teste tuberculínico (PPD), com leitura em 48–72 horas, é um exemplo de qual tipo de hipersensibilidade?",
+          "alternativas": [
+            {"letra": "A", "texto": "Tipo I"},
+            {"letra": "B", "texto": "Tipo II"},
+            {"letra": "C", "texto": "Tipo III"},
+            {"letra": "D", "texto": "Tipo IV"},
+            {"letra": "E", "texto": "Não é hipersensibilidade."}
+          ],
+          "gabarito": "D",
+          "comentario": "O PPD é uma reação de hipersensibilidade tipo IV (tardia, celular), mediada por linfócitos T Th1 e IFN-γ. A leitura em 48–72h reflete o tempo de recrutamento celular [6]."
+        },
+        {
+          "id": "q10",
+          "tipo": "multipla_escolha",
+          "enunciado": "A 'inflamação tipo 2' é caracterizada principalmente pela produção de quais citocinas?",
+          "alternativas": [
+            {"letra": "A", "texto": "IFN-γ, IL-2, TNF-α"},
+            {"letra": "B", "texto": "IL-17, IL-22"},
+            {"letra": "C", "texto": "IL-4, IL-5, IL-13"},
+            {"letra": "D", "texto": "IL-1, IL-6, IL-8"},
+            {"letra": "E", "texto": "TGF-β, IL-10"}
+          ],
+          "gabarito": "C",
+          "comentario": "A inflamação tipo 2 é mediada por Th2 e ILC2, com produção de IL-4, IL-5 e IL-13. É o substrato comum das doenças alérgicas (asma, rinite, dermatite atópica) [11]."
+        },
+        {
+          "id": "q11",
+          "tipo": "multipla_escolha",
+          "enunciado": "Sobre a resposta tardia da hipersensibilidade tipo I, é correto afirmar:",
+          "alternativas": [
+            {"letra": "A", "texto": "Ocorre em 5–30 minutos."},
+            {"letra": "B", "texto": "É mediada apenas por histamina."},
+            {"letra": "C", "texto": "Ocorre 2–24 horas após a exposição, mediada por citocinas e eosinófilos."},
+            {"letra": "D", "texto": "Não ocorre em doenças alérgicas."},
+            {"letra": "E", "texto": "É equivalente ao tipo IV."}
+          ],
+          "gabarito": "C",
+          "comentario": "A resposta tardia (2–24h) é mediada por citocinas (IL-4, IL-5, IL-13) e recrutamento de eosinófilos, caracterizando a inflamação crônica das doenças alérgicas [6,7]."
+        },
+        {
+          "id": "q12",
+          "tipo": "multipla_escolha",
+          "enunciado": "Na hipersensibilidade tipo II, quais as classes de imunoglobulinas predominantemente envolvidas?",
+          "alternativas": [
+            {"letra": "A", "texto": "IgE e IgA"},
+            {"letra": "B", "texto": "IgG e IgM"},
+            {"letra": "C", "texto": "IgD e IgE"},
+            {"letra": "D", "texto": "Apenas IgE"},
+            {"letra": "E", "texto": "IgA e IgG"}
+          ],
+          "gabarito": "B",
+          "comentario": "A hipersensibilidade tipo II é mediada por IgG e IgM, que se ligam a antígenos na superfície celular e ativam complemento, ADCC e opsonização [6]."
+        },
+        {
+          "id": "q13",
+          "tipo": "multipla_escolha",
+          "enunciado": "Qual a citocina produzida pelos Th2 que estimula especificamente a produção e ativação dos eosinófilos?",
+          "alternativas": [
+            {"letra": "A", "texto": "IL-4"},
+            {"letra": "B", "texto": "IL-5"},
+            {"letra": "C", "texto": "IL-13"},
+            {"letra": "D", "texto": "IFN-γ"},
+            {"letra": "E", "texto": "IL-10"}
+          ],
+          "gabarito": "B",
+          "comentario": "A IL-5 é a citocina-chave para a produção, maturação, ativação e recrutamento de eosinófilos. Por isso, anticorpos anti-IL-5 (mepolizumabe) são usados na asma eosinofílica [6,12]."
+        }
+      ]
+    },
+    {
+      "id": "bloco3",
+      "titulo": "Questões de Aprofundamento",
+      "quantidade": 5,
+      "questoes": [
+        {
+          "id": "q14",
+          "tipo": "discursiva",
+          "badge": "bap",
+          "badge_texto": "Aprofundamento",
+          "enunciado": "Explique por que o cruzamento (crosslink) de, no mínimo, duas moléculas de IgE na superfície do mastócito é necessário para desencadear a degranulação, e qual a consequência molecular desse evento.",
+          "resposta": "A simples ligação de um alérgeno a uma molécula de IgE isolada não dispara a degranulação. O sinal é gerado quando o alérgeno <b>polivalente</b> (com múltiplos epítopos) <b>cruza duas ou mais IgE</b> já ligadas aos FcεRI adjacentes. Esse cruzamento aproxima os receptores, provocando a <b>fosforilação dos ITAMs</b> (motivos de imunorreceptor baseados em tirosina) na porção intracelular do FcεRI por cinases da família Src (como Lyn). A cascata downstream (envolvendo Syk, LAT, PLCγ) leva ao <b>aumento do cálcio intracelular</b> e à <b>ativação da PKC</b>, resultando na <b>fusão dos grânulos</b> com a membrana (exocitose) e na <b>liberação dos mediadores pré-formados</b>, além da ativação da via das fosfolipases para síntese de mediadores lipídicos [6,7,10]. Sem o crosslink, não há agregação dos receptores e, portanto, não há sinal — daí a necessidade da polivalência do alérgeno."
+        },
+        {
+          "id": "q15",
+          "tipo": "discursiva",
+          "badge": "bap",
+          "badge_texto": "Aprofundamento",
+          "enunciado": "Discuta o conceito de 'inflamação tipo 2' e justifique, com base no mecanismo, o uso de biológicos como dupilumabe, mepolizumabe e omalizumabe nas doenças alérgicas graves.",
+          "resposta": "A inflamação tipo 2 é o <b>substrato imunológico comum</b> às doenças alérgicas (asma, rinite, dermatite atópica), mediado por <b>Th2</b> e <b>ILC2</b>, com produção de <b>IL-4, IL-5 e IL-13</b> [11]. Cada biológico atua em um ponto específico:<br>• <b>Omalizumabe (anti-IgE):</b> liga-se à IgE circulante, impedindo sua ligação ao FcεRI → reduz a sensibilização dos mastócitos/basófilos [12].<br>• <b>Mepolizumabe (anti-IL-5):</b> bloqueia a IL-5, reduzindo eosinófilos → útil no <b>fenótipo eosinofílico</b> da asma [12].<br>• <b>Dupilumabe (anti-IL-4Rα):</b> bloqueia o receptor comum de IL-4 e IL-13, atuando na <b>via central</b> → inibe produção de IgE e recrutamento de eosinófilos [11,12].<br>A lógica é <b>mecanística e estratificada</b>: identificar o fenótipo permite escolher o alvo terapêutico. A GINA incorporou esse conceito [8]."
+        },
+        {
+          "id": "q16",
+          "tipo": "discursiva",
+          "badge": "bap",
+          "badge_texto": "Aprofundamento",
+          "enunciado": "Uma gestante Rh-negativo (Rh-) tem um feto Rh+. Explique o mecanismo imunológico da doença hemolítica do recém-nascido (DHRN), o tipo de hipersensibilidade envolvido e a estratégia de prevenção.",
+          "resposta": "A DHRN é uma <b>hipersensibilidade tipo II</b> (citotóxica) [6]. O mecanismo: durante a gestação ou o parto, hemácias fetais Rh+ entram na circulação materna Rh-. O sistema imune materno reconhece o antígeno D (Rh) como estranho e produz <b>IgG anti-D</b>. Na <b>gestação subsequente</b> com feto Rh+, a IgG materna anti-D <b>atravessa a placenta</b> (a IgG atravessa a barreira placentária; a IgM, não), liga-se aos eritrócitos fetais e causa <b>hemólise</b> por complemento e opsonização/fagocitose → anemia fetal, icterícia, hidropsia. A <b>prevenção</b> consiste na administração de <b>imunoglobulina anti-D (RhIG)</b> à mãe Rh- nas situações de risco e na profilaxia pré-natal (28ª semana). A RhIG neutraliza as hemácias fetais <b>antes</b> que a mãe monte resposta imune ativa [6]. Isso é <b>tolerogênese passiva</b>."
+        },
+        {
+          "id": "q17",
+          "tipo": "discursiva",
+          "badge": "bap",
+          "badge_texto": "Aprofundamento",
+          "enunciado": "Diferencie, do ponto de vista imunológico e temporal, a 'resposta imediata' da 'resposta tardia' na hipersensibilidade tipo I, e relacione cada uma com a fisiopatologia da asma.",
+          "resposta": "<b>Resposta imediata (precoce):</b> ocorre em <b>5–30 minutos</b> após a exposição ao alérgeno, mediada principalmente pela <b>histamina</b> e leucotrienos liberados na degranulação dos mastócitos. Clinicamente, corresponde ao <b>broncoespasmo agudo</b> (sibilo, dispneia de início súbito). É rápida e reversível com broncodilatadores [6].<br><b>Resposta tardia:</b> ocorre <b>2–24 horas</b> após a exposição, mediada por <b>citocinas</b> (IL-4, IL-5, IL-13, TNF-α) sintetizadas de novo e pelo <b>recrutamento de eosinófilos</b> [6,7]. Na asma, corresponde à <b>inflamação crônica</b> das vias aéreas — edema, hipersecreção de muco, infiltrado eosinofílico e, a longo prazo, <b>remodelação</b>. A resposta tardia fundamenta o uso de <b>corticoides inalatórios</b> (que inibem a transcrição de citocinas) no tratamento de manutenção [8]. A distinção explica por que o asmático pode piorar horas após a exposição, mesmo após alívio inicial."
+        },
+        {
+          "id": "q18",
+          "tipo": "discursiva",
+          "badge": "bap",
+          "badge_texto": "Aprofundamento",
+          "enunciado": "No contexto da APS, um paciente com história de anafilaxia por vespa é encaminhado para orientação. Quais as recomendações da WAO (2020) para o manejo pós-evento e prevenção de recidivas, e por que o uso da adrenalina é considerado subótimo globalmente? Relacione às competências da DCN de Medicina 2025 (Res. CNE/CES nº 3/2025) [5].",
+          "resposta": "A WAO Anaphylaxis Guidance 2020 estabelece que, após um episódio de anafilaxia, o paciente deve ser <b>encaminhado a um especialista</b> (alergologia) para: (1) <b>identificar a causa</b> (história, testes cutâneos, IgE específica, eventualmente BAT); (2) <b>educação</b> do paciente e da família; (3) prescrição e treinamento no uso de <b>autoinjetor de adrenalina</b>; (4) <b>plano de ação escrito</b> e individualizado; (5) orientação de <b>evitação</b> do gatilho; (6) consideração de <b>imunoterapia</b> específica (no caso de veneno de himenópteros, altamente eficaz) [4].<br>A WAO destaca que o uso da adrenalina permanece <b>subótimo</b> globalmente, por: <b>atraso no reconhecimento</b>, <b>subutilização</b>, <b>falta de disponibilidade</b> e <b>custo</b> dos autoinjetores, e prescrição inadequada. Na APS brasileira, mesmo onde o autoinjetor é de difícil acesso, o médico deve <b>educar</b>, <b>treinar</b> e garantir o encaminhamento [4].<br><b>Relação com a DCN 2025 [5]:</b> integra competências da Res. CNE/CES nº 3/2025: <b>raciocínio clínico</b> baseado em evidências (inciso III); <b>integralidade do cuidado</b> com APS como coordenadora (inciso VI); <b>medicina baseada em evidências</b> (inciso X); atuação em <b>emergências</b> (inciso XIV); <b>educação em saúde</b> (incisos II e XIX); e <b>equidade</b> no acesso (incisos XI e XXV)."
+        }
+      ]
+    }
+  ]
+}

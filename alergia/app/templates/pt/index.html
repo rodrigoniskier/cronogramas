@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block titulo %}Início — {{ titulo_site }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="hero">
+    <div class="hero-conteudo">
+        <span class="hero-badge">DCN de Medicina 2025 • Res. CNE/CES nº 3/2025</span>
+        <h1>Mecanismos Imunológicos das Alergias</h1>
+        <p class="subtitulo">Fisiopatologia, Classificação e Abordagem Clínica no Contexto da APS/SUS</p>
+        <p class="contexto">Plataforma interativa de ensino para Graduação em Medicina — apostila ilustrada, slides com roteiro de fala, exercícios interativos e estudo de caso clínico</p>
+        <div class="hero-botoes">
+            <a href="{{ url_for('apostila') }}" class="btn btn-primary">📚 Estudar a Apostila</a>
+            <a href="{{ url_for('exercicios') }}" class="btn btn-secondary">✍️ Resolver Exercícios</a>
+        </div>
+    </div>
+</div>
+
+<div class="dcn-banner">
+    <h3>🇧🇷 Alinhamento às Diretrizes Curriculares Nacionais 2025</h3>
+    <p>
+        Este material foi atualizado conforme a <strong>Resolução CNE/CES nº 3, de 30 de setembro de 2025</strong>,
+        que institui as novas DCN do Curso de Graduação em Medicina (revoga a DCN 2014). O novo marco estabelece
+        <strong>27 competências</strong> (Art. 8º), com ênfase em: integralidade do cuidado com a APS como coordenadora
+        (inciso VI), medicina baseada em evidências (inciso X), determinantes sociais e mudanças climáticas (inciso XV),
+        tecnologias digitais e IA em saúde (inciso VII), atuação em emergências (inciso XIV) e cuidado às populações
+        vulnerabilizadas (inciso XI).
+    </p>
+</div>
+
+<div class="cards-grid">
+    <a href="{{ url_for('apostila') }}" class="card-nav">
+        <div class="icone-card">📖</div>
+        <h3>Apostila Ilustrada</h3>
+        <p>Conteúdo teórico completo: classificação de Coombs &amp; Gell (tipos I–IV), mecanismos celulares e moleculares, inflamação tipo 2, anafilaxia, abordagem na APS. Figuras SVG e 15 referências auditadas.</p>
+        <span class="tag">Material teórico</span>
+    </a>
+
+    <a href="{{ url_for('slides') }}" class="card-nav amarelo">
+        <div class="icone-card">📊</div>
+        <h3>Slides + Roteiro de Fala</h3>
+        <p>15 slides com roteiro de fala detalhado para o docente em cada slide. Objetivos estruturados pela Taxonomia de Bloom revisada (Anderson &amp; Krathwohl).</p>
+        <span class="tag">Apresentação</span>
+    </a>
+
+    <a href="{{ url_for('exercicios') }}" class="card-nav">
+        <div class="icone-card">📝</div>
+        <h3>Exercícios Interativos</h3>
+        <p>18 questões em 3 blocos: 3 resolvidas passo a passo, 10 de fixação (múltipla escolha com verificação instantânea) e 5 de aprofundamento. Gabarito comentado de todas.</p>
+        <span class="tag">Interativo</span>
+    </a>
+
+    <a href="{{ url_for('estudo_caso') }}" class="card-nav amarelo">
+        <div class="icone-card">🏥</div>
+        <h3>Estudo de Caso Clínico</h3>
+        <p>Caso desafiador de anafilaxia por vespa + asma não controlada numa UBS/ESF. Roteiro de aplicação para o docente + resolução comentada completa com navegação por abas.</p>
+        <span class="tag">Caso clínico</span>
+    </a>
+
+    <a href="{{ url_for('sobre') }}" class="card-nav">
+        <div class="icone-card">🔬</div>
+        <h3>Sobre o Material</h3>
+        <p>Protocolo de integridade científica aplicado, fontes auditadas, alinhamento à DCN 2025 e melhores práticas didáticas internacionais.</p>
+        <span class="tag">Informações</span>
+    </a>
+</div>
+
+<div class="separador-visual"></div>
+
+<div class="pagina-conteudo">
+    <h1>Síntese do Conteúdo</h1>
+
+    <div class="box box-info">
+        <p><strong>Classificação de Coombs &amp; Gell (1963):</strong> quatro tipos de reações de hipersensibilidade, baseados no tipo de imunidade (humoral × celular), no efetor predominante e no tempo de aparecimento.</p>
+    </div>
+
+    <table>
+        <tr>
+            <th>Tipo</th>
+            <th>Mecanismo</th>
+            <th>Anticorpo/Célula</th>
+            <th>Tempo</th>
+            <th>Exemplos clínicos</th>
+        </tr>
+        <tr>
+            <td><strong>I</strong></td>
+            <td>Imediato, IgE-mediado</td>
+            <td>IgE, mastócitos, basófilos</td>
+            <td>Minutos</td>
+            <td>Anafilaxia, asma alérgica, rinite alérgica</td>
+        </tr>
+        <tr>
+            <td><strong>II</strong></td>
+            <td>Citotóxico / citolítico</td>
+            <td>IgG, IgM, complemento</td>
+            <td>Minutos a horas</td>
+            <td>Anemia hemolítica autoimune, doença hemolítica do RN</td>
+        </tr>
+        <tr>
+            <td><strong>III</strong></td>
+            <td>Imunocomplexos</td>
+            <td>IgG, IgM, complemento</td>
+            <td>3–8 horas</td>
+            <td>Doença do soro, glomerulonefrites</td>
+        </tr>
+        <tr>
+            <td><strong>IV</strong></td>
+            <td>Tardia, celular</td>
+            <td>Células T (Th1, Th17, CTL)</td>
+            <td>24–72 horas</td>
+            <td>Dermatite de contato, teste tuberculínico</td>
+        </tr>
+    </table>
+
+    <div class="box box-destaque">
+        <p><strong>Conceito integrador — Inflamação Tipo 2:</strong> as doenças alérgicas IgE-mediadas (asma, rinite, dermatite atópica) compartilham um substrato comum: a produção das citocinas <strong>IL-4, IL-5 e IL-13</strong> por linfócitos <strong>Th2</strong> e <strong>ILC2</strong>. Este conceito fundamenta o desenvolvimento de <strong>biológicos</strong> (omalizumabe, mepolizumabe, dupilumabe).</p>
+    </div>
+
+    <h2>Melhores Práticas Didáticas Aplicadas</h2>
+    <ul>
+        <li><strong>Taxonomia de Bloom revisada</strong> (Anderson &amp; Krathwohl, 2001): objetivos estruturados em níveis cognitivos — Lembrar, Compreender, Aplicar, Analisar, Avaliar, Criar.</li>
+        <li><strong>Metodologias ativas</strong> (DCN 2025, Art. 18): estudo de caso com problematização, em pequenos grupos, com raciocínio progressivo ("fatiado").</li>
+        <li><strong>Avaliação programática</strong> (DCN 2025, Art. 36): feedback contínuo, contemplando os três domínios da competência — cognitivo, psicomotor e atitudinal.</li>
+        <li><strong>Integração ensino-serviço-comunidade</strong> (DCN 2025, Art. 22): caso clínico ambientado na APS/ESF, com ações de saúde pública.</li>
+    </ul>
+</div>
+
+{% endblock %}

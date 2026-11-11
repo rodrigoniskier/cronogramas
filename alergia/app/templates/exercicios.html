@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ t.ex_titulo }} — {{ titulo_site }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="aviso-integridade">
+    {{ t.ex_aviso | safe }}
+</div>
+
+<div class="placar">
+    <div class="info">{{ t.ex_progresso }}</div>
+    <div class="barra-progresso">
+        <div class="barra-progresso-fill"></div>
+    </div>
+    <div class="contador">{{ t.ex_contador.format(acertos=0, respondidas=0, total=10) }}</div>
+</div>
+
+{% for bloco in dados.blocos %}
+<div class="bloco-titulo">
+    <h2>{{ bloco.titulo }}</h2>
+    <span class="badge-count">{{ bloco.quantidade }} {{ t.ex_questoes }}</span>
+</div>
+
+<div style="padding: 16px 0;">
+{% for q in bloco.questoes %}
+
+{% if q.tipo == 'resolvida' %}
+<div class="exercicio" data-questao-id="{{ q.id }}" data-tipo="resolvida">
+    {% if q.badge %}
+    <span class="badge-tipo {{ q.badge }}">{{ q.badge_texto }}</span>
+    {% endif %}
+    <div class="enunciado">{{ q.enunciado }}</div>
+    <div class="resposta-discursiva">
+        <button class="btn-mostrar-resposta" data-rotulo="{{ t.ex_mostrar_resolucao }}" onclick="toggleResposta(this)">{{ t.ex_mostrar_resolucao }}</button>
+        <div class="resposta-oculta">
+            {{ q.resposta | safe }}
+        </div>
+    </div>
+</div>
+
+{% elif q.tipo == 'multipla_escolha' %}
+<div class="exercicio" data-questao-id="{{ q.id }}" data-tipo="multipla_escolha">
+    <div class="enunciado">Q{{ loop.index0 + 4 }}. {{ q.enunciado }}</div>
+    <ul class="alternativas">
+        {% for alt in q.alternativas %}
+        <li data-letra="{{ alt.letra }}" onclick="selecionarAlternativa(this, '{{ q.id }}')">
+            <span class="letra">{{ alt.letra }}</span>
+            <span>{{ alt.texto }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <button class="btn btn-primary btn-verificar" onclick="verificarResposta('{{ q.id }}')" disabled style="opacity:0.5;">
+        {{ t.ex_verificar }}
+    </button>
+    <div class="feedback">
+        <div class="resultado-icon"></div>
+        <div class="comentario"></div>
+    </div>
+</div>
+
+{% elif q.tipo == 'discursiva' %}
+<div class="exercicio" data-questao-id="{{ q.id }}" data-tipo="discursiva">
+    {% if q.badge %}
+    <span class="badge-tipo {{ q.badge }}">{{ q.badge_texto }}</span>
+    {% endif %}
+    <div class="enunciado">Q{{ loop.index0 + 14 }}. {{ q.enunciado }}</div>
+    <div class="resposta-discursiva">
+        <button class="btn-mostrar-resposta" data-rotulo="{{ t.ex_mostrar_resposta }}" onclick="toggleResposta(this)">{{ t.ex_mostrar_resposta }}</button>
+        <div class="resposta-oculta">
+            {{ q.resposta | safe }}
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endfor %}
+</div>
+
+{% endfor %}
+
+<div class="separador-visual"></div>
+
+<div class="pagina-conteudo">
+    <h2>{{ t.ex_referencias }}</h2>
+    <div class="aviso-integridade" style="font-size:0.85em">
+        {% for num, texto in t.ex_refs %}
+        <p><strong>[{{ num }}]</strong> {{ texto | safe }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

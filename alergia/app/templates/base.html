@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ html_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}{{ titulo_site }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    {% if request.endpoint and request.endpoint not in ('static',) %}
+    {% for cod, rotulo, hl in idiomas %}
+    <link rel="alternate" hreflang="{{ hl }}" href="{{ url_for(request.endpoint, lang=cod, _external=True) }}">
+    {% endfor %}
+    {% endif %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-logo" onclick="window.location.href='{{ url_for('index') }}'">
+            <div class="icone">⚕</div>
+            <div class="texto">
+                <h1>{{ t.logo_titulo }}</h1>
+                <p>{{ t.logo_sub }}</p>
+            </div>
+        </div>
+        <button class="menu-toggle" aria-label="{{ t.menu_label }}">☰</button>
+        <ul class="navbar-menu">
+            <li><a href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} class="ativo"{% endif %}>{{ t.menu_inicio }}</a></li>
+            <li><a href="{{ url_for('apostila') }}"{% if request.endpoint == 'apostila' %} class="ativo"{% endif %}>{{ t.menu_apostila }}</a></li>
+            <li><a href="{{ url_for('slides') }}"{% if request.endpoint == 'slides' %} class="ativo"{% endif %}>{{ t.menu_slides }}</a></li>
+            <li><a href="{{ url_for('exercicios') }}"{% if request.endpoint == 'exercicios' %} class="ativo"{% endif %}>{{ t.menu_exercicios }}</a></li>
+            <li><a href="{{ url_for('estudo_caso') }}"{% if request.endpoint == 'estudo_caso' %} class="ativo"{% endif %}>{{ t.menu_caso }}</a></li>
+            <li><a href="{{ url_for('sobre') }}"{% if request.endpoint == 'sobre' %} class="ativo"{% endif %}>{{ t.menu_sobre }}</a></li>
+        </ul>
+        <ul class="lang-switch" aria-label="{{ t.idioma_label }}">
+            {% for cod, rotulo, hl in idiomas %}
+            <li><a href="{{ url_for(request.endpoint or 'index', lang=cod) }}" hreflang="{{ hl }}" lang="{{ hl }}"{% if cod == lang %} class="ativo" aria-current="true"{% endif %}>{{ rotulo }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</header>
+
+<main>
+    {% block conteudo %}{% endblock %}
+</main>
+
+<footer>
+    <p>{{ t.rodape_linha1.format(dcn=dcn_ref) | safe }}</p>
+    <p class="footer-ref">{{ t.rodape_linha2 | safe }}</p>
+</footer>
+
+<script>
+window.I18N = {{ {
+    'lang': lang,
+    'selecione': t.ex_selecione,
+    'correto': t.ex_correto,
+    'incorreto': t.ex_incorreto,
+    'contador': t.ex_contador,
+    'mostrar': t.ex_mostrar,
+    'ocultar': t.ex_ocultar,
+    'verificarUrl': url_for('verificar_resposta')
+} | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

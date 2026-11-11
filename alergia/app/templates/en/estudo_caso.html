@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block titulo %}Case Study — {{ titulo_site }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="pagina-conteudo">
+    <h1>🏥 Clinical Case Study — Anaphylaxis and Asthma in Primary Care</h1>
+
+    <div class="box box-info">
+        <p><strong>Context:</strong> A case designed to apply knowledge of the immunological mechanisms of allergies in a realistic <strong>Primary Health Care</strong> setting in Brazil (ESF), aligned with the <strong>2025 Medicine DCN</strong> (CNE/CES Res. No. 3/2025) <sup>[5]</sup>, the WAO <sup>[4]</sup> and GINA <sup>[8]</sup>. It integrates diagnosis, immunological mechanism, acute management, chronic management and public health actions.</p>
+    </div>
+</div>
+
+<!-- TABS -->
+<div style="margin-top:20px;">
+    <div class="abas">
+        <div class="aba ativa" onclick="trocarAba(this, 'aba-caso')">📋 The Case</div>
+        <div class="aba" onclick="trocarAba(this, 'aba-roteiro')">👨‍🏫 Teaching Guide</div>
+        <div class="aba" onclick="trocarAba(this, 'aba-questoes')">❓ Discussion Questions</div>
+        <div class="aba" onclick="trocarAba(this, 'aba-resolucao')">✅ Annotated Solution</div>
+        <div class="aba" onclick="trocarAba(this, 'aba-cronologia')">⏱ Timeline and Summary</div>
+    </div>
+
+    <!-- CASE TAB -->
+    <div id="aba-caso" class="aba-conteudo ativa">
+        <h2>Part 1 — Case Presentation</h2>
+        <div class="box box-info">
+            <p><strong>Patient:</strong> J.S.S., female, 34 years old, homemaker, living in a peripheral neighborhood of a mid-sized city in Northeast Brazil. Seen at the neighborhood Basic Health Unit (UBS), linked to the Family Health Strategy.</p>
+            <p><strong>History of present illness:</strong> J.S.S. comes to the UBS reporting that she was <strong>"stung by a wasp"</strong> in the backyard of her home about <strong>40 minutes</strong> ago. She says <strong>"my whole body started itching"</strong>, noticed <strong>"red welts"</strong> (urticaria), <strong>"my lips and eyes swelled up"</strong> (angioedema) and began to feel <strong>"shortness of breath with wheezing in my chest"</strong>. She also reports <strong>"dizziness and darkened vision"</strong>.</p>
+            <p><strong>Past history:</strong> Asthma since childhood, with hospitalization at age 12; perennial allergic rhinitis; two previous episodes of intense local reaction after hymenopteran (wasp) stings, for which she did not seek care. Mother with asthma; sister with rhinitis. <strong>She does not take any regular medication.</strong> She says she "buys an inhaler at the pharmacy when an attack comes".</p>
+        </div>
+        <h3>Physical examination on arrival at the UBS</h3>
+        <table>
+            <tr><th>Parameter</th><th>Finding</th></tr>
+            <tr><td>BP</td><td>78/48 mmHg</td></tr>
+            <tr><td>HR</td><td>118 bpm</td></tr>
+            <tr><td>RR</td><td>28 breaths/min, using accessory muscles, diffuse wheezing</td></tr>
+            <tr><td>SpO₂ (room air)</td><td>90%</td></tr>
+            <tr><td>Skin</td><td>Generalized urticaria, angioedema of lips and eyelids</td></tr>
+            <tr><td>Consciousness</td><td>Lethargic, but responsive</td></tr>
+        </table>
+        <div class="box box-alerta">
+            <strong>Clinical scenario:</strong> Rapid-onset presentation (minutes) after a wasp sting, with cutaneous, respiratory and cardiovascular involvement (hypotension).
+        </div>
+    </div>
+
+    <!-- TEACHING GUIDE TAB -->
+    <div id="aba-roteiro" class="aba-conteudo">
+        <h2>Part 2 — Teaching Guide (for the instructor)</h2>
+        <div class="box box-destaque">
+            <h3>How to run the activity</h3>
+            <p>The case should be worked in <strong>small groups</strong> (4–6 students), using an active methodology (problematization), in a session of approximately <strong>90–120 minutes</strong> (DCN 2025, Art. 18 — active methodologies) <sup>[5]</sup>:</p>
+            <ol>
+                <li><strong>Release the case in stages</strong> (Part 1, then questions, then solution) — the case is "sliced" to stimulate progressive reasoning.</li>
+                <li><strong>Guided discussion</strong> with key questions after each stage.</li>
+                <li><strong>Group discussion time</strong>: 15 min per block of questions.</li>
+                <li><strong>Plenary</strong>: each group presents its conclusions; the instructor contrasts them with the solution.</li>
+                <li><strong>Final synthesis</strong>: the instructor recaps the mechanisms, the management and the public health actions.</li>
+            </ol>
+            <p>The case is deliberately <strong>challenging</strong> and <strong>contextualized</strong>: it addresses a real emergency (anaphylaxis) in a limited-resource setting (UBS), with coexisting asthma and atopy, requiring integration of immunological knowledge, clinical practice and public health.</p>
+        </div>
+        <h3>Learning objectives of the case</h3>
+        <ul>
+            <li><strong>Recognize</strong> the diagnostic criteria for anaphylaxis in a PHC setting.</li>
+            <li><strong>Identify</strong> the immunological mechanism (type I, IgE-mediated hypersensitivity) and relate it to the clinical findings.</li>
+            <li><strong>Apply</strong> first-line treatment (IM adrenaline) and justify it on pathophysiological grounds.</li>
+            <li><strong>Plan</strong> chronic management: action plan, auto-injector, referral, immunotherapy.</li>
+            <li><strong>Articulate</strong> public health actions in PHC (education, surveillance, comprehensive care).</li>
+        </ul>
+    </div>
+
+    <!-- QUESTIONS TAB -->
+    <div id="aba-questoes" class="aba-conteudo">
+        <h2>Part 3 — Group Discussion Questions</h2>
+
+        <div class="box box-clinico">
+            <h3>Block A — Diagnosis and mechanism (15 min)</h3>
+            <p><strong>A1.</strong> What is the syndromic diagnosis in this case? Justify it based on the clinical criteria.</p>
+            <p><strong>A2.</strong> Which type of hypersensitivity is involved, and what is the immunological mechanism step by step (from sensitization to clinical manifestation)?</p>
+            <p><strong>A3.</strong> Why had the patient, who had already had intense local reactions before, not developed anaphylaxis in the previous episodes?</p>
+        </div>
+
+        <div class="box box-clinico">
+            <h3>Block B — Acute management (15 min)</h3>
+            <p><strong>B1.</strong> What is the first therapeutic action to be taken immediately at the UBS? Specify the route, the approximate dose and the site of administration.</p>
+            <p><strong>B2.</strong> Why are antihistamines and corticosteroids <strong>not</strong> the first measure? What is their role?</p>
+            <p><strong>B3.</strong> At the UBS, without an advanced observation bed, what additional supportive measures are needed and what is the referral flow?</p>
+        </div>
+
+        <div class="box box-clinico">
+            <h3>Block C — Chronic management and public health (15 min)</h3>
+            <p><strong>C1.</strong> After stabilization and referral, what are the follow-up recommendations according to the WAO (2020)?</p>
+            <p><strong>C2.</strong> The patient has poorly controlled asthma. How can asthma management be integrated with post-anaphylaxis follow-up in PHC, according to GINA?</p>
+            <p><strong>C3.</strong> What health education and surveillance actions can the ESF team carry out in the community?</p>
+        </div>
+
+        <p style="margin-top:16px;color:#666;font-size:.9em"><em>Tip: discuss in your group before consulting the "Annotated Solution" tab.</em></p>
+    </div>
+
+    <!-- SOLUTION TAB -->
+    <div id="aba-resolucao" class="aba-conteudo">
+        <h2>Part 4 — Annotated Solution</h2>
+
+        <h3>Block A — Diagnosis and mechanism</h3>
+
+        <div class="box box-destaque">
+            <p><strong>A1. Diagnosis: ANAPHYLAXIS.</strong></p>
+            <p>The patient shows <strong>rapid onset</strong> (minutes, within 40 min) after exposure to a known allergen (wasp sting). NIAID/FAAN criteria (adopted by the WAO): <strong>skin/mucosal</strong> involvement (urticaria + angioedema) <strong>+</strong> <strong>respiratory</strong> compromise (wheezing, dyspnea, SpO₂ 90%) <strong>+</strong> <strong>drop in BP</strong> (78/48 mmHg) <sup>[4,15]</sup>. Hypotension (systolic BP &lt; 90 mmHg) constitutes <strong>anaphylactic shock</strong> — the severe form.</p>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>A2. Type of hypersensitivity: TYPE I (immediate, IgE-mediated).</strong></p>
+            <p><strong>Step-by-step mechanism:</strong></p>
+            <p><strong>Prior sensitization:</strong> in earlier episodes, wasp venom (phospholipase A2, hyaluronidase) was processed by APCs and presented to naive CD4+ T lymphocytes, which differentiated into <strong>Th2</strong> <sup>[6]</sup>. Th2 cells produced <strong>IL-4 and IL-13</strong>, inducing <strong>class switching</strong> of B lymphocytes to <strong>anti-venom IgE</strong> <sup>[6,11]</sup>. The IgE bound to <strong>FcεRI</strong> on <strong>mast cells</strong> and <strong>basophils</strong> → patient <strong>sensitized</strong> <sup>[7,10]</sup>.</p>
+            <p><strong>Re-exposure (current event):</strong> the wasp venom <strong>cross-links</strong> multiple IgE molecules bound to FcεRI <sup>[7,10]</sup>, triggering <strong>systemic mast cell degranulation</strong>, with <b>massive</b> release of mediators: <b>histamine</b>, <b>leukotrienes</b>, <b>prostaglandins</b>, <b>PAF</b> and <b>cytokines</b> <sup>[6]</sup>. The <strong>systemic</strong> (not local) release is what distinguishes anaphylaxis from a local reaction <sup>[4,6]</sup>.</p>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>A3. Why anaphylaxis now and not before?</strong></p>
+            <p>The type I allergic response is <strong>dose-dependent</strong> and depends on <strong>accumulated sensitization</strong>. The previous intense local reactions indicated that the patient was <strong>already sensitized</strong>, but the amount of venom injected was not enough to generate <strong>systemic</strong> mast cell activation. <strong>Repeated</strong> exposure tends to <strong>amplify</strong> the response (immunological memory booster) <sup>[6]</sup>. Thus, anaphylaxis can occur on a <strong>subsequent exposure</strong>. Crucial lesson: <strong>a previous intense local reaction is a risk factor</strong> for future anaphylaxis <sup>[4]</sup>.</p>
+        </div>
+
+        <h3>Block B — Acute management</h3>
+
+        <div class="box box-destaque">
+            <p><strong>B1. First action: INTRAMUSCULAR ADRENALINE (epinephrine).</strong></p>
+            <p><strong>Route:</strong> IM (not subcutaneous — IM absorption is faster and more predictable, especially with hypotension/edema) <sup>[4]</sup>. <strong>Site:</strong> <strong>anterolateral thigh</strong> (vastus lateralis) — not the buttock <sup>[4]</sup>. <strong>Adult dose:</strong> 0.3 to 0.5 mg of epinephrine (1 mg/mL = 1:1000), IM. May be repeated every 5–15 min if there is no response <sup>[4]</sup>.</p>
+            <p>Adrenaline acts on <strong>α1</strong> (vasoconstriction → ↑ BP), <strong>β1</strong> (chronotropism/inotropism) and <strong>β2</strong> (bronchodilation, mast cell stabilization) receptors <sup>[4]</sup>. <strong>This is the life-saving measure.</strong></p>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>B2. Why are antihistamines and corticosteroids not the first measure?</strong></p>
+            <p><strong>Antihistamines</strong> block only histamine H1 receptors — they do not act on leukotrienes, prostaglandins or PAF, nor on hypotension. They are <strong>adjuncts</strong> for residual pruritus/urticaria <sup>[4]</sup>.</p>
+            <p><strong>Corticosteroids</strong> have an <strong>onset of action of hours</strong> (genomic effect) and do not reverse the acute phase. Their role is to prevent the <strong>late response</strong> and recurrence (biphasic reaction) <sup>[4]</sup>.</p>
+            <p><strong>Adrenaline</strong> is the <strong>only</strong> drug with rapid action on all components. The WAO warns that its use is <strong>suboptimal</strong> worldwide <sup>[4]</sup>.</p>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>B3. Supportive measures and flow at the UBS.</strong></p>
+            <table>
+                <tr><th>Measure</th><th>Rationale</th></tr>
+                <tr><td><strong>IM adrenaline</strong> (first!)</td><td>Reverses the condition <sup>[4]</sup></td></tr>
+                <tr><td><strong>Trendelenburg</strong> / supine with legs elevated</td><td>Counters hypotension through venous return <sup>[4]</sup></td></tr>
+                <tr><td><strong>Oxygen therapy</strong></td><td>Corrects hypoxemia (SpO₂ 90%) <sup>[4]</sup></td></tr>
+                <tr><td><strong>Fluid resuscitation</strong> (IV crystalloid, bolus)</td><td>Vasodilation and capillary leak → relative hypovolemia <sup>[4]</sup></td></tr>
+                <tr><td><strong>Bronchodilator</strong> (salbutamol) after adrenaline</td><td>Adjunct for refractory bronchospasm <sup>[4]</sup></td></tr>
+                <tr><td><strong>Antihistamine + corticosteroid</strong></td><td>Adjuncts — pruritus and prevention of the late response <sup>[4]</sup></td></tr>
+            </table>
+            <p><strong>Flow:</strong> after initial stabilization (or concurrently), call <strong>SAMU/192</strong> (emergency medical service) for monitored transport. Anaphylaxis requires <strong>observation</strong> (6–24 h) because of the risk of a <strong>biphasic reaction</strong> <sup>[4]</sup>.</p>
+        </div>
+
+        <h3>Block C — Chronic management and public health</h3>
+
+        <div class="box box-destaque">
+            <p><strong>C1. Post-anaphylaxis follow-up recommendations (WAO 2020) <sup>[4]</sup>:</strong></p>
+            <ul>
+                <li><strong>Referral to allergology</strong> for etiological investigation (skin tests, specific IgE, BAT).</li>
+                <li><strong>Trigger confirmation</strong>: wasp venom → evaluation for <strong>venom-specific immunotherapy</strong> (highly effective) <sup>[4]</sup>.</li>
+                <li><strong>Prescription of an adrenaline auto-injector</strong> and <strong>training</strong>.</li>
+                <li><strong>Written action plan</strong>, in accessible language.</li>
+                <li><strong>Education</strong>: avoid risk areas, wear protective clothing.</li>
+                <li><strong>Identification card</strong> stating the risk of anaphylaxis.</li>
+            </ul>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>C2. Integration with asthma management (GINA) <sup>[8]</sup>:</strong></p>
+            <p>The patient has <strong>uncontrolled asthma</strong> (use of an "as-needed inhaler" = only a rescue bronchodilator, with no maintenance anti-inflammatory) — <strong>high risk</strong> of exacerbations. According to GINA, maintenance treatment should include an <strong>inhaled corticosteroid (ICS)</strong>, with or without a LABA. The use of a SABA alone without ICS is <strong>discouraged</strong> <sup>[8]</sup>. Assess <strong>adherence</strong>, <strong>inhaler technique</strong>, <strong>triggers</strong> (coexisting rhinitis must be treated) and <strong>control</strong> (ACQ or ACT). Type 2 inflammation is the <strong>common substrate</strong> — in severe asthma uncontrolled despite ICS/LABA, refer for <strong>phenotyping</strong> and possible <strong>biologic therapy</strong> <sup>[8,12]</sup>.</p>
+        </div>
+
+        <div class="box box-destaque">
+            <p><strong>C3. Public health and education actions in the ESF <sup>[3,5]</sup>:</strong></p>
+            <table>
+                <tr><th>Action</th><th>Details</th></tr>
+                <tr><td><strong>Home/community education</strong></td><td>CHW (ACS) visit: identify hymenopteran nests; teach the signs of anaphylaxis and the use of the auto-injector.</td></tr>
+                <tr><td><strong>Asthma education group</strong></td><td>Meetings at the UBS: inhaler technique, action plan, recognizing exacerbations, the importance of ICS.</td></tr>
+                <tr><td><strong>Active case finding</strong></td><td>Identify other patients with previous allergic reactions or uncontrolled asthma.</td></tr>
+                <tr><td><strong>Health surveillance</strong></td><td>Report serious adverse reactions; record the anaphylaxis in the medical chart (DCN 2025, item XXIV) <sup>[5]</sup>.</td></tr>
+                <tr><td><strong>Comprehensive care</strong></td><td>Physician, nurse and CHW working together — in line with the 2025 DCN <sup>[5]</sup>.</td></tr>
+                <tr><td><strong>Access to medicines</strong></td><td>Ensure adrenaline is available at the UBS and guide how to obtain the auto-injector.</td></tr>
+                <tr><td><strong>Environmental education</strong></td><td>Environmental control (dust mites, mold), relevant to rhinitis and asthma.</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- TIMELINE TAB -->
+    <div id="aba-cronologia" class="aba-conteudo">
+        <h2>Part 5 — Timeline and Summary</h2>
+
+        <h3>Case timeline</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="tempo">0 min</div>
+                <div class="descricao">Wasp sting in the backyard</div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">~5 min</div>
+                <div class="descricao">Onset of urticaria and pruritus</div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">~10–15 min</div>
+                <div class="descricao">Angioedema (lips, eyelids); dyspnea with wheezing</div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">~30–40 min</div>
+                <div class="descricao">Arrival at the UBS: hypotension (78/48), lethargy → <strong>anaphylaxis/anaphylactic shock</strong></div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">Immediate</div>
+                <div class="descricao"><strong>IM adrenaline</strong> + O₂ + fluids + Trendelenburg; call SAMU</div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">Stabilization</div>
+                <div class="descricao">Hospital referral; observation 6–24 h (biphasic risk)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="tempo">Discharge → PHC</div>
+                <div class="descricao">Referral to allergology, auto-injector, action plan, immunotherapy, asthma management (ICS), community education</div>
+            </div>
+        </div>
+
+        <div class="box box-clinico">
+            <strong>Summary of the case's lessons:</strong>
+            <ul>
+                <li>Anaphylaxis is a <strong>type I emergency</strong> and <strong>IM adrenaline is the first-line treatment</strong> — there is no justification for delaying it.</li>
+                <li>The mechanism is <strong>IgE-mediated</strong>: prior sensitization → cross-linking → systemic mast cell degranulation.</li>
+                <li>Previous intense local reactions are a <strong>risk factor</strong> for future anaphylaxis.</li>
+                <li>The <strong>coexistence of uncontrolled asthma</strong> worsens the condition and must be treated (ICS, per GINA).</li>
+                <li>PHC plays a central role in <strong>follow-up</strong>, <strong>education</strong> and <strong>comprehensive care</strong>, in line with the 2025 DCN and the SUS.</li>
+            </ul>
+        </div>
+
+        <h3>References</h3>
+        <div class="aviso-integridade" style="font-size:0.85em">
+            <p><strong>[3]</strong> Brazil. Ministry of Health. National Primary Care Policy / ESF.</p>
+            <p><strong>[4]</strong> Cardona V, et al. WAO Anaphylaxis Guidance 2020. <em>WAOJ.</em> 2020;13(10):100607.</p>
+            <p><strong>[5]</strong> Brazil. MEC/CNE. CNE/CES Res. No. 3/2025 (Medicine DCN). DOU, 1 Oct 2025.</p>
+            <p><strong>[6]</strong> Abbas AK, et al. <em>Cellular and Molecular Immunology.</em> 10th ed. Elsevier; 2022.</p>
+            <p><strong>[7]</strong> Murphy K, Weaver C. <em>Janeway's Immunobiology.</em> 10th ed. Garland; 2022.</p>
+            <p><strong>[8]</strong> GINA. Global Strategy for Asthma Management and Prevention. 2023.</p>
+            <p><strong>[10]</strong> Thermo Fisher. Mast Cell Overview (reviewed scientific content).</p>
+            <p><strong>[11]</strong> Wynn TA. Type 2 cytokines. <em>Nat Rev Drug Discov.</em> 2015;14(11):739–753.</p>
+            <p><strong>[12]</strong> Bousquet J, et al. Care pathways for biological treatment of severe asthma. <em>Allergy.</em></p>
+            <p><strong>[15]</strong> Sampson HA, et al. Definition and management of anaphylaxis. <em>Ann Emerg Med.</em> 2006;47(4):373–380.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

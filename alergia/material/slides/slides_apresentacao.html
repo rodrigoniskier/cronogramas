@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slides — Mecanismos Imunológicos das Alergias</title>
+<style>
+  :root{
+    --azul:#1a5490; --azul-claro:#2a7ab5; --verde:#2e8b57; --vermelho:#c0392b;
+    --laranja:#d97a1f; --roxo:#6c3483; --cinza:#3a3a3a; --cinza-claro:#f4f6f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica','Arial',sans-serif;background:#eef1f4;color:#222;line-height:1.5}
+  .slide{width:100%;max-width:960px;margin:18px auto;background:#fff;border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);overflow:hidden;border:1px solid #d0d7de}
+  .cabecalho{background:linear-gradient(135deg,#1a5490,#2a7ab5);color:#fff;padding:18px 30px}
+  .cabecalho h2{font-size:1.35em;font-weight:600}
+  .cabecalho .num{float:right;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:12px;font-size:.8em}
+  .corpo{padding:22px 30px}
+  .corpo h3{color:var(--verde);font-size:1.05em;margin-bottom:10px}
+  .corpo ul{margin-left:22px}
+  .corpo li{margin-bottom:6px;font-size:.95em}
+  .corpo p{font-size:.95em;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.88em}
+  th{background:var(--azul);color:#fff;padding:6px 8px;text-align:left}
+  td{border:1px solid #d0d7de;padding:6px 8px;vertical-align:top}
+  tr:nth-child(even) td{background:var(--cinza-claro)}
+  .roteiro{background:#fffde7;border-top:3px solid var(--laranja);padding:14px 30px;font-size:.9em}
+  .roteiro b{color:var(--laranja)}
+  .roteiro p{margin-bottom:4px;font-family:'Georgia',serif;line-height:1.55}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.78em;color:#fff;font-weight:600}
+  .b1{background:var(--vermelho)} .b2{background:var(--azul-claro)} .b3{background:var(--verde)}
+  .b4{background:var(--laranja)} .b-apo{background:var(--roxo)}
+  .box{border-radius:6px;padding:10px 14px;margin:10px 0;font-size:.9em}
+  .box-alerta{background:#fdecea;border-left:4px solid var(--vermelho)}
+  .box-info{background:#e7f3fe;border-left:4px solid var(--azul-claro)}
+  .box-ok{background:#eafaf1;border-left:4px solid var(--verde)}
+  .fig{text-align:center;margin:10px 0}
+  .fig svg{max-width:90%;height:auto}
+  .capa{background:linear-gradient(135deg,#1a5490,#2a7ab5);color:#fff;text-align:center;padding:60px 30px}
+  .capa h1{font-size:2em;margin-bottom:12px}
+  .capa .sub{font-size:1.1em;opacity:.92;margin-bottom:20px}
+  .capa .meta{font-size:.88em;opacity:.8;border-top:1px solid rgba(255,255,255,.3);padding-top:14px;margin-top:14px}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 0: CAPA -->
+<div class="slide">
+<div class="capa">
+<h1>Mecanismos Imunológicos das Alergias</h1>
+<div class="sub">Fisiopatologia, Classificação e Abordagem Clínica</div>
+<div class="sub" style="font-size:.95em">Aula para Graduação em Medicina • Contexto da APS/SUS</div>
+<div class="meta">
+Conforme DCN de Medicina (Resolução CNE/CES nº 3/2025) • Melhores práticas didáticas internacionais<br>
+Protocolo de Integridade Científica aplicado
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Bom dia/Boa tarde a todos. Hoje vamos estudar os mecanismos imunológicos das alergias — um tema central para a prática médica, especialmente na Atenção Primária à Saúde, onde as doenças alérgicas são extremamente frequentes. Esta aula está alinhada às Diretrizes Curriculares Nacionais de Medicina de 2025, instituídas pela Resolução CNE/CES nº 3, de 30 de setembro de 2025, que orienta a formação de médicos com competências para o cuidado integral, centrado na pessoa, na família e na comunidade, em todos os níveis de complexidade do SUS.</p>
+</div>
+</div>
+
+<!-- SLIDE 1: OBJETIVOS -->
+<div class="slide">
+<div class="cabecalho"><span class="num">1/14</span><h2>Objetivos da Aula</h2></div>
+<div class="corpo">
+<h3>Ao final desta aula, você será capaz de:</h3>
+<ul>
+<li><span class="badge b2">Lembrar</span> Descrever a classificação de Coombs e Gell (tipos I–IV)</li>
+<li><span class="badge b2">Compreender</span> Explicar os mecanismos celulares e moleculares de cada tipo de hipersensibilidade</li>
+<li><span class="badge b3">Analisar</span> Identificar os mediadores inflamatórios e citocinas da resposta tipo 2</li>
+<li><span class="badge b3">Avaliar</span> Relacionar os mecanismos imunológicos às manifestações clínicas</li>
+<li><span class="badge b1">Aplicar</span> Aplicar o conhecimento na abordagem clínica na APS, incluindo anafilaxia</li>
+</ul>
+<div class="box box-info">
+<b>Taxonomia de Bloom revisada (Anderson &amp; Krathwohl, 2001):</b> os verbos dos objetivos correspondem aos níveis cognitivos — Lembrar, Compreender, Aplicar, Analisar, Avaliar, Criar.
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Apresento os objetivos da aula, organizados conforme a Taxonomia de Bloom revisada. Note que não se trata apenas de memorizar a classificação — queremos que vocês compreendam os mecanismos, analisem os mediadores e, sobretudo, apliquem esse conhecimento na prática clínica, especialmente no reconhecimento da anafilaxia.</p>
+</div>
+</div>
+
+<!-- SLIDE 2: POR QUE IMPORTANTE -->
+<div class="slide">
+<div class="cabecalho"><span class="num">2/14</span><h2>Por que isso importa?</h2></div>
+<div class="corpo">
+<div class="box box-alerta">
+<b>Epidemiologia</b><br>
+Centenas de milhões de pessoas afetadas globalmente por doenças alérgicas, com tendência crescente <sup>[1]</sup>.
+</div>
+<ul>
+<li>No Brasil, estudos <b>ISAAC</b> mostram prevalências elevadas de asma, rinite e eczema em crianças/adolescentes <sup>[2]</sup></li>
+<li>Doenças alérgicas são <b>frequentes na APS</b> — Estratégia Saúde da Família</li>
+<li><b>Anafilaxia</b> é emergência potencialmente fatal — reconhecimento precoce salva vidas <sup>[4]</sup></li>
+</ul>
+<table>
+<tr><th>Doença</th><th>Contexto APS</th></tr>
+<tr><td>Rinite alérgica</td><td>Diagnóstico e manejo ambulatorial <sup>[14]</sup></td></tr>
+<tr><td>Asma</td><td>Tratamento de manutenção (corticoide inalatório) <sup>[8]</sup></td></tr>
+<tr><td>Anafilaxia</td><td>Reconhecimento + adrenalina IM + encaminhamento <sup>[4]</sup></td></tr>
+</table>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>As doenças alérgicas são um problema de saúde pública global. No Brasil, o estudo ISAAC demonstrou que estamos entre os países com maiores prevalências de asma e rinite em crianças. Isso significa que, como futuros médicos, vocês encontrarão essas condições com muita frequência, especialmente na Atenção Primária. Além disso, a anafilaxia é uma emergência que exige reconhecimento imediato — cada minuto conta.</p>
+</div>
+</div>
+
+<!-- SLIDE 3: CONCEITOS -->
+<div class="slide">
+<div class="cabecalho"><span class="num">3/14</span><h2>Conceitos Fundamentais</h2></div>
+<div class="corpo">
+<h3>Hipersensibilidade × Alergia</h3>
+<div class="box box-info">
+<p><b>Hipersensibilidade:</b> resposta imune que causa <b>dano tecidual</b>, exagerada/inadequada a um antígeno <sup>[6]</sup>.</p>
+<p><b>Alergia (WAO):</b> resposta imune mediada por mecanismos específicos que leva a sintomas reproduzíveis <sup>[1]</sup>.</p>
+<p><b>Relação:</b> toda alergia é hipersensibilidade, mas nem toda hipersensibilidade é denominada "alergia" clinicamente.</p>
+</div>
+<h3>Sistema imune normal × patológico</h3>
+<p>O sistema imune saudável é <b>regulado, proporcional e autolimitado</b>. Na hipersensibilidade, há resposta <b>exagerada, inadequada ou prolongada</b> <sup>[6,9]</sup>.</p>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Antes de entrarmos na classificação, é importante distinguir dois conceitos que costumam ser confundidos. Hipersensibilidade é o conceito mais amplo — toda resposta imune que causa dano. Alergia, no sentido clínico moderno da Organização Mundial de Alergia, refere-se a respostas mediadas por mecanismos específicos, levando a sintomas reproduzíveis. Na prática, quando falamos de rinite, asma alérgica ou anafilaxia, estamos no âmbito da alergia IgE-mediada — tipo I.</p>
+</div>
+</div>
+
+<!-- SLIDE 4: CLASSIFICAÇÃO COOMBS E GELL -->
+<div class="slide">
+<div class="cabecalho"><span class="num">4/14</span><h2>Classificação de Coombs e Gell (1963)</h2></div>
+<div class="corpo">
+<table>
+<tr><th>Tipo</th><th>Mecanismo</th><th>Efetor</th><th>Tempo</th><th>Exemplo</th></tr>
+<tr><td><span class="badge b1">I</span></td><td>Imediato</td><td>IgE, mastócitos</td><td>Minutos</td><td>Anafilaxia, rinite</td></tr>
+<tr><td><span class="badge b2">II</span></td><td>Citotóxico</td><td>IgG, IgM, complemento</td><td>Min–horas</td><td>Anemia hemolítica</td></tr>
+<tr><td><span class="badge b3">III</span></td><td>Imunocomplexos</td><td>IgG, complemento, PMN</td><td>3–8 h</td><td>Doença do soro</td></tr>
+<tr><td><span class="badge b4">IV</span></td><td>Tardia, celular</td><td>Células T (Th1/CTL)</td><td>24–72 h</td><td>Dermatite contato, PPD</td></tr>
+</table>
+<div class="box box-info">
+<b>Como memorizar:</b> Tipo I (1) é o mais <b>Imediato</b>; Tipo II afeta a <b>célula</b> (superfície); Tipo III são <b>3</b> elementos (Ag+Ac+depósito); Tipo IV é o mais tardio, <b>4</b> etapas (APC→Th1→citocinas→macrófagos).
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Em 1963, Gell e Coombs propuseram esta classificação que usamos até hoje. Observem que os quatro tipos diferem em três dimensões: o tipo de imunidade (humoral nos tipos I, II e III — com anticorpos; celular no tipo IV — com células T), o efetor predominante, e o tempo até a reação. Uma dica mnemônica útil: tipo I é o mais imediato; tipo IV é o mais tardio. Vamos detalhar cada um a seguir.</p>
+</div>
+</div>
+
+<!-- SLIDE 5: TIPO I - FASES -->
+<div class="slide">
+<div class="cabecalho"><span class="num">5/14</span><h2><span class="badge b1">Tipo I</span> — Fases da Resposta IgE-mediada</h2></div>
+<div class="corpo">
+<h3>Fase de sensibilização (1º contato — sem sintomas)</h3>
+<ul>
+<li>Alérgeno → APC → linfócito T CD4+ naive</li>
+<li>Diferenciação em <b>Th2</b> (induzida por IL-4) <sup>[6,11]</sup></li>
+<li>Th2 produz <b>IL-4/IL-13</b> → mudança de classe do B para <b>IgE</b> <sup>[6,11]</sup></li>
+<li>Th2 produz <b>IL-5</b> → eosinófilos <sup>[6]</sup></li>
+<li>IgE liga-se ao <b>FcεRI</b> em mastócitos/basófilos → <b>sensibilização</b> <sup>[7,10]</sup></li>
+</ul>
+<h3>Fase efetora (reexposição — sintomas em minutos)</h3>
+<ul>
+<li>Alérgeno <b>cruza (crosslink)</b> IgE ligada aos FcεRI <sup>[7,10]</sup></li>
+<li><b>Degranulação</b> → liberação de mediadores <sup>[6,10]</sup></li>
+</ul>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Aqui está o coração da aula. Na primeira exposição ao alérgeno, não há sintomas — ocorre a sensibilização. Em pessoas predispostas, o linfócito T naive diferencia-se em Th2, que produz citocinas-chave: IL-4 e IL-13, que mandam o linfócito B produzir IgE em vez de outros isotipos; e IL-5, que recruta eosinófilos. A IgE se liga a receptores de alta afinidade — os FcεRI — na superfície dos mastócitos. Na reexposição, o alérgeno cruza duas ou mais IgE, disparando a degranulação. Atenção: é o cruzamento (crosslink) que é o sinal, não a simples ligação.</p>
+</div>
+</div>
+
+<!-- SLIDE 6: TIPO I - MEDIADORES -->
+<div class="slide">
+<div class="cabecalho"><span class="num">6/14</span><h2><span class="badge b1">Tipo I</span> — Mediadores e Resposta Tardia</h2></div>
+<div class="corpo">
+<table>
+<tr><th>Grupo</th><th>Mediadores</th><th>Efeitos</th></tr>
+<tr><td><b>Pré-formados</b></td><td>Histamina, triptase, heparina</td><td>Vasodilatação, ↑ permeabilidade, broncoconstrição, prurido <sup>[6]</sup></td></tr>
+<tr><td><b>Lipídicos</b></td><td>Leucotrienos (LTC4/D4/E4), PGD2, PAF</td><td>Broncoconstrição potente, secreção, recrutamento <sup>[6]</sup></td></tr>
+<tr><td><b>Citocinas</b></td><td>IL-4, IL-5, IL-13, TNF-α</td><td>Amplificação, inflamação crônica <sup>[6,11]</sup></td></tr>
+</table>
+<div class="box box-info">
+<p><b>Resposta imediata:</b> 5–30 min — mediada por histamina/leucotrienos <sup>[6]</sup></p>
+<p><b>Resposta tardia:</b> 2–24 h — mediada por citocinas e eosinófilos → inflamação crônica <sup>[6,7]</sup></p>
+</div>
+<div class="box box-ok">
+<b>Alvo terapêutico:</b> antihistamínicos (histamina), antagonistas de leucotrienos, corticoides (citocinas), <b>biológicos</b> (IL-4Rα, IL-5, IgE) <sup>[8,12]</sup>
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Os mediadores dividem-se em três grupos. Os pré-formados, como a histamina, são liberados imediatamente — são eles que causam os sintomas da resposta precoce, em minutos. Os lipídicos, como os leucotrienos, são sintetizados de novo e causam broncoconstrição potente — por isso os antileucotrienos são úteis na asma. As citocinas, também sintetizadas de novo, sustentam a resposta tardia, 2 a 24 horas depois, e mantêm a inflamação crônica. É por isso que na asma persistente usamos corticoides — para inibir as citocinas — e, nos casos graves, biológicos que bloqueiam alvos específicos como IL-5 ou o receptor de IL-4.</p>
+</div>
+</div>
+
+<!-- SLIDE 7: TIPOS II E III -->
+<div class="slide">
+<div class="cabecalho"><span class="num">7/14</span><h2><span class="badge b2">Tipo II</span> e <span class="badge b3">Tipo III</span> — Visão Rápida</h2></div>
+<div class="corpo">
+<h3><span class="badge b2">Tipo II — Citotóxico</span></h3>
+<ul>
+<li>Anticorpos <b>IgG/IgM</b> ligados a antígenos na <b>superfície celular</b> <sup>[6]</sup></li>
+<li>Destruição por: <b>complemento (MAC)</b>, <b>ADCC</b>, <b>opsonização</b> <sup>[6]</sup></li>
+<li>Exemplos: anemia hemolítica autoimune, doença hemolítica do RN, reação transfusional ABO <sup>[6]</sup></li>
+</ul>
+<h3><span class="badge b3">Tipo III — Imunocomplexos</span></h3>
+<ul>
+<li>Complexos <b>Ag–Ac</b> depositam em tecidos → ativam complemento → recrutam PMN <sup>[6]</sup></li>
+<li>Tempo: <b>3–8 horas</b> <sup>[6]</sup></li>
+<li>Exemplos: doença do soro, glomerulonefrites, nefrite lúpica <sup>[6]</sup></li>
+</ul>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Os tipos II e III também envolvem anticorpos, mas com mecanismos diferentes. No tipo II, os anticorpos ligam-se a antígenos na superfície de células — como os glóbulos vermelhos na anemia hemolítica — e destroem a célula por complemento, ADCC ou opsonização. No tipo III, formam-se imunocomplexos que se depositam nos tecidos — rins, articulações, vasos — ativam o complemento, recrutam neutrófilos e causam dano. A doença do soro é o exemplo clássico. Embora não sejam chamados de "alergia" no dia a dia, são essenciais para entender doenças imunomediadas.</p>
+</div>
+</div>
+
+<!-- SLIDE 8: TIPO IV -->
+<div class="slide">
+<div class="cabecalho"><span class="num">8/14</span><h2><span class="badge b4">Tipo IV</span> — Hipersensibilidade Tardia (Celular)</h2></div>
+<div class="corpo">
+<ul>
+<li><b>Mediada por células T</b> (Th1, Th17, CTL) — <b>sem anticorpos</b> <sup>[6,7,13]</sup></li>
+<li>Tempo: <b>24–72 horas</b> <sup>[6,13]</sup></li>
+<li>Mecanismo: APC → ativação de T sensibilizada → citocinas (IFN-γ) → macrófagos → inflamação <sup>[6,13]</sup></li>
+</ul>
+<table>
+<tr><th>Subtipo</th><th>Citocina</th><th>Exemplo</th></tr>
+<tr><td>Contato</td><td>IFN-γ</td><td>Dermatite de contato (níquel) <sup>[13]</sup></td></tr>
+<tr><td>Tuberculínica</td><td>IFN-γ</td><td>Teste PPD (tuberculose) <sup>[6]</sup></td></tr>
+<tr><td>Granulomatosa</td><td>IFN-γ, TNF-α</td><td>Tuberculose, sarcoidose <sup>[6]</sup></td></tr>
+</table>
+<div class="box box-ok">
+<b>Aplicação APS:</b> O teste tuberculínico (PPD) — leitura em 48–72h — é hipersensibilidade tipo IV. Fundamental no controle da tuberculose no Brasil.
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>O tipo IV é o único celular — não envolve anticorpos. É mediado por linfócitos T previamente sensibilizados, que liberam citocinas, principalmente IFN-gama, recrutando macrófagos. Demora 24 a 72 horas — por isso é "tardia". A aplicação clínica mais relevante para nós é o teste tuberculínico, o PPD: em alguém previamente exposto ao bacilo da tuberculose, a intradermorreação produz uma induração que lemos em 48 a 72 horas. Esse tempo reflete exatamente o recrutamento das células. É fundamental nos programas de controle da tuberculose na APS.</p>
+</div>
+</div>
+
+<!-- SLIDE 9: INFLAMAÇÃO TIPO 2 -->
+<div class="slide">
+<div class="cabecalho"><span class="num">9/14</span><h2>Conceito Integrador: Inflamação Tipo 2</h2></div>
+<div class="corpo">
+<div class="box box-info">
+<p><b>Inflamação tipo 2</b> = resposta mediada por <b>Th2</b> e <b>ILC2</b> (células linfoides inatas tipo 2), caracterizada por <b>IL-4, IL-5, IL-13</b> <sup>[11]</sup>.</p>
+<p>Epitélio exposto ao alérgeno libera <b>alaminas</b> (TSLP, IL-25, IL-33) → ativam ILC2 → amplificam Th2 <sup>[11]</sup></p>
+</div>
+<div class="fig">
+<svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,sans-serif">
+  <rect x="0" y="0" width="700" height="180" fill="#fafbfc" rx="6"/>
+  <rect x="20" y="60" width="100" height="40" rx="5" fill="#e7f3fe" stroke="#2a7ab5"/><text x="70" y="84" text-anchor="middle" font-size="10" fill="#2a7ab5">Epitélio</text>
+  <text x="70" y="115" text-anchor="middle" font-size="8" fill="#666">TSLP, IL-25, IL-33</text>
+  <line x1="120" y1="80" x2="180" y2="80" stroke="#999" marker-end="url(#a)"/>
+  <rect x="180" y="60" width="100" height="40" rx="5" fill="#f3e8f9" stroke="#6c3483"/><text x="230" y="84" text-anchor="middle" font-size="10" fill="#6c3483">ILC2 / Th2</text>
+  <text x="230" y="115" text-anchor="middle" font-size="8" fill="#666">IL-4, IL-5, IL-13</text>
+  <line x1="280" y1="80" x2="340" y2="80" stroke="#999" marker-end="url(#a)"/>
+  <rect x="340" y="60" width="100" height="40" rx="5" fill="#fdecea" stroke="#c0392b"/><text x="390" y="80" text-anchor="middle" font-size="9" fill="#c0392b">B→IgE</text><text x="390" y="93" text-anchor="middle" font-size="9" fill="#c0392b">Eosinófilos</text>
+  <line x1="440" y1="80" x2="500" y2="80" stroke="#999" marker-end="url(#a)"/>
+  <rect x="500" y="50" width="180" height="60" rx="5" fill="#eafaf1" stroke="#2e8b57"/><text x="590" y="76" text-anchor="middle" font-size="10" fill="#2e8b57">Doenças alérgicas</text><text x="590" y="92" text-anchor="middle" font-size="9" fill="#2e8b57">Asma, rinite, DA</text>
+  <defs><marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#999"/></marker></defs>
+  <text x="350" y="150" text-anchor="middle" font-size="9" fill="#555" font-style="italic">Figura — Cascata da inflamação tipo 2 e alvos de biológicos</text>
+  <rect x="430" y="130" width="90" height="20" rx="3" fill="#fff3cd" stroke="#d97a1f"/><text x="475" y="144" text-anchor="middle" font-size="8" fill="#856404">Biológicos (alvo)</text>
+</svg>
+</div>
+<div class="box box-ok">
+<b>Biológicos:</b> omalizumabe (anti-IgE), mepolizumabe (anti-IL-5), dupilumabe (anti-IL-4Rα) <sup>[8,12]</sup>
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Este é um conceito integrador moderno: a inflamação tipo 2. As doenças alérgicas IgE-mediadas — asma, rinite, dermatite atópica — compartilham um substrato comum, que é a produção das citocinas IL-4, IL-5 e IL-13 por linfócitos Th2 e pelas células linfoides inatas tipo 2, as ILC2. Tudo começa quando o epitélio reconhece o alérgeno e libera alaminas — TSLP, IL-25, IL-33 — que ativam as ILC2 e amplificam toda a cascata. É por isso que hoje falamos em "doenças tipo 2" como um espectro. E é isso que fundamenta a revolução dos biológicos: se bloquearmos IL-5, tratamos o fenótipo eosinofílico da asma; se bloquearmos o receptor de IL-4, atuamos na via comum. A GINA incorporou esse conceito.</p>
+</div>
+</div>
+
+<!-- SLIDE 10: ANAFILAXIA -->
+<div class="slide">
+<div class="cabecalho"><span class="num">10/14</span><h2>⚠ Anafilaxia — Emergência Tipo I</h2></div>
+<div class="corpo">
+<div class="box box-alerta">
+<b>Definição:</b> reação sistêmica de hipersensibilidade tipo I, de início rápido (minutos), potencialmente fatal. Liberação sistêmica de mediadores (histamina) de mastócitos/basófilos → vasodilatação, edema de via aérea, broncoconstrição, hipotensão, choque <sup>[4,15]</sup>.
+</div>
+<h3>Critérios diagnósticos (NIAID/FAAN, adotados pela WAO) <sup>[4,15]</sup></h3>
+<ul>
+<li><b>Sintomas em minutos</b> após exposição a provável alérgeno <b>E</b> um dos:</li>
+<li>Envolvimento de <b>pele/mucosa</b> (urticária, angioedema) <b>+</b> comprometimento respiratório <b>OU</b> queda PA</li>
+<li><b>OU</b> ≥ 2 de: pele/mucosa, respiratório, PA reduzida, GI persistente</li>
+<li><b>OU</b> queda da PA após exposição a alérgeno conhecido</li>
+</ul>
+<div class="box box-alerta">
+<b>Tratamento de primeira linha:</b> <b>ADRENALINA (epinefrina) INTRAMUSCULAR</b> — face anterolateral da coxa <sup>[4]</sup>
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Atenção máxima aqui. Anafilaxia é a manifestação mais grave da hipersensibilidade tipo I e é uma emergência. Os critérios diagnósticos do NIAID/FAAN, adotados pela WAO, ajudam a reconhecer: se o paciente tem sintomas em minutos após a exposição a um provável alérgeno e apresenta envolvimento de pele mais respiratório ou queda de pressão, é anafilaxia. O tratamento de primeira linha é um e somente um: adrenalina intramuscular, na face anterolateral da coxa. Não esperem, não demorem com antihistamínicos ou corticoides como primeira medida. A WAO, em 2020, alerta que o uso da adrenalina é subótimo globalmente — isso precisa mudar.</p>
+</div>
+</div>
+
+<!-- SLIDE 11: APS -->
+<div class="slide">
+<div class="cabecalho"><span class="num">11/14</span><h2>Abordagem na APS / SUS</h2></div>
+<div class="corpo">
+<h3>Ações na Estratégia Saúde da Família <sup>[3,5]</sup></h3>
+<table>
+<tr><th>Foco</th><th>Ações</th></tr>
+<tr><td>Acolhimento/Diagnóstico</td><td>Rinite, asma leve-mod, dermatite atópica</td></tr>
+<tr><td>Educação em saúde</td><td>Gatilhos, técnica inalatória, plano de ação</td></tr>
+<tr><td>Acompanhamento</td><td>Longitudinal, adesão, controle</td></tr>
+<tr><td>Anafilaxia</td><td>Reconhecer, adrenalina, autoinjetor, encaminhar <sup>[4]</sup></td></tr>
+<tr><td>Encaminhamento</td><td>Casos graves, biológicos, alergologia</td></tr>
+</table>
+<div class="box box-ok">
+<b>Plano de ação para anafilaxia (WAO 2020) <sup>[4]</sup>:</b> educar paciente/família, prescrever autoinjetor de adrenalina, plano escrito, identificar gatilhos, encaminhar ao especialista.
+</div>
+<div class="box box-info">
+<b>DCN de Medicina 2025:</b> o egresso deve atuar com <b>integralidade</b>, em <b>todos os níveis de complexidade</b>, com ênfase na <b>atenção primária como coordenadora do cuidado</b> (inciso VI), reconhecendo os <b>determinantes sociais</b> (inciso XV) <sup>[5]</sup>.
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Agora vamos ao contexto da APS. É na Estratégia Saúde da Família que a maioria dos pacientes com doenças alérgicas é atendida. Nossas ações incluem acolher e diagnosticar os quadros comuns, educar sobre gatilhos e uso correto da medicação, acompanhar longitudinalmente a adesão e o controle. Para a anafilaxia, seguimos as recomendações da WAO: educar paciente e família, prescrever autoinjetor de adrenalina quando indicado, fazer um plano de ação escrito e encaminhar ao especialista. Tudo isso está alinhado às DCN 2025, que orientam a atuação integral em todos os níveis de complexidade do SUS, com ênfase na atenção primária como coordenadora do cuidado e na compreensão dos determinantes sociais e ambientais.</p>
+</div>
+</div>
+
+<!-- SLIDE 12: SÍNTESE -->
+<div class="slide">
+<div class="cabecalho"><span class="num">12/14</span><h2>Síntese da Aula</h2></div>
+<div class="corpo">
+<div class="fig">
+<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,sans-serif">
+  <rect x="0" y="0" width="700" height="200" fill="#fafbfc" rx="6"/>
+  <rect x="20" y="30" width="150" height="80" rx="8" fill="#fdecea" stroke="#c0392b" stroke-width="2"/>
+  <text x="95" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#c0392b">Tipo I</text>
+  <text x="95" y="68" text-anchor="middle" font-size="9" fill="#333">IgE • Mastócitos</text>
+  <text x="95" y="82" text-anchor="middle" font-size="9" fill="#333">Minutos</text>
+  <text x="95" y="98" text-anchor="middle" font-size="8.5" fill="#333">Anafilaxia, asma</text>
+  <rect x="185" y="30" width="150" height="80" rx="8" fill="#e7f3fe" stroke="#2a7ab5" stroke-width="2"/>
+  <text x="260" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#2a7ab5">Tipo II</text>
+  <text x="260" y="68" text-anchor="middle" font-size="9" fill="#333">IgG/IgM • Célula</text>
+  <text x="260" y="82" text-anchor="middle" font-size="9" fill="#333">Min–Horas</text>
+  <text x="260" y="98" text-anchor="middle" font-size="8.5" fill="#333">Hemólise</text>
+  <rect x="350" y="30" width="150" height="80" rx="8" fill="#eafaf1" stroke="#2e8b57" stroke-width="2"/>
+  <text x="425" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#2e8b57">Tipo III</text>
+  <text x="425" y="68" text-anchor="middle" font-size="9" fill="#333">Imunocomplexos</text>
+  <text x="425" y="82" text-anchor="middle" font-size="9" fill="#333">3–8h</text>
+  <text x="425" y="98" text-anchor="middle" font-size="8.5" fill="#333">Doença soro</text>
+  <rect x="515" y="30" width="165" height="80" rx="8" fill="#fdf2e9" stroke="#d97a1f" stroke-width="2"/>
+  <text x="597" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#d97a1f">Tipo IV</text>
+  <text x="597" y="68" text-anchor="middle" font-size="9" fill="#333">Células T</text>
+  <text x="597" y="82" text-anchor="middle" font-size="9" fill="#333">24–72h</text>
+  <text x="597" y="98" text-anchor="middle" font-size="8.5" fill="#333">Contato, PPD</text>
+  <rect x="150" y="140" width="400" height="45" rx="8" fill="#f3e8f9" stroke="#6c3483" stroke-width="2"/>
+  <text x="350" y="160" text-anchor="middle" font-size="11" font-weight="bold" fill="#6c3483">Inflamação Tipo 2 (IL-4, IL-5, IL-13)</text>
+  <text x="350" y="176" text-anchor="middle" font-size="9" fill="#333">Substrato comum das alergias → alvo de biológicos</text>
+</svg>
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Para sintetizar: temos quatro tipos de hipersensibilidade. O tipo I, imediato, IgE-mediado, é o das nossas alergias clássicas — asma, rinite, anafilaxia. Os tipos II e III envolvem anticorpos contra células ou em complexos, respectivamente. O tipo IV é celular, tardio — dermatite de contato e tuberculina. E por cima de tudo, o conceito moderno de inflamação tipo 2, que é o substrato comum das doenças alérgicas e o alvo dos biológicos.</p>
+</div>
+</div>
+
+<!-- SLIDE 13: PRÓXIMOS PASSOS -->
+<div class="slide">
+<div class="cabecalho"><span class="num">13/14</span><h2>Atividades e Próximos Passos</h2></div>
+<div class="corpo">
+<ul>
+<li>📝 <b>Apostila ilustrada</b> — leitura complementar completa</li>
+<li>📋 <b>Lista de exercícios</b> — 3 resolvidas + 10 fixação + 5 aprofundamento (com gabarito comentado)</li>
+<li>🏥 <b>Estudo de caso clínico</b> — aplicação na APS</li>
+<li>📚 <b>Leitura recomendada:</b> Abbas, capítulo de hipersensibilidade; Janeway, capítulo 12 <sup>[6,7]</sup></li>
+<li>🌐 <b>Diretrizes:</b> GINA (asma), WAO (anafilaxia) <sup>[4,8]</sup></li>
+</ul>
+<div class="box box-info">
+<b>Lembrete:</b> todo o material segue protocolo de integridade científica — apenas fontes verificadas (livros-texto, artigos revisados por pares, diretrizes de sociedades científicas).
+</div>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Para consolidar o aprendizado, vocês têm três materiais complementares: a apostila ilustrada, que aprofunda tudo o que vimos; a lista de exercícios, com questões resolvidas passo a passo, questões de fixação e questões de aprofundamento, todas com gabarito comentado; e um estudo de caso clínico desafiador, ambientado na Atenção Primária à Saúde. Para aprofundar, recomendo os capítulos de hipersensibilidade do Abbas e do Janeway, e as diretrizes da GINA e da WAO. Todo o material foi construído com protocolo de integridade científica — apenas fontes verificadas.</p>
+</div>
+</div>
+
+<!-- SLIDE 14: REFERÊNCIAS -->
+<div class="slide">
+<div class="cabecalho"><span class="num">14/14</span><h2>Referências Principais</h2></div>
+<div class="corpo" style="font-size:.85em">
+<ol>
+<li>Pawankar R, et al. WAO White Book on Allergy. World Allergy Organization. <sup>[1]</sup></li>
+<li>Solé D, et al. Estudo ISAAC no Brasil. <sup>[2]</sup></li>
+<li>Brasil. MS. Política Nacional de Atenção Básica. <sup>[3]</sup></li>
+<li>Cardona V, et al. WAO Anaphylaxis Guidance 2020. <i>WAOJ.</i> 2020. <sup>[4]</sup></li>
+<li>Brasil. MEC/CNE. Resolução CNE/CES nº 3/2025 (DCN Medicina). <sup>[5]</sup></li>
+<li>Abbas AK, Lichtman AH, Pillai S. <i>Imunologia Celular e Molecular.</i> 10ª ed. Elsevier; 2022. <sup>[6]</sup></li>
+<li>Murphy K, Weaver C. <i>Janeway's Immunobiology.</i> 10ª ed. Garland; 2022. <sup>[7]</sup></li>
+<li>GINA. Global Strategy for Asthma Management and Prevention. 2023. <sup>[8]</sup></li>
+<li>Kumar V, et al. <i>Robbins Patologia.</i> 10ª ed. Elsevier; 2022. <sup>[9]</sup></li>
+<li>Thermo Fisher. Mast Cell Overview (conteúdo científico revisado). <sup>[10]</sup></li>
+<li>Wynn TA. Type 2 cytokines. <i>Nat Rev Drug Discov.</i> 2015. <sup>[11]</sup></li>
+<li>Bousquet J, et al. Care pathways for biological treatment of severe asthma. <i>Allergy.</i> <sup>[12]</sup></li>
+<li>Dermatite de contato alérgica (tipo IV); corroborado por <sup>[6,7]</sup>. <sup>[13]</sup></li>
+<li>Small P, Kim H. Allergic rhinitis. <i>AACI.</i> 2011. <sup>[14]</sup></li>
+<li>Sampson HA, et al. Definition of anaphylaxis. <i>Ann Emerg Med.</i> 2006. <sup>[15]</sup></li>
+</ol>
+</div>
+<div class="roteiro">
+<b>Roteiro de fala:</b>
+<p>Estas são as referências principais que sustentam a aula. Todas são fontes verificadas: livros-texto de referência internacional, diretrizes de sociedades científicas reconhecidas como WAO e GINA, artigos revisados por pares em periódicos indexados, e documentos normativos oficiais. Obrigado pela atenção. Vamos agora para as atividades.</p>
+</div>
+</div>
+
+</body>
+</html>
