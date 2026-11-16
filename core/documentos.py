@@ -235,6 +235,15 @@ def _sem_rotacao(objeto):
     return abs(matriz[1]) < 1e-3 and abs(matriz[2]) < 1e-3
 
 
+def _texto_da_faixa(pagina, blocos, esquerda, direita, de, ate):
+    """Acrescenta a `blocos` o texto da faixa horizontal [de, ate] da página (entre tabelas)."""
+    if ate - de < 1:
+        return
+    texto = pagina.crop((esquerda, de, direita, ate)).extract_text() or ""
+    if texto.strip():
+        blocos.append(("texto", texto.replace("\n", "\n\n")))
+
+
 def ler_pdf(arquivo):
     try:
         import pdfplumber
@@ -250,15 +259,15 @@ def ler_pdf(arquivo):
             for pagina in pdf.pages:
                 pagina = pagina.filter(_sem_rotacao)
                 caracteres += len(pagina.chars)
-                tabelas = sorted(pagina.find_tables(), key=lambda t: t.bbox[1])
-                fora = pagina
-                for tabela in tabelas:
-                    fora = fora.outside_bbox(tabela.bbox)
-                texto = fora.extract_text() or ""
-                if texto.strip():
-                    blocos.append(("texto", texto.replace("\n", "\n\n")))
-                for tabela in tabelas:
+                # Texto e tabelas na ordem em que aparecem na página: a identificação escrita
+                # acima de uma tabela vale para ela, e não para as tabelas seguintes.
+                esquerda, topo, direita, base = pagina.bbox
+                cursor = topo
+                for tabela in sorted(pagina.find_tables(), key=lambda t: (t.bbox[1], t.bbox[0])):
+                    _texto_da_faixa(pagina, blocos, esquerda, direita, cursor, min(tabela.bbox[1], base))
                     blocos.append(("tabela", tabela.extract()))
+                    cursor = max(cursor, min(tabela.bbox[3], base))
+                _texto_da_faixa(pagina, blocos, esquerda, direita, cursor, base)
                 pagina.flush_cache()
     except ErroImportacao:
         raise

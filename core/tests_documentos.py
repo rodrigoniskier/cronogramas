@@ -183,6 +183,36 @@ class LeituraTests(Base):
         conteudo = lido.cabecalhos.index("Conteúdo")
         self.assertEqual({l["c"][conteudo].split(" com ")[0] for l in lido.linhas}, {f"Tema {i}" for i in range(84)})
 
+    def test_pdf_com_dois_cronogramas_na_mesma_pagina_e_identificacao_em_texto(self):
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+        estilo = getSampleStyleSheet()["Normal"]
+        grade = TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.black)])
+
+        def cronograma(componente, turma, dias):
+            tabela = Table([["DATA", "HORÁRIO", "CONTEÚDO", "DOCENTE"]] + [[d, "08h-10h", "Aula", "Ana Lima"] for d in dias])
+            tabela.setStyle(grade)
+            return [Paragraph(f"COMPONENTE CURRICULAR: {componente}", estilo), Paragraph(f"PERÍODO: 2º    TURMA: {turma}", estilo),
+                    Spacer(1, 6), tabela, Spacer(1, 18)]
+
+        saida = BytesIO()
+        SimpleDocTemplate(saida).build(
+            [Paragraph("Cronogramas do 2º período — dados fictícios", estilo)]
+            + cronograma("Anatomia II", "A", ["01/03", "08/03"]) + cronograma("Fisiologia II", "B", ["02/03"])
+            + [Paragraph("Observação: sujeito a alterações.", estilo)]
+        )
+        lido = imp.ler_arquivo(enviado("dois.pdf", saida.getvalue()))
+        colunas = [lido.cabecalhos.index(t) for t in ("Componente curricular", "Turma", "Período", "Data")]
+        self.assertEqual([[l["c"][i] for i in colunas] for l in lido.linhas], [
+            ["Anatomia II", "A", "2º", "01/03"], ["Anatomia II", "A", "2º", "08/03"], ["Fisiologia II", "B", "2º", "02/03"],
+        ])
+        importacao, analise = self.conferir(enviado("dois.pdf", saida.getvalue()))
+        self.assertTrue(analise.ok, analise.erros)
+        self.assertEqual([(c.rotulo, len(c.linhas)) for c in analise.componentes],
+                         [("Anatomia II — Turma A", 2), ("Fisiologia II — Turma B", 1)])
+
     def test_arquivos_que_nao_podem_ser_lidos(self):
         from docx import Document
 
