@@ -456,6 +456,8 @@ class Importacao(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     arquivo_nome = models.CharField(max_length=200)
+    arquivos = models.JSONField(default=list)      # [{nome, formato, linhas, avisos, sha256, removido}]
+    associacoes = models.JSONField(default=dict)   # {nome normalizado: id do usuário, ou 0 = ignorar}
     cabecalhos = models.JSONField(default=list)
     linhas = models.JSONField(default=list)        # [{"n": linha no Excel, "c": [textos]}]
     mapeamento = models.JSONField(default=dict)    # {campo: índice da coluna}
@@ -474,3 +476,10 @@ class Importacao(models.Model):
     @property
     def pendente(self):
         return self.status == self.Status.PENDENTE
+
+    @property
+    def nomes_dos_arquivos(self):
+        """Nomes pelo índice "f" das linhas ("" para arquivos removidos da conferência)."""
+        if not self.arquivos:
+            return [self.arquivo_nome]
+        return ["" if a.get("removido") else a["nome"] for a in self.arquivos]

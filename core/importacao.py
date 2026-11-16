@@ -1,14 +1,19 @@
-"""Importação de cronogramas a partir de planilha Excel (.xlsx).
+"""Importação de cronogramas a partir de arquivos XLSX, DOCX e PDF.
 
-Formato: uma linha por encontro, com colunas livres mapeadas para os campos
-de `CAMPOS`. O fluxo tem três etapas, todas refeitas a partir do estado atual
-do banco (nada é confiado ao navegador):
+Todos os formatos são reduzidos a uma tabela com uma linha por encontro e
+colunas livres, mapeadas para os campos de `CAMPOS`. Vários arquivos, de
+formatos diferentes, podem ser reunidos na mesma conferência (`anexar`) e
+são validados e cruzados em conjunto. O fluxo tem três etapas, todas refeitas
+a partir do estado atual do banco (nada é confiado ao navegador):
 
-1. `ler_planilha`   — lê o arquivo com limites de tamanho e guarda o texto das células;
+1. `ler_arquivo`    — lê cada arquivo com limites de tamanho e guarda o texto das
+                      células (`ler_planilha` para XLSX; core/documentos.py para DOCX/PDF);
 2. `analisar`       — valida cada linha, resolve docentes/componentes, planeja o que
-                      será criado ou atualizado e prevê os conflitos resultantes;
+                      será criado ou atualizado e prevê os conflitos resultantes —
+                      entre os arquivos e com o que já está cadastrado;
 3. `aplicar`        — grava tudo em uma única transação (ou nada, se houver erro).
 """
+import hashlib
 import re
 import zipfile
 from collections import Counter, defaultdict
@@ -23,7 +28,9 @@ from . import agenda as ag
 from .models import Componente, Conflito, Encontro, HorarioSemanal, Usuario, ch_padrao
 from .services import calendarios_de, datas_previstas, montar_agenda, pode_gerenciar, registrar, sincronizar_conflitos
 
-MAX_BYTES = 2 * 1024 * 1024          # tamanho do arquivo enviado
+MAX_BYTES = 4 * 1024 * 1024          # tamanho de cada arquivo enviado
+MAX_ARQUIVOS = 20                     # arquivos reunidos em uma mesma conferência
+FORMATOS = {".xlsx": "xlsx", ".docx": "docx", ".pdf": "pdf"}
 MAX_DESCOMPACTADO = 30 * 1024 * 1024  # proteção contra arquivo-bomba (xlsx é um zip)
 MAX_LINHAS = 3000
 MAX_COLUNAS = 40
@@ -70,7 +77,7 @@ CAMPOS = (
     Campo("carga_horaria", "CH total (h/a)", ("ch total", "carga horaria", "carga horaria total"), 6, True),
     Campo("ch_teorica", "CH teórica (h/a)", ("ch teorica", "teorica"), 6, True),
     Campo("ch_pratica", "CH prática (h/a)", ("ch pratica", "pratica"), 6, True),
-    Campo("coordenador", "Coordenador (e-mail)", ("coordenador", "coordenador a", "coordenador e mail", "e mail do coordenador"), 254, True),
+    Campo("coordenador", "Coordenador (e-mail ou nome)", ("coordenador", "coordenador a", "coordenador e mail", "e mail do coordenador"), 254, True),
     Campo("semestre", "Semestre (conferência)", ("semestre", "semestre letivo", "periodo letivo"), 40),
 )
 CAMPO = {c.nome: c for c in CAMPOS}
@@ -180,6 +187,112 @@ def ler_planilha(arquivo):
     return cabecalhos, linhas
 
 
+# ------------------------------------------------- vários arquivos e formatos
+
+
+@dataclass
+class ArquivoLido:
+    nome: str
+    formato: str            # xlsx | docx | pdf
+    cabecalhos: list
+    linhas: list            # [{"n": linha no arquivo, "c": [textos]}]
+    avisos: list
+    sha256: str
+
+
+def ler_arquivo(arquivo):
+    """Lê um arquivo enviado, em qualquer dos formatos aceitos."""
+    nome = (getattr(arquivo, "name", "") or "arquivo").replace("\\", "/").rsplit("/", 1)[-1][:120]
+    formato = FORMATOS.get("." + nome.lower().rsplit(".", 1)[-1] if "." in nome else "")
+    if not formato:
+        raise ErroImportacao(f"{nome}: formato não aceito. Envie arquivos .xlsx, .docx ou .pdf.")
+    if getattr(arquivo, "size", 0) > MAX_BYTES:
+        raise ErroImportacao(f"{nome}: o arquivo excede o limite de {MAX_BYTES // (1024 * 1024)} MB.")
+    arquivo.seek(0)
+    sha256 = hashlib.sha256(arquivo.read()).hexdigest()
+    try:
+        if formato == "xlsx":
+            cabecalhos, linhas = ler_planilha(arquivo)
+            avisos = []
+        else:
+            from . import documentos   # import tardio: documentos.py usa as definições deste módulo
+
+            cabecalhos, linhas, avisos = (documentos.ler_docx if formato == "docx" else documentos.ler_pdf)(arquivo)
+    except ErroImportacao as erro:
+        raise ErroImportacao(f"{nome}: {erro}")
+    return ArquivoLido(nome, formato, cabecalhos, linhas, avisos, sha256)
+
+
+def anexar(cabecalhos, linhas, arquivos, lido):
+    """Acrescenta um arquivo lido à tabela única da conferência.
+
+    Colunas equivalentes são unificadas: pelo campo reconhecido no título
+    ("Disciplina" e "Componente curricular" são a mesma coluna) ou, se o título
+    não é reconhecido, pelo próprio título. Cada linha guarda em "f" o índice
+    do arquivo de origem. Retorna (cabeçalhos, linhas, arquivos) novos.
+    """
+    ativos = [a for a in arquivos if not a.get("removido")]
+    if len(ativos) >= MAX_ARQUIVOS:
+        raise ErroImportacao(f"{lido.nome}: a conferência já tem {MAX_ARQUIVOS} arquivos.")
+    if any(a.get("sha256") == lido.sha256 for a in ativos):
+        raise ErroImportacao(f"{lido.nome}: este arquivo já está anexado.")
+
+    def chave(titulo, sufixo):
+        campo = _APELIDOS.get(_rotulo_normalizado(titulo))
+        return f"@{campo}" if campo else (_rotulo_normalizado(titulo) or f"#{sufixo}")
+
+    f = len(arquivos)
+    cabecalhos = list(cabecalhos)
+    posicao = {}
+    for i, titulo in enumerate(cabecalhos):
+        posicao.setdefault(chave(titulo, f"a{i}"), i)
+    destino, usadas = [], set()
+    for j, titulo in enumerate(lido.cabecalhos):
+        k = chave(titulo, f"{f}.{j}")
+        if k in usadas:                          # título repetido no mesmo arquivo: coluna própria
+            k = f"{k}#{f}.{j}"
+        usadas.add(k)
+        if k not in posicao:
+            posicao[k] = len(cabecalhos)
+            cabecalhos.append(titulo)
+        destino.append(posicao[k])
+    if len(cabecalhos) > 2 * MAX_COLUNAS:
+        raise ErroImportacao(f"{lido.nome}: os arquivos, juntos, têm colunas demais.")
+
+    largura = len(cabecalhos)
+    linhas = [{**l, "c": (l["c"] + [""] * largura)[:largura]} for l in linhas]
+    for l in lido.linhas:
+        celulas = [""] * largura
+        for j, valor in enumerate(l["c"]):
+            if j < len(destino) and valor:
+                celulas[destino[j]] = valor
+        linhas.append({"n": l["n"], "f": f, "c": celulas})
+    if len(linhas) > MAX_LINHAS:
+        raise ErroImportacao(f"{lido.nome}: os arquivos, juntos, têm mais de {MAX_LINHAS} linhas.")
+    if sum(len(c) for l in linhas for c in l["c"]) > MAX_TEXTO:
+        raise ErroImportacao(f"{lido.nome}: os arquivos, juntos, têm texto demais.")
+    arquivos = arquivos + [{
+        "nome": lido.nome, "formato": lido.formato, "linhas": len(lido.linhas), "avisos": lido.avisos, "sha256": lido.sha256,
+    }]
+    return cabecalhos, linhas, arquivos
+
+
+def remover_arquivo(linhas, arquivos, f):
+    """Retira da conferência as linhas de um arquivo (os índices dos demais não mudam)."""
+    arquivos = [{**a, "removido": True} if i == f else a for i, a in enumerate(arquivos)]
+    return [l for l in linhas if l.get("f", 0) != f], arquivos
+
+
+def completar_mapeamento(mapa, cabecalhos):
+    """Mantém o mapeamento atual e acrescenta os campos reconhecidos nas colunas novas."""
+    mapa = limpar_mapeamento(mapa, len(cabecalhos))
+    usadas = set(mapa.values())
+    for campo, i in sugerir_mapeamento(cabecalhos).items():
+        if campo not in mapa and i not in usadas:
+            mapa[campo] = i
+    return mapa
+
+
 # ---------------------------------------------------------------- mapeamento
 
 
@@ -218,7 +331,9 @@ def erros_do_mapeamento(mapa):
 # -------------------------------------------------------- conversão de valores
 
 
-def ler_data(texto):
+def ler_data(texto, semestre=None):
+    """Aceita 15/02/2027, 15/2/27, 2027-02-15 e, conhecido o semestre, 15/02 (sem ano),
+    como no modelo institucional: o ano é o que coloca a data dentro do semestre."""
     texto = texto.strip()
     m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?", texto)
     if m:
@@ -227,6 +342,16 @@ def ler_data(texto):
     if m:
         ano = int(m[3]) + (2000 if len(m[3]) == 2 else 0)
         return date(ano, int(m[2]), int(m[1]))
+    m = re.fullmatch(r"(\d{1,2})[/.\-](\d{1,2})", texto)
+    if m and semestre is not None:
+        candidatas = []
+        for ano in dict.fromkeys((semestre.data_inicio.year, semestre.data_fim.year)):
+            try:
+                candidatas.append(date(ano, int(m[2]), int(m[1])))
+            except ValueError:
+                pass
+        if candidatas:
+            return next((d for d in candidatas if semestre.data_inicio <= d <= semestre.data_fim), candidatas[0])
     raise ValueError
 
 
@@ -259,6 +384,15 @@ def _inteiro(texto):
 
 
 # ------------------------------------------------------------------- análise
+
+
+class Pos(int):
+    """Número da linha no arquivo de origem; `f` é o índice do arquivo na conferência."""
+
+    def __new__(cls, n, f=0):
+        pos = super().__new__(cls, n)
+        pos.f = f
+        return pos
 
 
 @dataclass
@@ -299,13 +433,32 @@ class Analise:
     componentes: list = field(default_factory=list)
     conflitos: list = field(default_factory=list)   # [{tipo, texto}]
     linhas_lidas: int = 0
+    arquivos: list = field(default_factory=list)    # nomes dos arquivos, pelo índice "f" das linhas
+    pessoas: list = field(default_factory=list)     # nomes não reconhecidos ou associados manualmente
 
     @property
     def ok(self):
         return not self.erros and bool(self.componentes)
 
+    @property
+    def varios_arquivos(self):
+        return len([a for a in self.arquivos if a]) > 1
+
+    def nome_arquivo(self, linha):
+        f = getattr(linha, "f", 0)
+        return self.arquivos[f] if f < len(self.arquivos) and self.arquivos[f] else ""
+
+    def ref(self, linha):
+        """'linha 4' ou, havendo vários arquivos, 'linha 4 de cronograma.pdf'."""
+        return f"linha {int(linha)}" + (f" de {self.nome_arquivo(linha)}" if self.varios_arquivos else "")
+
     def erro(self, linha, campo, mensagem):
-        self.erros.append({"linha": linha, "campo": CAMPO[campo].rotulo if campo in CAMPO else campo, "mensagem": mensagem})
+        eh_linha = isinstance(linha, int)
+        self.erros.append({
+            "linha": int(linha) if eh_linha else linha, "f": getattr(linha, "f", 0),
+            "arquivo": self.nome_arquivo(linha) if eh_linha else "",
+            "campo": CAMPO[campo].rotulo if campo in CAMPO else campo, "mensagem": mensagem,
+        })
 
     @property
     def contagem(self):
@@ -319,36 +472,66 @@ class Analise:
         }
 
 
+_TITULOS_DE_PESSOA = re.compile(r"^(?:(?:prof(?:a|essora?)?|dr(?:a)?|me|ma|msc|esp|phd)\b\.?\s*)+")
+
+
+def _sem_titulo(nome):
+    """'Profa. Dra. Ana Lima' → 'ana lima' (comparação de nomes vindos de documentos)."""
+    return _TITULOS_DE_PESSOA.sub("", ag.normalizar(nome)).strip() or ag.normalizar(nome)
+
+
 class _Docentes:
-    """Resolve o texto da coluna de docente para um usuário do cadastro — nunca cria usuários."""
+    """Resolve o texto das colunas de docente e de coordenador para um usuário do cadastro.
 
-    def __init__(self):
+    Nunca cria usuários. Ordem: associação manual feita na conferência; e-mail; nome de
+    usuário; nome completo; nome sem títulos (Prof., Dra. …). Nomes ambíguos ou
+    desconhecidos ficam pendentes, para associação manual.
+    """
+
+    def __init__(self, associacoes=None):
+        self.associacoes = associacoes or {}
         self.todos = list(Usuario.docentes())
-        self.por_email = {u.email: u for u in self.todos}
-        self.por_usuario = {u.username: u for u in self.todos if u.username}
-        self.por_nome = defaultdict(list)
-        for u in self.todos:
-            self.por_nome[ag.normalizar(u.nome)].append(u)
+        self.por_id = {u.id: u for u in self.todos}
+        self.consultadas = {}     # {chave: {texto, papel, linhas}} — nomes que precisaram de associação
 
-    def resolver(self, texto):
-        """Retorna (usuário, mensagem de erro)."""
-        chave = texto.strip().lower()
+    def _anotar(self, chave, texto, papel):
+        item = self.consultadas.setdefault(chave, {"chave": chave, "texto": texto, "papel": papel, "linhas": 0})
+        item["linhas"] += 1
+
+    def resolver(self, texto, papel="docente"):
+        """Retorna (usuário ou None, mensagem de erro)."""
+        coordenador = papel == "coordenador"
+        candidatos = [u for u in self.todos if u.perfil == Usuario.Perfil.COORD] if coordenador else self.todos
+        grupo = "coordenadores" if coordenador else "docentes"
+        rotulo = "Coordenador" if coordenador else "Docente"
+        chave = ag.normalizar(texto)
+        if chave in self.associacoes:
+            self._anotar(chave, texto, papel)
+            escolhido = self.associacoes[chave]
+            if escolhido == 0:
+                return None, ""            # importar sem docente / usar o coordenador padrão
+            usuario = self.por_id.get(escolhido)
+            if usuario in candidatos:
+                return usuario, ""
         if "@" in chave:
-            u = self.por_email.get(chave)
-            return (u, "") if u else (None, f"Docente “{texto}” não encontrado entre os docentes ativos.")
-        if chave in self.por_usuario:
-            return self.por_usuario[chave], ""
-        achados = self.por_nome.get(ag.normalizar(texto), [])
+            achados = [u for u in candidatos if u.email == chave]
+        else:
+            achados = [u for u in candidatos if u.username and u.username == chave]
+            achados = achados or [u for u in candidatos if ag.normalizar(u.nome) == chave]
+            achados = achados or [u for u in candidatos if _sem_titulo(u.nome) == _sem_titulo(texto)]
         if len(achados) == 1:
             return achados[0], ""
+        if chave not in self.associacoes:
+            self._anotar(chave, texto, papel)
         if achados:
-            return None, f"Há {len(achados)} docentes chamados “{texto}”. Informe o e-mail."
-        return None, f"Docente “{texto}” não encontrado entre os docentes ativos. Informe o e-mail cadastrado."
+            return None, f"Há {len(achados)} {grupo} chamados “{texto}”. Informe o e-mail ou associe o nome a um cadastro."
+        return None, (f"{rotulo} “{texto}” não encontrado entre os {grupo} ativos. "
+                      "Informe o e-mail cadastrado ou associe o nome a um cadastro.")
 
 
 def _ler_linha(analise, linha, mapa, semestre, docentes):
     """Converte uma linha da planilha. Retorna dict de valores, ou None se houver erro."""
-    n, celulas = linha["n"], linha["c"]
+    n, celulas = Pos(linha["n"], linha.get("f", 0)), linha["c"]
     bruto = {campo: celulas[i].strip() if i < len(celulas) else "" for campo, i in mapa.items()}
     erros_antes = len(analise.erros)
     v = {}
@@ -362,7 +545,7 @@ def _ler_linha(analise, linha, mapa, semestre, docentes):
 
     if bruto.get("data"):
         try:
-            v["data"] = ler_data(bruto["data"])
+            v["data"] = ler_data(bruto["data"], semestre)
         except ValueError:
             analise.erro(n, "data", f"Data inválida: “{bruto['data']}”. Use DD/MM/AAAA.")
         else:
@@ -417,7 +600,7 @@ def _ler_linha(analise, linha, mapa, semestre, docentes):
     return v
 
 
-def _resolver_componente(analise, plano, primeira_linha, usuario, semestre, coordenador_padrao, existentes):
+def _resolver_componente(analise, plano, primeira_linha, usuario, semestre, coordenador_padrao, existentes, docentes):
     """Define se o componente será criado ou atualizado e verifica as permissões."""
     existente = existentes.get((ag.normalizar(plano.nome), ag.normalizar(plano.turma)))
     if existente:
@@ -435,22 +618,20 @@ def _resolver_componente(analise, plano, primeira_linha, usuario, semestre, coor
                                   "foi mantido; os dados de cadastro da planilha não são aplicados a componentes existentes.")
         return
 
-    email = plano.atributos.get("coordenador", "").strip().lower()
-    if usuario.eh_admin:
-        coord = None
-        if email:
-            coord = Usuario.objects.filter(email=email, is_active=True, perfil=Usuario.Perfil.COORD).first()
-            if not coord:
-                analise.erro(primeira_linha, "coordenador", f"Coordenador “{email}” não encontrado entre os coordenadores ativos.")
-                return
-        plano.coordenador = coord or coordenador_padrao
+    texto = plano.atributos.get("coordenador", "").strip()
+    indicado, msg = docentes.resolver(texto, "coordenador") if texto else (None, "")
+    if msg:
+        analise.erro(primeira_linha, "coordenador", msg)
+    elif usuario.eh_admin:
+        plano.coordenador = indicado or coordenador_padrao
         if not plano.coordenador:
-            analise.erro(primeira_linha, "coordenador", f"{plano.rotulo} é novo: informe o coordenador na planilha "
-                                                         "ou escolha um coordenador padrão ao enviar o arquivo.")
+            analise.erro(primeira_linha, "coordenador", f"{plano.rotulo} é novo: informe o coordenador no arquivo "
+                                                         "ou escolha um coordenador padrão ao enviar.")
     else:
         # Coordenador importa apenas componentes sob sua própria responsabilidade.
-        if email and email != usuario.email:
-            analise.erro(primeira_linha, "coordenador", f"{plano.rotulo}: você só pode criar componentes sob a sua coordenação.")
+        if indicado and indicado.id != usuario.id:
+            analise.erro(primeira_linha, "coordenador", f"{plano.rotulo}: você só pode criar componentes sob a sua coordenação "
+                                                         f"(o arquivo indica {indicado.nome}).")
         plano.coordenador = usuario
 
 
@@ -503,7 +684,7 @@ def _prever_conflitos(analise, semestre):
         for l in plano.linhas:
             prof_id = l.professor.id if l.professor else None
             if l.acao == "CRIAR":
-                id_ = f"L{l.n}"
+                id_ = f"L{getattr(l.n, 'f', 0)}.{int(l.n)}"
                 agenda.adicionar(ag.Aula(id_, comp_id, semestre.id, turma, prof_id, l.data, l.inicio, l.fim))
             elif l.acao == "ATUALIZAR" and prof_id:
                 id_ = l.encontro.id
@@ -511,7 +692,7 @@ def _prever_conflitos(analise, semestre):
             else:
                 continue
             tocados.append(id_)
-            rotulos[id_] = f"linha {l.n} ({plano.rotulo})"
+            rotulos[id_] = f"{analise.ref(l.n)} ({plano.rotulo})"
 
     achados = ag.ordenar(agenda.conflitos(tocados))
     outros = {i for c in achados for i in c.ids if i not in rotulos}
@@ -531,16 +712,20 @@ def _prever_conflitos(analise, semestre):
         analise.conflitos.append({"tipo": c.tipo, "titulo": titulos[c.tipo], "texto": texto})
 
 
-def analisar(cabecalhos, linhas, mapeamento, usuario, semestre, coordenador_padrao=None):
-    """Valida a planilha e planeja a importação, sem gravar nada."""
-    analise = Analise(linhas_lidas=len(linhas))
+def analisar(cabecalhos, linhas, mapeamento, usuario, semestre, coordenador_padrao=None, arquivos=(), associacoes=None):
+    """Valida as linhas (de um ou de vários arquivos) e planeja a importação, sem gravar nada.
+
+    `arquivos` são os nomes dos arquivos de origem, na ordem do índice "f" das linhas;
+    `associacoes` é o de-para {nome normalizado: id do usuário, ou 0 para ignorar}.
+    """
+    analise = Analise(linhas_lidas=len(linhas), arquivos=list(arquivos))
     mapa = limpar_mapeamento(mapeamento, len(cabecalhos))
     for msg in erros_do_mapeamento(mapa):
         analise.erro("—", "Mapeamento", msg)
     if analise.erros:
         return analise
 
-    docentes = _Docentes()
+    docentes = _Docentes(associacoes)
     grupos, vistos = {}, {}
     for linha in linhas:
         v = _ler_linha(analise, linha, mapa, semestre, docentes)
@@ -558,11 +743,11 @@ def analisar(cabecalhos, linhas, mapeamento, usuario, semestre, coordenador_padr
             if anterior is None:
                 plano.atributos[campo], plano.origem[campo] = valor, v["n"]
             elif ag.normalizar(anterior) != ag.normalizar(valor):
-                analise.erro(v["n"], campo, f"“{valor}” diverge de “{anterior}”, informado para o mesmo componente na linha {plano.origem[campo]}.")
+                analise.erro(v["n"], campo, f"“{valor}” diverge de “{anterior}”, informado para o mesmo componente na {analise.ref(plano.origem[campo])}.")
         prof_id = v["professor"].id if v["professor"] else None
         duplicata = (chave, v["data"], v["inicio"], v["fim"], prof_id, ag.normalizar(v["campos"]["grupos"]))
         if duplicata in vistos:
-            analise.erro(v["n"], "data", f"Linha repetida: mesmo componente, data, horário, docente e grupo da linha {vistos[duplicata]}.")
+            analise.erro(v["n"], "data", f"Linha repetida: mesmo componente, data, horário, docente e grupo da {analise.ref(vistos[duplicata])}.")
             continue
         vistos[duplicata] = v["n"]
         plano.linhas.append(LinhaPlano(v["n"], v["data"], v["inicio"], v["fim"], v["professor"], v["campos"]))
@@ -574,12 +759,15 @@ def analisar(cabecalhos, linhas, mapeamento, usuario, semestre, coordenador_padr
     for plano in grupos.values():
         if not plano.linhas:
             continue
-        _resolver_componente(analise, plano, plano.linhas[0].n, usuario, semestre, coordenador_padrao, existentes)
+        _resolver_componente(analise, plano, plano.linhas[0].n, usuario, semestre, coordenador_padrao, existentes, docentes)
         if plano.existente:
             _casar_com_existentes(plano)
         analise.componentes.append(plano)
 
-    analise.erros.sort(key=lambda e: (not isinstance(e["linha"], int), e["linha"] if isinstance(e["linha"], int) else 0))
+    analise.pessoas = sorted(docentes.consultadas.values(), key=lambda p: (p["papel"], p["texto"]))
+    for pessoa in analise.pessoas:
+        pessoa["valor"] = (associacoes or {}).get(pessoa["chave"])
+    analise.erros.sort(key=lambda e: (not isinstance(e["linha"], int), e["f"], e["linha"] if isinstance(e["linha"], int) else 0))
     if not analise.erros:
         if not analise.componentes:
             analise.erro("—", "Planilha", "Nenhuma linha válida para importar.")

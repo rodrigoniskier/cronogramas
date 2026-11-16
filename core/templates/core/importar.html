@@ -1,10 +1,10 @@
 {% extends "core/base.html" %}
-{% block titulo %}Importar planilha{% endblock %}
-{% block cabecalho %}Importar cronogramas de planilha{% endblock %}
+{% block titulo %}Importar cronogramas{% endblock %}
+{% block cabecalho %}Importar cronogramas (XLSX, DOCX e PDF){% endblock %}
 {% block conteudo %}
 <div class="row g-3">
   <div class="col-lg-6"><div class="card h-100">
-    <div class="card-header"><i class="bi bi-file-earmark-spreadsheet"></i> 1. Enviar planilha</div>
+    <div class="card-header"><i class="bi bi-files"></i> Enviar cronogramas</div>
     <div class="card-body">
       <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
         {% include "core/_form.html" with col="col-12" %}
@@ -13,20 +13,19 @@
           <a class="btn btn-outline-primary" href="{% url 'importacao_modelo' %}"><i class="bi bi-download"></i> Baixar planilha-modelo</a>
         </div>
       </form>
-      <p class="small text-secondary mt-3 mb-0"><i class="bi bi-shield-check"></i> Nada é gravado no envio. Na etapa seguinte você confere o mapeamento das colunas, os erros de validação e os conflitos que a planilha causaria, e só então confirma a importação.</p>
+      <p class="small text-secondary mt-3 mb-0"><i class="bi bi-shield-check"></i> Nada é gravado no envio. Na conferência você vê os erros de validação e os conflitos que os cronogramas causariam — entre si e com o que já está cadastrado —, pode anexar mais arquivos (até {{ max_arquivos }} por conferência) e só então confirma a importação.</p>
     </div>
   </div></div>
   <div class="col-lg-6"><div class="card h-100">
-    <div class="card-header"><i class="bi bi-info-circle"></i> Formato aceito</div>
+    <div class="card-header"><i class="bi bi-info-circle"></i> Formatos aceitos</div>
     <div class="card-body small">
-      <p>Arquivo <strong>.xlsx</strong> com <strong>uma linha por encontro</strong> na primeira aba. Os títulos das colunas são reconhecidos automaticamente (linhas de título acima do cabeçalho são ignoradas) e podem ser reassociados na conferência.</p>
       <ul class="mb-2">
-        <li><strong>Obrigatórios:</strong> componente curricular, turma, data e horário (uma coluna “13h-15h30” ou colunas de início e término).</li>
-        <li><strong>Docente:</strong> e-mail cadastrado (recomendado), nome de usuário ou nome completo sem homônimos. Docentes não cadastrados não são criados.</li>
+        <li><strong>Planilha (.xlsx):</strong> uma linha por encontro na primeira aba. Obrigatórios: componente curricular, turma, data e horário (uma coluna “13h-15h30” ou colunas de início e término). Os títulos das colunas são reconhecidos automaticamente e podem ser reassociados na conferência.</li>
+        <li><strong>Documento (.docx) e PDF:</strong> o modelo institucional “CRONOGRAMA DE AULAS” — quadro de identificação (curso, componente curricular, semestre, período, turma, coordenador) e tabela com DATA, HORÁRIO, CONTEÚDO, Tipos, ATIVIDADES, RECURSOS, GRUPOS, DOCENTE, CH e LOCAL. São lidos os arquivos exportados por este sistema e documentos com a mesma estrutura. PDF digitalizado (imagem) não é lido.</li>
+        <li><strong>Docente:</strong> e-mail cadastrado, nome de usuário ou nome completo. Nomes não reconhecidos podem ser associados a um cadastro na conferência; docentes não cadastrados não são criados.</li>
         <li><strong>Turma:</strong> informe também o <em>período</em> — sem ele não é possível detectar conflitos de turma.</li>
-        <li><strong>Opcionais:</strong> conteúdo, tipo (T/P), atividades, recursos, grupos, CH, local, observações internas; e, para componentes novos, curso, código, turno, cargas horárias e coordenador (e-mail).</li>
       </ul>
-      <p class="mb-0">Componentes inexistentes no semestre são criados; nos existentes, os encontros da planilha preenchem os horários vazios ou são acrescentados. Importar a mesma planilha duas vezes não duplica encontros.</p>
+      <p class="mb-0">Componentes inexistentes no semestre são criados; nos existentes, os encontros dos arquivos preenchem os horários vazios ou são acrescentados. Importar o mesmo arquivo duas vezes não duplica encontros.</p>
     </div>
   </div></div>
 </div>
@@ -42,7 +41,7 @@
         <td class="small">{% if not i.pendente %}{{ i.resumo.criados }} criado(s), {{ i.resumo.atualizados }} atualizado(s){% else %}—{% endif %}</td>
         <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'importacao_detalhe' i.pk %}">{% if i.pendente %}Conferir{% else %}Ver resultado{% endif %}</a></td></tr>
     {% empty %}
-      <tr><td colspan="6" class="text-center text-secondary py-3">Você ainda não enviou planilhas.</td></tr>
+      <tr><td colspan="6" class="text-center text-secondary py-3">Você ainda não enviou arquivos.</td></tr>
     {% endfor %}
     </tbody>
   </table></div>

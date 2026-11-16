@@ -22,7 +22,7 @@
     <div class="nav flex-column">
       <a class="nav-link {% if n == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2" aria-hidden="true"></i> Painel geral</a>
       <a class="nav-link {% if n == 'componentes' or n == 'cronograma' or n == 'componente_novo' or n == 'componente_editar' %}active{% endif %}" href="{% url 'componentes' %}"><i class="bi bi-table" aria-hidden="true"></i> Componentes e cronogramas</a>
-      {% if user.eh_admin or user.eh_coordenador %}<a class="nav-link {% if n == 'importar' or n == 'importacao_detalhe' %}active{% endif %}" href="{% url 'importar' %}"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Importar planilha</a>{% endif %}
+      {% if user.eh_admin or user.eh_coordenador %}<a class="nav-link {% if n == 'importar' or n == 'importacao_detalhe' %}active{% endif %}" href="{% url 'importar' %}"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> Importar cronogramas</a>{% endif %}
       <a class="nav-link {% if n == 'conflitos' or n == 'conflito_detalhe' or n == 'plano_remanejamento' %}active{% endif %}" href="{% url 'conflitos' %}"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Central de Conflitos
         {% if n_minhas_pendencias %}<span class="badge text-bg-danger ms-auto" title="Conflitos ativos relacionados a você">{{ n_minhas_pendencias }}<span class="visually-hidden"> pendências suas</span></span>{% endif %}</a>
       <a class="nav-link {% if n == 'historico' %}active{% endif %}" href="{% url 'historico' %}"><i class="bi bi-clock-history" aria-hidden="true"></i> Histórico de alterações</a>
