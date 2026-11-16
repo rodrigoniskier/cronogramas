@@ -98,7 +98,7 @@ def importacao_detalhe(request, pk):
             try:
                 with transaction.atomic():
                     # Trava o registro: dois cliques não aplicam a mesma planilha duas vezes.
-                    travada = Importacao.objects.select_for_update().select_related("semestre", "coordenador_padrao").get(pk=imp.pk)
+                    travada = Importacao.objects.select_for_update(of=("self",)).select_related("semestre", "coordenador_padrao").get(pk=imp.pk)
                     if not travada.pendente:
                         raise ErroImportacao("Esta importação já foi concluída.")
                     analise = analisar(

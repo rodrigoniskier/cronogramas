@@ -117,7 +117,7 @@ def aplicar_sugestoes(request):
     try:
         with transaction.atomic():
             ids = {acao.componente_id for acao, _ in pares}
-            comps = {c.id: c for c in Componente.objects.select_for_update().filter(pk__in=ids).select_related("semestre")}
+            comps = {c.id: c for c in Componente.objects.select_for_update(of=("self",)).filter(pk__in=ids).select_related("semestre")}
             if len(comps) != len(ids) or len({c.semestre_id for c in comps.values()}) != 1:
                 raise _Recusa("As ações devem pertencer a componentes existentes de um mesmo semestre.")
             ctx = sg.montar_contexto(next(iter(comps.values())).semestre)
