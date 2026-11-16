@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+{% block titulo %}Importação — {{ imp.arquivo_nome }}{% endblock %}
+{% block cabecalho %}Importação de cronogramas{% endblock %}
+{% block conteudo %}
+<a href="{% url 'importar' %}" class="small"><i class="bi bi-arrow-left"></i> Voltar às importações</a>
+<div class="card mt-2 mb-3"><div class="card-body d-flex flex-wrap gap-3 align-items-center">
+  <div><i class="bi bi-file-earmark-spreadsheet fs-4" style="color:var(--unipe-azul)"></i></div>
+  <div><strong>{% if arquivos|length > 1 %}{{ arquivos|length }} arquivos{% else %}{{ imp.arquivo_nome }}{% endif %}</strong><br><span class="small text-secondary">Semestre {{ imp.semestre.nome }} · enviado em {{ imp.criado_em|date:"d/m/Y H:i" }}{% if imp.coordenador_padrao %} · coordenador padrão: {{ imp.coordenador_padrao.nome }}{% endif %}</span></div>
+  <span class="badge text-bg-{% if imp.pendente %}warning{% else %}success{% endif %} ms-auto">{{ imp.get_status_display }}</span>
+</div></div>
+
+{% if imp.pendente %}
+<div class="card mb-3" id="arquivos">
+  <div class="card-header"><i class="bi bi-files"></i> 1. Arquivos desta conferência <span class="text-secondary fw-normal">— conferidos e cruzados em conjunto</span></div>
+  <div class="card-body">
+    {% if arquivos %}
+    <div class="table-responsive"><table class="table table-sm align-middle">
+      <thead><tr><th>Arquivo</th><th>Formato</th><th class="text-end">Encontros lidos</th><th>Observações da leitura</th><th></th></tr></thead>
+      <tbody>
+      {% for a in arquivos %}
+        <tr><td class="fw-semibold">{{ a.nome }}</td><td><span class="badge text-bg-light border text-uppercase">{{ a.formato }}</span></td>
+          <td class="text-end">{{ a.linhas }}</td>
+          <td class="small text-secondary">{% for aviso in a.avisos %}{{ aviso }} {% empty %}—{% endfor %}</td>
+          <td class="text-end">{% if arquivos|length > 1 %}<form method="post" data-confirmar="Retirar este arquivo da conferência?">{% csrf_token %}<input type="hidden" name="acao" value="remover_arquivo"><input type="hidden" name="arquivo" value="{{ a.indice }}"><button class="btn btn-sm btn-outline-danger" aria-label="Retirar {{ a.nome }}"><i class="bi bi-x-lg"></i> Retirar</button></form>{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% endif %}
+    {% if pode_anexar %}
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="acao" value="anexar">
+      <div class="col-md-8"><label class="form-label small fw-semibold mb-1" for="{{ anexo.arquivo.id_for_label }}">{{ anexo.arquivo.label }}</label>{{ anexo.arquivo }}</div>
+      <div class="col-md-4"><button class="btn btn-outline-primary"><i class="bi bi-paperclip"></i> Anexar à conferência</button></div>
+    </form>
+    <p class="small text-secondary mt-2 mb-0">Anexe os cronogramas dos demais componentes para cruzá-los entre si antes de gravar. Os formatos podem ser misturados.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header"><i class="bi bi-diagram-3"></i> 2. Mapeamento das colunas</div>
+  <div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="mapear">
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Coluna dos arquivos</th><th>Exemplo de valor</th><th style="min-width:260px">Campo do sistema</th></tr></thead>
+        <tbody>
+        {% for col in colunas %}
+          <tr><td><label class="fw-semibold mb-0" for="col_{{ col.indice }}">{{ col.titulo }}</label></td>
+            <td class="small text-secondary">{{ col.exemplo|default:"—" }}</td>
+            <td><select class="form-select form-select-sm" id="col_{{ col.indice }}" name="col_{{ col.indice }}">
+              <option value="">— não importar —</option>
+              {% for c in campos %}<option value="{{ c.nome }}" {% if c.nome == col.campo %}selected{% endif %}>{{ c.rotulo }}</option>{% endfor %}
+            </select></td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Aplicar mapeamento e validar de novo</button>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header"><i class="bi bi-clipboard-check"></i> 3. Validação dos dados</div>
+  <div class="card-body">
+    {% if analise.erros %}
+      <div class="alert alert-danger" role="alert"><i class="bi bi-x-octagon-fill"></i> <strong>{{ analise.erros|length }} erro{{ analise.erros|length|pluralize }}</strong> em {{ analise.linhas_lidas }} linha{{ analise.linhas_lidas|pluralize }} lida{{ analise.linhas_lidas|pluralize }}. A importação é “tudo ou nada”: corrija {% if mapeamento_ok %}os arquivos e envie-os novamente{% if analise.pessoas %}, ou associe abaixo os nomes não reconhecidos{% endif %}{% else %}o mapeamento acima{% endif %}.</div>
+      <div class="table-responsive" style="max-height:420px"><table class="table table-sm small mb-0" id="tabela-erros">
+        <thead><tr>{% if analise.varios_arquivos %}<th>Arquivo</th>{% endif %}<th>Linha</th><th>Campo</th><th>Problema</th></tr></thead>
+        <tbody>{% for e in erros %}<tr>{% if analise.varios_arquivos %}<td>{{ e.arquivo|default:"—" }}</td>{% endif %}<td class="text-nowrap">{{ e.linha }}</td><td class="text-nowrap">{{ e.campo }}</td><td>{{ e.mensagem }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% if erros_ocultos %}<p class="small text-secondary mt-2 mb-0">… e mais {{ erros_ocultos }} erro(s) não exibido(s).</p>{% endif %}
+    {% else %}
+      {% with n=analise.contagem %}
+      <div class="alert alert-success" role="status"><i class="bi bi-check-circle-fill"></i> <strong>Dados válidos.</strong> {{ n.linhas }} linha{{ n.linhas|pluralize }} lida{{ n.linhas|pluralize }}: {{ n.criar }} encontro{{ n.criar|pluralize }} a criar, {{ n.atualizar }} a atualizar e {{ n.sem_alteracao }} sem alteração, em {{ n.componentes_novos }} componente{{ n.componentes_novos|pluralize }} novo{{ n.componentes_novos|pluralize }} e {{ n.componentes_existentes }} existente{{ n.componentes_existentes|pluralize }}.</div>
+      {% endwith %}
+      <div class="table-responsive"><table class="table table-sm mb-0">
+        <thead><tr><th>Componente</th><th>Situação</th><th>Coordenador(a)</th><th class="text-end">Linhas</th></tr></thead>
+        <tbody>{% for c in analise.componentes %}<tr><td>{{ c.rotulo }}</td>
+          <td>{% if c.novo %}<span class="badge text-bg-primary">Será criado</span>{% else %}<span class="badge text-bg-secondary">Já existe</span>{% endif %}</td>
+          <td>{{ c.coordenador.nome }}</td><td class="text-end">{{ c.linhas|length }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    {% endif %}
+    {% for a in analise.avisos %}<div class="alert alert-warning mt-3 mb-0 small"><i class="bi bi-exclamation-circle"></i> {{ a }}</div>{% endfor %}
+    <p class="small text-secondary mt-2 mb-0">Em planilhas, “linha” é a linha do Excel; em DOCX e PDF, é a posição da linha na tabela do cronograma (sem contar o cabeçalho).</p>
+  </div>
+</div>
+
+{% if analise.pessoas %}
+<div class="card mb-3" id="pessoas">
+  <div class="card-header"><i class="bi bi-person-lines-fill"></i> Nomes de docentes e coordenadores a associar</div>
+  <div class="card-body">
+    <p class="small text-secondary">Estes nomes não foram reconhecidos automaticamente (ou foram associados por você). Documentos costumam trazer o nome, e não o e-mail: indique a quem cada um corresponde no cadastro. Nenhum usuário é criado.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="associar"><input type="hidden" name="total" value="{{ analise.pessoas|length }}">
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th>Nome no arquivo</th><th>Papel</th><th class="text-end">Ocorrências</th><th style="min-width:300px">Corresponde a</th></tr></thead>
+        <tbody>
+        {% for p in analise.pessoas %}
+          <tr><td class="fw-semibold">{{ p.texto }}<input type="hidden" name="nome_{{ forloop.counter0 }}" value="{{ p.texto }}"></td>
+            <td>{% if p.papel == 'coordenador' %}Coordenador{% else %}Docente{% endif %}</td><td class="text-end">{{ p.linhas }}</td>
+            <td><select class="form-select form-select-sm" name="pessoa_{{ forloop.counter0 }}" aria-label="Cadastro correspondente a {{ p.texto }}">
+              <option value="">— não associado —</option>
+              <option value="0" {% if p.valor == 0 %}selected{% endif %}>{% if p.papel == 'coordenador' %}— ignorar: usar o coordenador padrão ou quem importa —{% else %}— importar sem docente —{% endif %}</option>
+              {% for d in docentes %}<option value="{{ d.id }}" {% if p.valor == d.id %}selected{% endif %}>{{ d.nome }} ({{ d.email }})</option>{% endfor %}
+            </select></td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Salvar associações e validar de novo</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if not analise.erros %}
+<div class="card mb-3">
+  <div class="card-header"><i class="bi bi-exclamation-triangle"></i> 4. Conflitos que a importação causará</div>
+  <div class="card-body">
+    {% if analise.conflitos %}
+      <p class="mb-2"><strong>{{ analise.conflitos|length }} conflito{{ analise.conflitos|length|pluralize }}</strong> envolvendo os encontros dos arquivos{% if analise.varios_arquivos %} — entre os próprios arquivos e com o que já está cadastrado{% endif %}. Conflitos não impedem a importação: ficam registrados na Central de Conflitos, com sugestões de remanejamento.</p>
+      <ul class="list-group small" id="conflitos-previstos">{% for c in analise.conflitos %}<li class="list-group-item"><span class="badge text-bg-danger me-1">{{ c.titulo }}</span>{{ c.texto }}</li>{% endfor %}</ul>
+    {% else %}
+      <p class="mb-0 text-success"><i class="bi bi-check-circle"></i> Nenhum conflito de docente, turma ou calendário foi previsto.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="d-flex flex-wrap gap-2">
+  <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="aplicar">
+    <button class="btn btn-destaque" {% if not analise.ok %}disabled{% endif %}><i class="bi bi-check2-circle"></i> Confirmar importação</button></form>
+  <form method="post" data-confirmar="Descartar esta conferência e todos os seus arquivos? Nada foi gravado até aqui.">{% csrf_token %}<input type="hidden" name="acao" value="descartar">
+    <button class="btn btn-outline-secondary"><i class="bi bi-trash"></i> Descartar</button></form>
+</div>
+
+{% else %}
+<div class="card mb-3">
+  <div class="card-header"><i class="bi bi-check2-circle"></i> Resultado</div>
+  <div class="card-body">
+    <p>Importada em {{ imp.aplicado_em|date:"d/m/Y H:i" }}: <strong>{{ imp.resumo.criados }}</strong> encontro(s) criado(s), <strong>{{ imp.resumo.atualizados }}</strong> atualizado(s) e {{ imp.resumo.sem_alteracao }} sem alteração.</p>
+    <div class="table-responsive"><table class="table table-sm">
+      <thead><tr><th>Componente</th><th>Situação</th><th class="text-end">Criados</th><th class="text-end">Atualizados</th><th></th></tr></thead>
+      <tbody>{% for c in imp.resumo.componentes %}<tr><td>{{ c.rotulo }}</td><td>{% if c.novo %}Criado{% else %}Atualizado{% endif %}</td><td class="text-end">{{ c.criados }}</td><td class="text-end">{{ c.atualizados }}</td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'cronograma' c.id %}"><i class="bi bi-table"></i> Abrir cronograma</a></td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if imp.resumo.conflitos_previstos %}
+      <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> A importação trouxe <strong>{{ imp.resumo.conflitos_previstos|length }} conflito(s)</strong>, já registrados na Central de Conflitos.</div>
+      <ul class="list-group small mb-3">{% for t in imp.resumo.conflitos_previstos %}<li class="list-group-item">{{ t }}</li>{% endfor %}</ul>
+      <a class="btn btn-danger" href="{% url 'plano_remanejamento' %}?semestre={{ imp.semestre_id }}"><i class="bi bi-magic"></i> Ver plano de remanejamento sugerido</a>
+      <a class="btn btn-outline-danger" href="{% url 'conflitos' %}?semestre={{ imp.semestre_id }}"><i class="bi bi-list-check"></i> Central de Conflitos</a>
+    {% else %}
+      <p class="text-success mb-0"><i class="bi bi-check-circle"></i> Nenhum conflito foi causado por esta importação.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

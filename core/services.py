@@ -6,7 +6,10 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from .models import Componente, Conflito, DataBloqueada, Encontro, HistoricoAlteracao, ch_padrao, hora_modelo
+from . import agenda as ag
+from .models import (
+    Componente, Conflito, DataBloqueada, Encontro, HistoricoAlteracao, Semestre, ch_padrao, hora_modelo,
+)
 
 # ---------------------------------------------------------------- permissões
 
@@ -75,13 +78,14 @@ def datas_previstas(componente):
 
 
 @transaction.atomic
-def gerar_encontros(componente):
+def gerar_encontros(componente, sincronizar=True):
     """Sincroniza os encontros regulares com a grade semanal e o calendário.
 
     - cria os encontros que faltam;
     - remove encontros regulares vazios que deixaram de estar previstos;
     - preserva encontros já preenchidos (passam a ser excepcionais) e os excepcionais.
-    Retorna (criados, removidos, preservados).
+    Retorna (criados, removidos, preservados). Com `sincronizar=False`, quem chama
+    assume o recálculo dos conflitos (útil ao regerar vários componentes de uma vez).
     """
     previstas = datas_previstas(componente)
     todos = list(componente.encontros.all())
@@ -120,81 +124,113 @@ def gerar_encontros(componente):
     ]
     Encontro.objects.bulk_create(novos)
     criados = len(novos)
-    sincronizar_conflitos(docentes_afetados)
+    if sincronizar:
+        sincronizar_conflitos(docentes_afetados, {componente.semestre_id})
     return criados, removidos, preservados
 
 
 # ------------------------------------------------------------------ conflitos
 
 
-def _sobrepoe(a, b):
-    """Intervalos semiabertos: aulas consecutivas (14–16 e 16–18) não conflitam."""
-    return a.hora_inicio < b.hora_fim and b.hora_inicio < a.hora_fim
+def calendarios_de(semestre_ids):
+    """{semestre_id: agenda.Calendario} com o período letivo e as datas bloqueadas."""
+    bloqueadas = defaultdict(dict)
+    for sem_id, dia, descricao in DataBloqueada.objects.filter(semestre__in=semestre_ids).values_list(
+        "semestre_id", "data", "descricao"
+    ):
+        bloqueadas[sem_id][dia] = descricao
+    return {
+        sem_id: ag.Calendario(inicio, fim, bloqueadas[sem_id])
+        for sem_id, inicio, fim in Semestre.objects.filter(pk__in=semestre_ids).values_list(
+            "id", "data_inicio", "data_fim"
+        )
+    }
+
+
+def montar_agenda(encontros, docente=True, turma_calendario=True):
+    """Constrói a agenda em memória a partir de um queryset de encontros.
+
+    `docente=False` ignora os docentes e `turma_calendario=False` ignora turmas e
+    calendário — usados para recalcular só a parte afetada por uma alteração.
+    """
+    linhas = list(encontros.values_list(
+        "id", "componente_id", "componente__semestre_id", "componente__curso",
+        "componente__periodo", "componente__turma", "professor_id", "data", "hora_inicio", "hora_fim",
+    ))
+    calendarios = calendarios_de({l[2] for l in linhas}) if turma_calendario else {}
+    return ag.Agenda(
+        (
+            ag.Aula(
+                id=i, componente_id=comp, semestre_id=sem,
+                turma=ag.chave_turma(sem, curso, periodo, turma) if turma_calendario else None,
+                professor_id=prof if docente else None, data=dia, inicio=ini, fim=fim,
+            )
+            for i, comp, sem, curso, periodo, turma, prof, dia, ini, fim in linhas
+        ),
+        calendarios,
+    )
 
 
 @transaction.atomic
-def sincronizar_conflitos(professor_ids=None):
-    """Recalcula os conflitos docentes.
+def sincronizar_conflitos(professor_ids=None, semestre_ids=None):
+    """Recalcula e persiste os conflitos (regras em core/agenda.py).
 
-    Considera todos os componentes, independentemente do coordenador. Com
-    `professor_ids`, limita o recálculo aos docentes afetados por uma alteração;
-    sem argumento, verifica toda a base.
+    Sem argumentos, verifica toda a base. Com `professor_ids`, recalcula os
+    conflitos docentes desses docentes (em todos os componentes e semestres);
+    com `semestre_ids`, os conflitos de turma e de calendário desses semestres.
     """
-    encontros = Encontro.objects.filter(professor__isnull=False)
-    existentes = Conflito.objects.all()
-    if professor_ids is not None:
-        ids = {p for p in professor_ids if p}
-        if not ids:
+    T = Conflito.Tipo
+    if professor_ids is None and semestre_ids is None:
+        achados = montar_agenda(Encontro.objects.all()).conflitos()
+        existentes = Conflito.objects.all()
+    else:
+        profs = {p for p in (professor_ids or ()) if p}
+        sems = {s for s in (semestre_ids or ()) if s}
+        if not profs and not sems:
             return
-        encontros = encontros.filter(professor_id__in=ids)
-        existentes = existentes.filter(professor_id__in=ids)
+        achados, escopo = set(), Q(pk__in=[])
+        if profs:
+            achados |= montar_agenda(
+                Encontro.objects.filter(professor_id__in=profs), turma_calendario=False
+            ).conflitos()
+            escopo |= Q(tipo=T.DOCENTE, professor_id__in=profs)
+        if sems:
+            achados |= montar_agenda(
+                Encontro.objects.filter(componente__semestre_id__in=sems), docente=False
+            ).conflitos()
+            escopo |= Q(tipo__in=[T.TURMA, T.CALENDARIO]) & (
+                Q(encontro_a__componente__semestre_id__in=sems) | Q(encontro_b__componente__semestre_id__in=sems)
+            )
+        existentes = Conflito.objects.filter(escopo)
 
-    por_docente_dia = defaultdict(list)
-    for e in encontros.only("id", "professor_id", "data", "hora_inicio", "hora_fim"):
-        por_docente_dia[(e.professor_id, e.data)].append(e)
-
-    atuais = {}
-    for (prof_id, data), lista in por_docente_dia.items():
-        if len(lista) < 2:
-            continue
-        lista.sort(key=lambda e: (e.hora_inicio, e.id))
-        for i, a in enumerate(lista):
-            for b in lista[i + 1:]:
-                if b.hora_inicio >= a.hora_fim:
-                    break
-                if _sobrepoe(a, b):
-                    x, y = (a, b) if a.id < b.id else (b, a)
-                    atuais[(x.id, y.id, prof_id)] = (
-                        data,
-                        max(a.hora_inicio, b.hora_inicio),
-                        min(a.hora_fim, b.hora_fim),
-                    )
-
+    atuais = {c.chave: c for c in achados}
     agora = timezone.now()
     vistos = set()
     for c in existentes:
-        chave = (c.encontro_a_id, c.encontro_b_id, c.professor_id)
-        vistos.add(chave)
-        if chave in atuais:
-            data, ini, fim = atuais[chave]
-            if not c.ativo or (c.data, c.sobreposicao_inicio, c.sobreposicao_fim) != (data, ini, fim):
+        vistos.add(c.chave)
+        achado = atuais.get(c.chave)
+        if achado:
+            novo = (achado.data, achado.inicio, achado.fim, achado.descricao)
+            if not c.ativo or (c.data, c.sobreposicao_inicio, c.sobreposicao_fim, c.descricao) != novo:
                 c.status = Conflito.Status.ATIVO
                 c.resolvido_em = None
-                c.data, c.sobreposicao_inicio, c.sobreposicao_fim = data, ini, fim
+                c.data, c.sobreposicao_inicio, c.sobreposicao_fim, c.descricao = novo
                 c.save()
         elif c.ativo:
             c.status = Conflito.Status.RESOLVIDO
             c.resolvido_em = agora
             c.save(update_fields=["status", "resolvido_em"])
 
-    for chave, (data, ini, fim) in atuais.items():
+    for chave, achado in atuais.items():
         if chave in vistos:
             continue
         try:
             with transaction.atomic():
                 Conflito.objects.create(
-                    encontro_a_id=chave[0], encontro_b_id=chave[1], professor_id=chave[2],
-                    data=data, sobreposicao_inicio=ini, sobreposicao_fim=fim,
+                    tipo=achado.tipo, encontro_a_id=achado.a, encontro_b_id=achado.b,
+                    professor_id=achado.professor_id, data=achado.data,
+                    sobreposicao_inicio=achado.inicio, sobreposicao_fim=achado.fim,
+                    motivo=achado.motivo, descricao=achado.descricao[:160],
                 )
         except IntegrityError:
             pass  # criado por requisição concorrente
@@ -206,11 +242,12 @@ def conflitos_ativos():
         "encontro_a__componente__coordenador",
         "encontro_b__componente__coordenador",
         "encontro_a__componente__semestre",
+        "encontro_b__componente__semestre",
     )
 
 
 def conflitos_do_usuario(usuario):
-    """Conflitos ativos em que o usuário é o docente ou atua no componente."""
+    """Conflitos ativos em que o usuário é o docente ou atua em um dos componentes."""
     q = (
         Q(professor=usuario)
         | Q(encontro_a__componente__professores=usuario)
@@ -267,7 +304,7 @@ def estatisticas(componentes):
     for a, b in Conflito.objects.filter(status=Conflito.Status.ATIVO).values_list(
         "encontro_a__componente", "encontro_b__componente"
     ):
-        for cid in {a, b}:
+        for cid in {a, b} - {None}:
             conf[cid] += 1
     saida = {}
     for c in componentes:
@@ -310,14 +347,10 @@ def problemas_para_aprovacao(componente):
         Q(encontro_a__componente=componente) | Q(encontro_b__componente=componente)
     )
     for c in ativos:
-        meu, outro = (c.encontro_a, c.encontro_b) if c.encontro_a.componente_id == componente.id else (c.encontro_b, c.encontro_a)
+        meu = c.encontro_a if c.encontro_a.componente_id == componente.id else c.encontro_b
         problemas.append({
             "tipo": "conflito",
-            "mensagem": (
-                f"{meu.descricao}: conflito docente de {c.professor.nome} com "
-                f"{outro.componente.nome} (Turma {outro.componente.turma}), "
-                f"{c.sobreposicao_inicio:%H:%M}–{c.sobreposicao_fim:%H:%M}."
-            ),
+            "mensagem": f"{c.get_tipo_display()} — {c.explicacao}",
             "encontro_id": meu.id,
         })
     return problemas

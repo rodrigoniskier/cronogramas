@@ -1,17 +1,19 @@
 {% extends "core/base.html" %}
 {% block titulo %}Conflito{% endblock %}
-{% block cabecalho %}Conflito docente{% endblock %}
+{% block cabecalho %}{{ c.get_tipo_display }}{% endblock %}
 {% block conteudo %}
 <a href="{% url 'conflitos' %}" class="small"><i class="bi bi-arrow-left"></i> Voltar à Central de Conflitos</a>
 <div class="alert {% if c.ativo %}alert-danger{% else %}alert-success{% endif %} mt-2" role="status">
   {% if c.ativo %}<i class="bi bi-exclamation-triangle-fill"></i> <strong>Conflito ativo.</strong>{% else %}<i class="bi bi-check-circle-fill"></i> <strong>Conflito resolvido</strong> em {{ c.resolvido_em|date:"d/m/Y H:i" }}.{% endif %}
-  <strong>{{ c.professor.nome }}</strong> {% if c.ativo %}está{% else %}estava{% endif %} em dois encontros em {{ c.data|date:"l, d/m/Y" }},
+  {% if c.tipo == 'DOCENTE' %}<strong>{{ c.professor.nome }}</strong> {% if c.ativo %}está{% else %}estava{% endif %} em dois encontros em {{ c.data|date:"l, d/m/Y" }},
   com sobreposição das <strong>{{ c.sobreposicao_inicio|time:"H:i" }} às {{ c.sobreposicao_fim|time:"H:i" }}</strong>.
   {% if c.ativo %}Para resolver, altere o professor, a data ou o horário de um dos encontros.{% endif %}
+  {% else %}{{ c.explicacao }}
+  {% if c.ativo %}Para resolver, altere a data ou o horário {% if c.tipo == 'TURMA' %}de um dos encontros{% else %}do encontro{% endif %}.{% endif %}{% endif %}
 </div>
 <div class="row g-3 mb-3">
   {% for l in c.lados %}
-  <div class="col-lg-6"><div class="card h-100">
+  <div class="{% if c.lados|length == 1 %}col-12{% else %}col-lg-6{% endif %}"><div class="card h-100">
     <div class="card-header">{{ l.comp.nome }} — Turma {{ l.comp.turma }}</div>
     <div class="card-body">
       <dl class="row mb-2 small">
@@ -23,7 +25,9 @@
       </dl>
       <a class="btn btn-sm btn-outline-primary" href="{{ l.url }}"><i class="bi bi-box-arrow-up-right"></i> Abrir no cronograma</a>
       <hr>
-      {% if l.pode_editar %}
+      {% if l.pode_editar and c.tipo != 'DOCENTE' %}
+      <p class="small text-secondary mb-0">Para mudar data ou horário, abra o encontro no cronograma{% if c.ativo %} ou use uma das sugestões abaixo{% endif %}.</p>
+      {% elif l.pode_editar %}
       <form method="post" class="row g-2 align-items-end">{% csrf_token %}
         <input type="hidden" name="acao" value="trocar_professor"><input type="hidden" name="encontro" value="{{ l.enc.pk }}">
         <div class="col"><label class="form-label small fw-semibold mb-0" for="tp-{{ l.enc.pk }}">Trocar o professor deste encontro</label>
@@ -40,6 +44,21 @@
     </div></div></div>
   {% endfor %}
 </div>
+{% if sugestoes %}
+<div class="card mb-3" id="sugestoes">
+  <div class="card-header"><i class="bi bi-magic"></i> Sugestões de remanejamento</div>
+  {% if sugestoes.aplicaveis %}
+  <ul class="list-group list-group-flush">{% for s in sugestoes.aplicaveis %}{% include "core/_sugestao.html" with aplicar=True mostrar_resolvidos=False %}{% endfor %}</ul>
+  {% else %}
+  <div class="card-body small text-secondary"><i class="bi bi-slash-circle"></i> {{ sugestoes.diagnostico }}</div>
+  {% endif %}
+  {% if sugestoes.outras %}
+  <div class="card-body border-top py-2 small fw-semibold">Alternativas que dependem do responsável pelo outro componente (registre uma solicitação abaixo):</div>
+  <ul class="list-group list-group-flush">{% for s in sugestoes.outras %}{% include "core/_sugestao.html" with aplicar=False mostrar_resolvidos=False %}{% endfor %}</ul>
+  {% endif %}
+  <div class="card-footer small text-secondary">Cada sugestão respeita as restrições rígidas (docentes e turma livres, calendário, cronograma em elaboração) e é conferida novamente ao ser aplicada. Para resolver vários conflitos de uma vez, veja o <a href="{% url 'plano_remanejamento' %}?semestre={{ c.encontro_a.componente.semestre_id }}">plano de remanejamento do semestre</a>.</div>
+</div>
+{% endif %}
 <div class="row g-3">
   <div class="col-lg-6"><div class="card h-100">
     <div class="card-header"><i class="bi bi-chat-left-text"></i> Solicitações de ajuste e observações</div>
@@ -53,7 +72,7 @@
         <button class="btn btn-sm btn-primary"><i class="bi bi-send"></i> Registrar</button></form>
     </div></div></div>
   <div class="col-lg-6"><div class="card h-100">
-    <div class="card-header"><i class="bi bi-clock-history"></i> Histórico dos dois encontros</div>
+    <div class="card-header"><i class="bi bi-clock-history"></i> Histórico {% if c.encontro_b %}dos dois encontros{% else %}do encontro{% endif %}</div>
     <div class="table-responsive"><table class="table table-sm mb-0 small">
       <thead><tr><th>Quando</th><th>Quem</th><th>Componente</th><th>Campo</th><th>De → Para</th></tr></thead><tbody>
       {% for h in historico %}<tr><td class="text-nowrap">{{ h.data_hora|date:"d/m/Y H:i" }}</td><td>{{ h.usuario.nome|default:"—" }}</td><td>{{ h.componente.nome }}</td><td>{{ h.campo }}</td><td>{{ h.valor_anterior|default:"(vazio)"|truncatechars:50 }} → {{ h.valor_novo|default:"(vazio)"|truncatechars:50 }}</td></tr>

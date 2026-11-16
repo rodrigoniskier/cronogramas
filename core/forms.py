@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, BaseUserCreationForm
 
-from .models import Componente, Configuracao, DataBloqueada, Semestre, Usuario
+from .models import Componente, Configuracao, DataBloqueada, Importacao, Semestre, Usuario
 
 
 class _Bootstrap:
@@ -162,3 +162,76 @@ class ConfiguracaoForm(_Bootstrap, forms.ModelForm):
                 raise forms.ValidationError("Envie uma imagem PNG ou JPG válida.")
             arq.seek(0)
         return arq
+
+
+class VariosArquivosInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class VariosArquivosField(forms.FileField):
+    """Campo de arquivo que aceita um ou vários arquivos e devolve sempre uma lista."""
+
+    def __init__(self, *a, **kw):
+        kw.setdefault("widget", VariosArquivosInput(attrs={"accept": ".xlsx,.docx,.pdf", "multiple": True}))
+        super().__init__(*a, **kw)
+
+    def clean(self, data, initial=None):
+        um = super().clean
+        if isinstance(data, (list, tuple)) and data:
+            return [um(d, initial) for d in data]
+        return [um(None if isinstance(data, (list, tuple)) else data, initial)]   # lista vazia: "campo obrigatório"
+
+
+class _LeituraDeArquivos:
+    """Lê os arquivos enviados; `self.lidos` fica com o resultado de cada um."""
+
+    def clean_arquivo(self):
+        from .importacao import MAX_ARQUIVOS, ErroImportacao, ler_arquivo
+
+        enviados = self.cleaned_data["arquivo"]
+        if len(enviados) > MAX_ARQUIVOS:
+            raise forms.ValidationError(f"Envie no máximo {MAX_ARQUIVOS} arquivos por vez.")
+        self.lidos, erros = [], []
+        for arquivo in enviados:
+            try:
+                self.lidos.append(ler_arquivo(arquivo))
+            except ErroImportacao as erro:
+                erros.append(str(erro))
+        if erros:
+            raise forms.ValidationError(erros)
+        return enviados
+
+
+class ImportacaoForm(_LeituraDeArquivos, _Bootstrap, forms.ModelForm):
+    arquivo = VariosArquivosField(
+        label="Cronogramas (.xlsx, .docx ou .pdf)",
+        help_text="Selecione um ou vários arquivos, em qualquer combinação de formatos; eles são conferidos e cruzados em conjunto.",
+    )
+
+    class Meta:
+        model = Importacao
+        fields = ["semestre", "coordenador_padrao"]
+        labels = {"semestre": "Semestre de destino", "coordenador_padrao": "Coordenador dos componentes novos"}
+        help_texts = {"coordenador_padrao": "Usado quando o arquivo não informa o coordenador."}
+
+    field_order = ["arquivo", "semestre", "coordenador_padrao"]
+
+    def __init__(self, *a, usuario=None, **kw):
+        super().__init__(*a, **kw)
+        self.fields["coordenador_padrao"].queryset = Usuario.objects.filter(
+            is_active=True, perfil=Usuario.Perfil.COORD
+        )
+        if usuario and not usuario.eh_admin:
+            # Coordenador importa apenas componentes sob sua própria responsabilidade.
+            del self.fields["coordenador_padrao"]
+        self._estilizar()
+
+
+class AnexoForm(_LeituraDeArquivos, _Bootstrap, forms.Form):
+    """Acrescenta arquivos a uma conferência em andamento."""
+
+    arquivo = VariosArquivosField(label="Anexar mais cronogramas (.xlsx, .docx ou .pdf)")
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._estilizar()

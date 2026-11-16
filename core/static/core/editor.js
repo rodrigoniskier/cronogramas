@@ -163,6 +163,13 @@
     if (!conf) return null;
     var td = el('td', {colspan: NCOL});
     conf.forEach(function (c) {
+      if (c.tipo !== 'DOCENTE') {   // turma ou calendário: texto montado no servidor
+        td.appendChild(el('div', {class: 'alerta-conflito', html:
+          '<i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> <strong>' + esc(c.titulo).toUpperCase() + ':</strong> ' + esc(c.explicacao) + ' ' +
+          (c.outro_url ? '<a href="' + esc(c.outro_url) + '">Abrir o outro encontro</a> · ' : '') +
+          '<a href="' + esc(c.detalhe_url) + '">Detalhes e resolução</a>'}));
+        return;
+      }
       td.appendChild(el('div', {class: 'alerta-conflito', html:
         '<i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> <strong>CONFLITO DE HORÁRIO DOCENTE:</strong> ' + esc(c.professor) +
         ' está alocado(a) em ' + esc(c.data_br) + ' neste encontro (' + esc(c.meu_horario) + ') e também em <strong>' + esc(c.outro_componente) +
@@ -242,7 +249,7 @@
       '<span class="small text-secondary ms-1">' + s.preenchidos + ' de ' + s.total + ' encontros preenchidos (' + s.pct + '%)</span>';
     var b = document.getElementById('banner-conflitos');
     b.innerHTML = s.conflitos ? '<div class="alert alert-danger d-flex flex-wrap align-items-center gap-2 mb-2"><i class="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i><div><strong>' + s.conflitos +
-      (s.conflitos > 1 ? ' conflitos de horário docente' : ' conflito de horário docente') + ' neste cronograma.</strong> O salvamento continua permitido; a aprovação só será possível após a resolução.</div>' +
+      (s.conflitos > 1 ? ' conflitos de alocação' : ' conflito de alocação') + ' neste cronograma.</strong> O salvamento continua permitido; a aprovação só será possível após a resolução.</div>' +
       '<button type="button" class="btn btn-sm btn-danger ms-auto" id="ver-conflitos"><i class="bi bi-funnel"></i> Mostrar só os conflitos</button>' +
       '<a class="btn btn-sm btn-outline-danger" href="/conflitos/?componente=' + cfg.compId + '">Central de Conflitos</a></div>' : '';
     var u = estado.ultima_edicao;
@@ -455,7 +462,7 @@
       bSalvar.disabled = false;
       if (pendentes() || falhaRede) { toast('Há alterações que não puderam ser salvas. Verifique os avisos.', 'danger'); return; }
       var n = estado.stats.conflitos;
-      toast(n ? 'Cronograma salvo. Atenção: ' + n + ' conflito(s) de horário permanece(m) pendente(s).' : 'Cronograma salvo.', n ? 'warning' : 'success');
+      toast(n ? 'Cronograma salvo. Atenção: ' + n + ' conflito(s) de alocação permanece(m) pendente(s).' : 'Cronograma salvo.', n ? 'warning' : 'success');
     });
   });
   var modalValidar = new bootstrap.Modal('#modal-validar');
@@ -468,12 +475,12 @@
       var p = r.j.problemas, mv = document.getElementById('mv-corpo'), fa = document.getElementById('form-aprovar');
       fa.hidden = !(r.j.pode_aprovar && !p.length);
       if (!p.length) {
-        mv.innerHTML = '<div class="alert alert-success mb-0"><i class="bi bi-check-circle-fill"></i> <strong>Cronograma válido.</strong> Todos os encontros estão preenchidos e não há conflitos docentes. ' +
+        mv.innerHTML = '<div class="alert alert-success mb-0"><i class="bi bi-check-circle-fill"></i> <strong>Cronograma válido.</strong> Todos os encontros estão preenchidos e não há conflitos. ' +
           (estado.situacao !== 'RASCUNHO' ? 'Este cronograma já está aprovado.' : (r.j.pode_aprovar ? 'Você já pode aprová-lo.' : 'A aprovação cabe ao coordenador responsável.')) + '</div>';
       } else {
         var nc = p.filter(function (x) { return x.tipo === 'conflito'; }).length;
         mv.innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i> <strong>' + p.length + ' pendência(s)</strong> impedem a aprovação' +
-          (nc ? ' — ' + nc + ' conflito(s) docente(s)' : '') + '. O rascunho permanece salvo.</div><ul class="list-group">' +
+          (nc ? ' — ' + nc + ' conflito(s) de alocação' : '') + '. O rascunho permanece salvo.</div><ul class="list-group">' +
           p.map(function (x) {
             return '<li class="list-group-item d-flex gap-2 align-items-start"><i class="bi ' + (x.tipo === 'conflito' ? 'bi-exclamation-triangle-fill text-danger' : 'bi-pencil text-secondary') + '" aria-hidden="true"></i><span class="flex-grow-1">' +
               '<span class="badge ' + (x.tipo === 'conflito' ? 'text-bg-danger' : 'text-bg-secondary') + ' me-1">' + (x.tipo === 'conflito' ? 'Conflito' : x.tipo === 'incompleto' ? 'Incompleto' : 'Estrutura') + '</span>' + esc(x.mensagem) + '</span>' +

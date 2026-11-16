@@ -90,20 +90,27 @@ def encontro_json(e):
 
 
 def _conflito_lado(c, meu, outro):
-    oc = outro.componente
-    return {
+    lado = {
         "id": c.id,
-        "professor": c.professor.nome,
+        "tipo": c.tipo,
+        "titulo": c.get_tipo_display(),
+        "explicacao": c.explicacao,
+        "professor": c.professor.nome if c.professor_id else "",
         "data_br": c.data.strftime("%d/%m/%Y"),
         "sobreposicao": f"{c.sobreposicao_inicio:%H:%M}–{c.sobreposicao_fim:%H:%M}",
         "meu_horario": f"{meu.hora_inicio:%H:%M}–{meu.hora_fim:%H:%M}",
-        "outro_componente": oc.nome,
-        "outro_turma": oc.turma,
-        "outro_coordenador": oc.coordenador.nome,
-        "outro_horario": f"{outro.hora_inicio:%H:%M}–{outro.hora_fim:%H:%M}",
-        "outro_url": f"/componentes/{oc.id}/cronograma/#encontro-{outro.id}",
         "detalhe_url": f"/conflitos/{c.id}/",
     }
+    if outro is not None:
+        oc = outro.componente
+        lado.update({
+            "outro_componente": oc.nome,
+            "outro_turma": oc.turma,
+            "outro_coordenador": oc.coordenador.nome,
+            "outro_horario": f"{outro.hora_inicio:%H:%M}–{outro.hora_fim:%H:%M}",
+            "outro_url": f"/componentes/{oc.id}/cronograma/#encontro-{outro.id}",
+        })
+    return lado
 
 
 def estado_json(componente, usuario):
@@ -113,7 +120,7 @@ def estado_json(componente, usuario):
         Q(encontro_a__componente=componente) | Q(encontro_b__componente=componente)
     ):
         for meu, outro in ((c.encontro_a, c.encontro_b), (c.encontro_b, c.encontro_a)):
-            if meu.componente_id == componente.id:
+            if meu is not None and meu.componente_id == componente.id:
                 mapa.setdefault(meu.id, []).append(_conflito_lado(c, meu, outro))
     ultimo = max((e for e in encontros if e.atualizado_em), key=lambda e: e.atualizado_em, default=None)
     return {
@@ -263,8 +270,10 @@ def alterar_encontro(usuario, pk, campos, base=None, versao=None, forcar=False):
     e.atualizado_em = timezone.now()
     e.save()
     docentes_afetados.add(e.professor_id)
-    if set(mudancas) & ({"professor_id"} | set(CAMPOS_AGENDA)):
-        sincronizar_conflitos(docentes_afetados)
+    mudou_agenda = bool(set(mudancas) & set(CAMPOS_AGENDA))
+    if mudou_agenda or "professor_id" in mudancas:
+        # Docente: recalcula os docentes afetados. Data/horário: também turma e calendário.
+        sincronizar_conflitos(docentes_afetados, {comp.semestre_id} if mudou_agenda else None)
     return e, True
 
 
@@ -330,6 +339,7 @@ def api_encontro_criar(request, pk):
                 atualizado_por=request.user, atualizado_em=timezone.now(),
             )
             registrar(request.user, comp, "Encontro inserido", "", e.descricao, e)
+            sincronizar_conflitos(semestre_ids={comp.semestre_id})
     except ErroEdicao as err:
         return _erro_json(err)
     return JsonResponse({"encontro_id": e.id, "estado": estado_json(comp, request.user)})
@@ -498,6 +508,7 @@ def componente_form(request, pk=None):
         if form.is_valid() and not erros_h:
             try:
                 with transaction.atomic():
+                    semestre_anterior = comp.semestre_id if comp else None
                     obj = form.save(commit=False)
                     if not u.eh_admin:
                         obj.coordenador = u
@@ -508,6 +519,8 @@ def componente_form(request, pk=None):
                         [HorarioSemanal(componente=obj, dia_semana=d, hora_inicio=i, hora_fim=f) for d, i, f in horarios]
                     )
                     criados, removidos, preservados = gerar_encontros(obj)
+                    if semestre_anterior and semestre_anterior != obj.semestre_id:
+                        sincronizar_conflitos(semestre_ids={semestre_anterior})
                     registrar(u, obj, "Cadastro do componente", "", "Componente criado" if not comp else "Cadastro atualizado")
             except IntegrityError:
                 form.add_error("nome", "Já existe este componente para a mesma turma e semestre.")
@@ -562,7 +575,7 @@ def cronograma(request, pk):
 @require_POST
 def componente_validar(request, pk):
     comp = get_object_or_404(_componentes(), pk=pk)
-    sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+    sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)), {comp.semestre_id})
     return JsonResponse({
         "problemas": problemas_para_aprovacao(comp),
         "estado": estado_json(comp, request.user),
@@ -580,7 +593,7 @@ def componente_transicao(request, pk, acao):
         S = Componente.Situacao
         agora = timezone.now()
         if acao == "aprovar" and comp.situacao == S.RASCUNHO:
-            sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)))
+            sincronizar_conflitos(set(comp.encontros.values_list("professor_id", flat=True)), {comp.semestre_id})
             problemas = problemas_para_aprovacao(comp)
             if problemas:
                 messages.error(request, f"Aprovação impedida: {len(problemas)} pendência(s). Use “Validar cronograma” para ver a lista.")
@@ -633,7 +646,7 @@ def exportar(request, pk, formato):
 
 def _lados(c, usuario):
     c.lados = []
-    for meu in (c.encontro_a, c.encontro_b):
+    for meu in filter(None, (c.encontro_a, c.encontro_b)):
         c.lados.append({
             "enc": meu,
             "comp": meu.componente,
@@ -653,6 +666,8 @@ def conflitos(request):
     )
     if situacao in ("ATIVO", "RESOLVIDO"):
         qs = qs.filter(status=situacao)
+    if g.get("tipo") in Conflito.Tipo.values:
+        qs = qs.filter(tipo=g["tipo"])
     if g.get("professor", "").isdigit():
         qs = qs.filter(professor_id=g["professor"])
     if g.get("componente", "").isdigit():
@@ -681,6 +696,7 @@ def conflitos(request):
         "coordenadores": Usuario.objects.filter(perfil=Usuario.Perfil.COORD),
         "componentes": _componentes(),
         "semestres": Semestre.objects.all(),
+        "tipos": Conflito.Tipo.choices,
     })
 
 
@@ -718,11 +734,16 @@ def conflito_detalhe(request, pk):
                     messages.error(request, err.mensagem)
         return redirect("conflito_detalhe", pk=pk)
     _lados(c, u)
+    sugestoes = None
+    if c.ativo:
+        from .views_sugestoes import sugestoes_do_conflito   # import tardio: evita ciclo entre os módulos
+
+        sugestoes = sugestoes_do_conflito(c, u)
     historico = HistoricoAlteracao.objects.filter(
         encontro_id__in=[c.encontro_a_id, c.encontro_b_id]
     ).select_related("usuario", "componente")[:50]
     return render(request, "core/conflito_detalhe.html", {
-        "c": c, "historico": historico, "docentes": Usuario.docentes(),
+        "c": c, "historico": historico, "docentes": Usuario.docentes(), "sugestoes": sugestoes,
         "observacoes": c.observacoes.select_related("autor"),
     })
 
@@ -819,16 +840,24 @@ def semestre_form(request, pk=None):
     form = SemestreForm(request.POST or None, instance=sem)
     if request.method == "POST" and form.is_valid():
         obj = form.save()
+        sincronizar_conflitos(semestre_ids={obj.pk})   # o período letivo pode ter mudado
         messages.success(request, "Semestre salvo.")
         return redirect("semestre_detalhe", pk=obj.pk)
     return render(request, "core/semestre_form.html", {"form": form, "sem": sem})
 
 
 def _regerar_semestre(sem):
+    """Regera os encontros dos componentes em elaboração e recalcula os conflitos uma única vez.
+
+    Encontros de cronogramas aprovados não são alterados: se ficarem em data
+    bloqueada, passam a constar como restrição de calendário.
+    """
     total = 0
     for comp in sem.componentes.filter(situacao=Componente.Situacao.RASCUNHO):
-        gerar_encontros(comp)
+        gerar_encontros(comp, sincronizar=False)
         total += 1
+    docentes = set(Encontro.objects.filter(componente__semestre=sem).values_list("professor_id", flat=True))
+    sincronizar_conflitos(docentes, {sem.pk})
     return total
 
 
