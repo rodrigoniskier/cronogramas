@@ -476,8 +476,9 @@ _TITULOS_DE_PESSOA = re.compile(r"^(?:(?:prof(?:a|essora?)?|dr(?:a)?|me|ma|msc|e
 
 
 def _sem_titulo(nome):
-    """'Profa. Dra. Ana Lima' → 'ana lima' (comparação de nomes vindos de documentos)."""
-    return _TITULOS_DE_PESSOA.sub("", ag.normalizar(nome)).strip() or ag.normalizar(nome)
+    """'Profa. Dra. Ana Lima (substituta)' → 'ana lima' (comparação de nomes vindos de documentos)."""
+    limpo = " ".join(re.sub(r"\([^)]*\)", " ", ag.normalizar(nome)).split())
+    return _TITULOS_DE_PESSOA.sub("", limpo).strip() or ag.normalizar(nome)
 
 
 class _Docentes:
@@ -514,7 +515,8 @@ class _Docentes:
             if usuario in candidatos:
                 return usuario, ""
         if "@" in chave:
-            achados = [u for u in candidatos if u.email == chave]
+            # E-mail não tem espaços: em PDF, uma célula estreita pode quebrá-lo em várias linhas.
+            achados = [u for u in candidatos if u.email == chave.replace(" ", "")]
         else:
             achados = [u for u in candidatos if u.username and u.username == chave]
             achados = achados or [u for u in candidatos if ag.normalizar(u.nome) == chave]

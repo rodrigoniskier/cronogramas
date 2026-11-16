@@ -303,6 +303,18 @@ class ImportacaoDeDocumentosTests(Base):
         self.assertEqual(list(Encontro.objects.order_by("data").values_list("professor", flat=True)), [self.p1.id, self.p2.id, None])
         self.assertEqual(Componente.objects.get().coordenador, self.coord)
 
+    def test_resolucao_de_nomes_tolera_titulos_parenteses_e_email_quebrado(self):
+        Usuario.objects.filter(pk=self.p3.pk).update(nome="Célia Reis (substituta)")
+        docentes = imp._Docentes()
+        casos = {"Ana Lima": self.p1, "PROFA. DRA. ANA LIMA": self.p1, "Prof. Me. Bruno Sá": self.p2, "Célia Reis": self.p3,
+                 "Profa. Célia Reis (substituta)": self.p3, "p1@t. example": self.p1, "P2@T.EXAMPLE": self.p2}
+        for texto, esperado in casos.items():
+            self.assertEqual(docentes.resolver(texto), (esperado, ""), texto)
+        for texto in ("Ana", "Lima", "Maria Ana Lima", "x@t.example"):
+            self.assertIsNone(docentes.resolver(texto)[0], texto)
+        self.assertEqual(docentes.resolver("Carla Nunes", "coordenador"), (self.coord, ""))
+        self.assertIsNone(docentes.resolver("Ana Lima", "coordenador")[0])       # professora não é coordenadora
+
     def test_coordenador_do_documento_precisa_ser_quem_importa_ou_ser_associado(self):
         comp = self.componente(coord=self.coord2, encontros=[(SEG, (8, 0), (10, 0), self.p1, "Aula")])
         arquivo = self.exportar(comp, "pdf")

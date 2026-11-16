@@ -21,13 +21,16 @@ CronoMed é um monólito Django (um projeto `config`, um app `core`), com págin
 |---|---|
 | `core/agenda.py` (novo) | Regras de conflito, puras e determinísticas, sobre registros em memória. Não acessa o banco. |
 | `core/services.py` | Permissões, geração de encontros, estados e **persistência** dos conflitos (`sincronizar_conflitos`), agora baseada na agenda. |
-| `core/importacao.py` (novo) | Leitura do `.xlsx`, mapeamento de colunas, validação, plano de importação, prévia de conflitos e gravação. |
+| `core/importacao.py` (novo) | Leitura de planilhas, reunião de vários arquivos em uma tabela única (`anexar`), mapeamento de colunas, validação, resolução de nomes, plano de importação, prévia de conflitos e gravação. |
+| `core/documentos.py` (novo) | Leitura de cronogramas em DOCX e PDF no modelo institucional, convertidos para a mesma tabela das planilhas. |
 | `core/sugestoes.py` (novo) | Motor de sugestões: candidatos, restrições rígidas, custo, verificação e plano conjunto. |
 | `core/views_importacao.py`, `core/views_sugestoes.py` (novos) | Telas dessas duas funcionalidades. |
 | `core/views.py` | Telas existentes; ajustadas para exibir os três tipos de conflito e as sugestões. `alterar_encontro` continua sendo o único ponto de gravação de encontros pelo usuário. |
 
 ```
-planilha .xlsx ──► importacao.ler_planilha ──► Importacao (conteúdo no banco, privada do usuário)
+.xlsx ──► importacao.ler_planilha ─┐
+.docx ──► documentos.ler_docx ─────┼─► importacao.anexar ──► Importacao (tabela única de até 20 arquivos,
+.pdf  ──► documentos.ler_pdf ──────┘                          conteúdo no banco, privada do usuário)
                                                    │
                         mapeamento de colunas ─────┤
                                                    ▼
@@ -50,9 +53,19 @@ planilha .xlsx ──► importacao.ler_planilha ──► Importacao (conteúdo
 ## 3. Modelo de dados (alterações)
 
 - **`Conflito`**: novo campo `tipo` (`DOCENTE`, `TURMA`, `CALENDARIO`), `motivo` e `descricao` (restrições de calendário); `encontro_b` e `professor` tornaram-se opcionais. Registros existentes permanecem válidos como `DOCENTE`. Unicidade garantida por restrições condicionais (migração `0004`).
-- **`Importacao`** (migração `0005`): planilha enviada, com cabeçalhos, linhas (texto das células em JSON), mapeamento, situação e resumo. O conteúdo fica no banco porque o Vercel não tem disco gravável.
+- **`Importacao`** (migrações `0005` e `0006`): conferência de um ou vários arquivos, com a lista de arquivos, cabeçalhos e linhas da tabela única (texto das células em JSON; cada linha guarda o arquivo de origem), mapeamento, associações de nomes, situação e resumo. O conteúdo fica no banco porque o Vercel não tem disco gravável.
 
 Nenhum modelo ou campo existente foi removido.
+
+## 3.1 Leitura de DOCX e PDF e cruzamento de arquivos
+
+DOCX e PDF são reduzidos à mesma estrutura intermediária — uma sequência de blocos de texto e de tabelas — e um único extrator (`documentos._extrair`) produz as linhas. Assim, um documento e o seu PDF geram exatamente o mesmo resultado, e tudo o que vem depois (validação, cruzamento, gravação) é idêntico para os três formatos.
+
+- **Identificação**: rótulos CURSO, COMPONENTE CURRICULAR, CH, Teórica, Prática, SEMESTRE, PERÍODO, TURMA e COORDENADOR, em células de tabela ou em texto corrido (vários rótulos na mesma linha).
+- **Tabela do cronograma**: a que tem colunas de data e de horário; os títulos usam os mesmos apelidos das planilhas. Células mescladas (vários docentes na mesma aula) viram uma linha por docente; cabeçalho repetido a cada página e tabela continuada são tratados; linhas de feriado são ignoradas; um arquivo pode conter vários cronogramas.
+- **PDF**: lido com pdfplumber (tabelas com linhas de grade). Texto girado — a marca-d'água de rascunho — é descartado antes da extração. PDF sem texto (digitalizado) é recusado com mensagem específica; não há OCR.
+- **Cruzamento**: `importacao.anexar` junta os arquivos em uma tabela única, unificando colunas pelo campo reconhecido no título. Cada linha guarda o arquivo de origem; erros e conflitos previstos citam arquivo e linha. A prévia de conflitos roda a agenda sobre todas as linhas de todos os arquivos mais o que já está no banco.
+- **Dependência**: pdfplumber (MIT) traz pdfminer.six, pypdfium2 e cryptography — cerca de 16 MB compactados (o conjunto de dependências passa a ~45 MB compactados, abaixo do limite de 60 MB configurado para a função serverless; **não testado no Vercel**). A importação é tardia: sem a biblioteca, só a leitura de PDF fica indisponível. Alternativas avaliadas: pypdf (leve, mas sem estrutura de tabela) e PyMuPDF (licença AGPL e binário maior).
 
 ## 4. Regras de conflito
 
@@ -95,7 +108,7 @@ O recálculo é incremental: alterar o docente recalcula os conflitos desse doce
 
 - Todas as rotas novas exigem login (middleware global) e CSRF.
 - **Importação**: só administradores e coordenadores. Cada importação é filtrada por `usuario=request.user` — outro usuário, mesmo administrador, recebe 404. Coordenadores só criam componentes sob sua coordenação e só atualizam os que coordenam; componentes aprovados/publicados não são alterados.
-- **Arquivo**: apenas `.xlsx`, até 2 MB, com limite de tamanho descompactado, de linhas, de colunas e de texto; lido em modo somente leitura; nunca gravado em disco. Docentes inexistentes não são criados. Textos da planilha são sempre exibidos com escape.
+- **Arquivos**: apenas `.xlsx`, `.docx` e `.pdf`; até 20 por conferência e 4 MB cada, com limite de tamanho descompactado, de páginas, de linhas, de colunas e de texto; lidos em modo somente leitura; nunca gravados em disco. Docentes inexistentes não são criados; a associação manual de nomes só aceita docentes ativos do cadastro. Textos dos arquivos são sempre exibidos com escape.
 - **Sugestões**: qualquer usuário consulta; mover aula exige gerenciar o componente, trocar docente exige poder editá-lo — as mesmas regras do editor, impostas por `alterar_encontro`. Dados enviados pelo navegador não são confiados.
 - Nenhuma credencial foi adicionada ao repositório; exemplos usam apenas dados fictícios (`*.example`).
 
@@ -105,8 +118,9 @@ O recálculo é incremental: alterar o docente recalcula os conflitos desse doce
 2. A turma é identificada por semestre + curso + período + turma.
 3. A importação é “tudo ou nada”: qualquer erro de validação impede a gravação.
 4. Em componentes já existentes, a planilha acrescenta ou preenche encontros, mas não altera o cadastro do componente.
-5. Docentes são identificados por e-mail, nome de usuário ou nome completo sem homônimos.
+5. Docentes são identificados por e-mail, nome de usuário ou nome completo sem homônimos (desconsiderando títulos); os demais são associados manualmente na conferência.
 6. Restrições de calendário impedem a aprovação, como os demais conflitos.
+7. Em DOCX e PDF, o formato de referência é o modelo institucional reproduzido pelas exportações do sistema; linhas com tipo “-” e sem docente são feriados ou dias sem aula e não são importadas.
 
 ## 8. Desempenho medido
 
