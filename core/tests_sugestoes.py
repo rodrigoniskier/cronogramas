@@ -91,6 +91,9 @@ class SugestaoTests(Base):
         trocas = [s.acao for s in sugestoes if s.acao.tipo == "TROCAR_DOCENTE"]
         self.assertEqual({(t.componente_id, t.professor_id) for t in trocas},
                          {(a.id, self.p2.id), (a.id, self.coord.id), (b.id, self.coord.id)})
+        # No máximo um movimento por aula e por data: alternativas realmente distintas.
+        movimentos = [(s.acao.encontros, s.acao.data) for s in sugestoes if s.acao.tipo == "MOVER"]
+        self.assertEqual(len(movimentos), len(set(movimentos)))
         # Resultado determinístico.
         de_novo, _ = sg.sugerir(sg.montar_contexto(self.sem), conflito, LIVRE, limite=8)
         self.assertEqual([s.carga for s in de_novo], [s.carga for s in sugestoes])

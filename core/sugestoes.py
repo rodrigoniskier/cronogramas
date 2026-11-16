@@ -90,10 +90,12 @@ class Acao:
     professor_id: int = None
     custo: int = 0
     motivos: tuple = ()     # justificativa do custo, para exibição
+    desvio: int = 0         # minutos entre o novo início e o original (critério de desempate)
 
     @property
     def ordem(self):
-        return (self.custo, self.tipo, self.encontros, self.data or date.min, self.inicio or time.min, self.professor_id or 0)
+        return (self.custo, self.tipo, self.desvio, self.encontros, self.data or date.min,
+                self.inicio or time.min, self.professor_id or 0)
 
 
 @dataclass
@@ -266,7 +268,11 @@ def violacoes(ctx, acao):
 
 
 def _movimentos(ctx, id_, limite, rejeitados):
-    """Até `limite` movimentos válidos e de menor custo para a aula do encontro."""
+    """Até `limite` movimentos válidos e de menor custo para a aula do encontro.
+
+    No máximo um por data (o de menor custo; em empate, o horário mais próximo do
+    original), para que as sugestões sejam alternativas de fato distintas.
+    """
     agenda = ctx.agenda
     ids = bloco(agenda, id_)
     aulas = [agenda.aulas[i] for i in ids]
@@ -289,6 +295,7 @@ def _movimentos(ctx, id_, limite, rejeitados):
         if len(melhores) >= limite and base + distancia > melhores[-1].custo:
             break       # datas mais distantes só custam mais
         atipico = bool(comp.dias) and dia.weekday() not in comp.dias
+        do_dia = None
         for m in inicios:
             inicio, fim = _hora(m), _hora(m + duracao)
             if (dia, inicio) == (a.data, a.inicio):
@@ -314,8 +321,11 @@ def _movimentos(ctx, id_, limite, rejeitados):
                 motivos.append(f"{DIAS[dia.weekday()]} não é dia habitual do componente")
             if len(ids) > 1:
                 motivos.append(f"move os {len(ids)} docentes/grupos da aula")
-            melhores.append(Acao(MOVER, ids, comp.id, dia, inicio, fim, None, custo, tuple(motivos)))
-        melhores = sorted(melhores, key=lambda x: x.ordem)[:limite]
+            acao = Acao(MOVER, ids, comp.id, dia, inicio, fim, None, custo, tuple(motivos), abs(m - _minutos(a.inicio)))
+            if do_dia is None or acao.ordem < do_dia.ordem:
+                do_dia = acao
+        if do_dia:
+            melhores = sorted(melhores + [do_dia], key=lambda x: x.ordem)[:limite]
     return melhores
 
 

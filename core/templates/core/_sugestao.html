@@ -1,5 +1,5 @@
-<li class="list-group-item">
-  <div class="d-flex flex-wrap gap-2 align-items-start">
+<li class="list-group-item d-flex gap-2">
+  <div class="d-flex flex-wrap gap-2 align-items-start flex-grow-1">
     <div class="flex-grow-1">
       <div class="fw-semibold"><i class="bi {% if s.acao.tipo == 'MOVER' %}bi-calendar2-range{% else %}bi-person-fill-gear{% endif %}" aria-hidden="true"></i> {{ s.descricao }}</div>
       <div class="small text-secondary">{{ s.acao.motivos|join:" · " }} · custo {{ s.acao.custo }}</div>
