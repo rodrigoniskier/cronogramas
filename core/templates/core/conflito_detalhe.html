@@ -44,6 +44,21 @@
     </div></div></div>
   {% endfor %}
 </div>
+{% if sugestoes %}
+<div class="card mb-3" id="sugestoes">
+  <div class="card-header"><i class="bi bi-magic"></i> Sugestões de remanejamento</div>
+  {% if sugestoes.aplicaveis %}
+  <ul class="list-group list-group-flush">{% for s in sugestoes.aplicaveis %}{% include "core/_sugestao.html" with aplicar=True mostrar_resolvidos=False %}{% endfor %}</ul>
+  {% else %}
+  <div class="card-body small text-secondary"><i class="bi bi-slash-circle"></i> {{ sugestoes.diagnostico }}</div>
+  {% endif %}
+  {% if sugestoes.outras %}
+  <div class="card-body border-top py-2 small fw-semibold">Alternativas que dependem do responsável pelo outro componente (registre uma solicitação abaixo):</div>
+  <ul class="list-group list-group-flush">{% for s in sugestoes.outras %}{% include "core/_sugestao.html" with aplicar=False mostrar_resolvidos=False %}{% endfor %}</ul>
+  {% endif %}
+  <div class="card-footer small text-secondary">Cada sugestão respeita as restrições rígidas (docentes e turma livres, calendário, cronograma em elaboração) e é conferida novamente ao ser aplicada. Para resolver vários conflitos de uma vez, veja o <a href="{% url 'plano_remanejamento' %}?semestre={{ c.encontro_a.componente.semestre_id }}">plano de remanejamento do semestre</a>.</div>
+</div>
+{% endif %}
 <div class="row g-3">
   <div class="col-lg-6"><div class="card h-100">
     <div class="card-header"><i class="bi bi-chat-left-text"></i> Solicitações de ajuste e observações</div>

@@ -1,0 +1,64 @@
+{% extends "core/base.html" %}
+{% block titulo %}Plano de remanejamento{% endblock %}
+{% block cabecalho %}Plano de remanejamento{% endblock %}
+{% block conteudo %}
+<a href="{% url 'conflitos' %}" class="small"><i class="bi bi-arrow-left"></i> Voltar à Central de Conflitos</a>
+<form method="get" class="d-flex flex-wrap gap-2 align-items-center my-2">
+  <label class="fw-semibold" for="p-sem">Semestre</label>
+  <select id="p-sem" name="semestre" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+    {% for s in semestres %}<option value="{{ s.pk }}" {% if semestre and s.pk == semestre.pk %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
+  </select>
+</form>
+
+{% if not semestre %}
+<div class="card"><div class="card-body text-secondary">Nenhum semestre cadastrado.</div></div>
+{% elif not plano.total %}
+<div class="card"><div class="card-body text-center py-5 text-secondary"><i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>Não há conflitos ativos neste semestre.</div></div>
+{% else %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card indicador alerta"><div class="icone"><i class="bi bi-exclamation-triangle"></i></div><div><div class="valor">{{ plano.total }}</div><div class="rotulo">Conflitos ativos no semestre</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card indicador sucesso"><div class="icone"><i class="bi bi-magic"></i></div><div><div class="valor">{{ resolvidos }}</div><div class="rotulo">Resolvidos pelo plano ({{ plano.sugestoes|length }} aç{{ plano.sugestoes|length|pluralize:"ão,ões" }})</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card indicador {% if sem_solucao %}alerta{% endif %}"><div class="icone"><i class="bi bi-slash-circle"></i></div><div><div class="valor">{{ sem_solucao|length }}</div><div class="rotulo">Sem solução automática</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card indicador {% if fora_de_alcance %}atencao{% endif %}"><div class="icone"><i class="bi bi-lock"></i></div><div><div class="valor">{{ fora_de_alcance|length }}</div><div class="rotulo">Fora da sua alçada</div></div></div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header d-flex flex-wrap align-items-center gap-2"><span><i class="bi bi-magic"></i> Ações propostas</span>
+    {% if plano.sugestoes %}
+    <form method="post" action="{% url 'aplicar_sugestoes' %}" class="ms-auto" data-confirmar="Aplicar as {{ plano.sugestoes|length }} ações do plano? Elas são gravadas em conjunto: se alguma não for mais válida, nenhuma é aplicada.">{% csrf_token %}
+      <input type="hidden" name="acoes" value="{{ cargas_json }}"><input type="hidden" name="proximo" value="{{ request.get_full_path }}">
+      <button class="btn btn-sm btn-destaque"><i class="bi bi-check2-all"></i> Aplicar plano completo</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if plano.sugestoes %}
+  <ol class="list-group list-group-flush list-group-numbered" id="acoes-plano">
+    {% for s in plano.sugestoes %}{% include "core/_sugestao.html" with aplicar=False mostrar_resolvidos=True %}{% endfor %}
+  </ol>
+  <div class="card-footer small text-secondary">
+    Custo total {{ plano.custo }} (menor é melhor). {% if plano.completa %}Busca concluída: é o plano de menor custo entre os candidatos considerados.{% else %}Limite de busca atingido: é o melhor plano encontrado, não necessariamente o de menor custo.{% endif %}
+    As ações são encadeadas — uma pode depender do horário liberado pela anterior — e por isso o plano é aplicado em conjunto.
+  </div>
+  {% else %}
+  <div class="card-body text-secondary">Nenhuma ação pôde ser proposta para os conflitos ao seu alcance.</div>
+  {% endif %}
+</div>
+
+{% if sem_solucao %}
+<div class="card mb-3"><div class="card-header"><i class="bi bi-slash-circle"></i> Sem solução automática</div>
+  <ul class="list-group list-group-flush small" id="sem-solucao">{% for conflito, motivo in sem_solucao %}<li class="list-group-item"><strong>{{ conflito }}</strong><br><span class="text-secondary">{{ motivo }}</span></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% if fora_de_alcance %}
+<div class="card mb-3"><div class="card-header"><i class="bi bi-lock"></i> Fora da sua alçada</div>
+  <ul class="list-group list-group-flush small">{% for conflito, motivo in fora_de_alcance %}<li class="list-group-item"><strong>{{ conflito }}</strong><br><span class="text-secondary">{{ motivo }}</span></li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<details class="small text-secondary">
+  <summary>Como o plano é calculado</summary>
+  <p class="mt-2 mb-1"><strong>Restrições rígidas</strong> (nunca violadas): docentes e turma livres no novo horário; data dentro do período do componente e do semestre, não bloqueada; dia útil ou dia habitual do componente; duração preservada, entre 07:00 e 22:30; apenas cronogramas em elaboração; substituto vinculado ao componente; nenhum conflito novo.</p>
+  <p class="mb-0"><strong>Preferências</strong> (custo): {{ pesos.dia }} por dia de distância da data original; {{ pesos.horario }} por mudar o horário; {{ pesos.turno }} por sair do turno; {{ pesos.dia_atipico }} por dia da semana não habitual; {{ pesos.linha_extra }} por docente/grupo adicional movido; {{ pesos.troca_docente }} por troca de docente, mais {{ pesos.carga_no_dia }} por encontro que o substituto já tenha no dia.</p>
+</details>
+{% endif %}
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth
 from django.urls import path
 
-from . import views, views_importacao
+from . import views, views_importacao, views_sugestoes
 from .forms import LoginForm
 
 urlpatterns = [
@@ -29,6 +29,8 @@ urlpatterns = [
     path("importar/<int:pk>/", views_importacao.importacao_detalhe, name="importacao_detalhe"),
     path("conflitos/", views.conflitos, name="conflitos"),
     path("conflitos/verificar/", views.conflitos_verificar, name="conflitos_verificar"),
+    path("conflitos/plano/", views_sugestoes.plano_remanejamento, name="plano_remanejamento"),
+    path("conflitos/sugestoes/aplicar/", views_sugestoes.aplicar_sugestoes, name="aplicar_sugestoes"),
     path("conflitos/<int:pk>/", views.conflito_detalhe, name="conflito_detalhe"),
     path("historico/", views.historico, name="historico"),
     path("usuarios/", views.usuarios, name="usuarios"),

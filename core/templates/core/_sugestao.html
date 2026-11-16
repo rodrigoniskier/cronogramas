@@ -1,0 +1,16 @@
+<li class="list-group-item">
+  <div class="d-flex flex-wrap gap-2 align-items-start">
+    <div class="flex-grow-1">
+      <div class="fw-semibold"><i class="bi {% if s.acao.tipo == 'MOVER' %}bi-calendar2-range{% else %}bi-person-fill-gear{% endif %}" aria-hidden="true"></i> {{ s.descricao }}</div>
+      <div class="small text-secondary">{{ s.acao.motivos|join:" · " }} · custo {{ s.acao.custo }}</div>
+      <div class="small text-success"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verificado: elimina {{ s.resolve|length }} conflito{{ s.resolve|length|pluralize }} e não cria nenhum.
+        {% if mostrar_resolvidos %}<span class="text-secondary">({{ s.resolve_textos|join:"; " }})</span>{% endif %}</div>
+    </div>
+    {% if aplicar %}
+    <form method="post" action="{% url 'aplicar_sugestoes' %}" data-confirmar="Aplicar este remanejamento?">{% csrf_token %}
+      <input type="hidden" name="acoes" value="{{ s.carga_json }}"><input type="hidden" name="proximo" value="{{ request.get_full_path }}">
+      <button class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-check-lg"></i> Aplicar</button>
+    </form>
+    {% endif %}
+  </div>
+</li>

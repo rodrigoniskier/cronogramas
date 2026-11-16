@@ -91,6 +91,7 @@
     {% if imp.resumo.conflitos_previstos %}
       <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> A planilha trouxe <strong>{{ imp.resumo.conflitos_previstos|length }} conflito(s)</strong>, já registrados na Central de Conflitos.</div>
       <ul class="list-group small mb-3">{% for t in imp.resumo.conflitos_previstos %}<li class="list-group-item">{{ t }}</li>{% endfor %}</ul>
+      <a class="btn btn-danger" href="{% url 'plano_remanejamento' %}?semestre={{ imp.semestre_id }}"><i class="bi bi-magic"></i> Ver plano de remanejamento sugerido</a>
       <a class="btn btn-outline-danger" href="{% url 'conflitos' %}?semestre={{ imp.semestre_id }}"><i class="bi bi-list-check"></i> Central de Conflitos</a>
     {% else %}
       <p class="text-success mb-0"><i class="bi bi-check-circle"></i> Nenhum conflito foi causado por esta importação.</p>

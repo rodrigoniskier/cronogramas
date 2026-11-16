@@ -734,11 +734,16 @@ def conflito_detalhe(request, pk):
                     messages.error(request, err.mensagem)
         return redirect("conflito_detalhe", pk=pk)
     _lados(c, u)
+    sugestoes = None
+    if c.ativo:
+        from .views_sugestoes import sugestoes_do_conflito   # import tardio: evita ciclo entre os módulos
+
+        sugestoes = sugestoes_do_conflito(c, u)
     historico = HistoricoAlteracao.objects.filter(
         encontro_id__in=[c.encontro_a_id, c.encontro_b_id]
     ).select_related("usuario", "componente")[:50]
     return render(request, "core/conflito_detalhe.html", {
-        "c": c, "historico": historico, "docentes": Usuario.docentes(),
+        "c": c, "historico": historico, "docentes": Usuario.docentes(), "sugestoes": sugestoes,
         "observacoes": c.observacoes.select_related("autor"),
     })
 
