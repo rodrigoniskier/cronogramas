@@ -28,6 +28,8 @@ MAX_DESCOMPACTADO = 30 * 1024 * 1024  # proteção contra arquivo-bomba (xlsx é
 MAX_LINHAS = 3000
 MAX_COLUNAS = 40
 MAX_CELULA = 5000
+MAX_TEXTO = 2_000_000                 # total de caracteres guardados por importação
+MAX_VAZIAS_SEGUIDAS = 500             # depois disso, considera-se que os dados acabaram
 LINHAS_CABECALHO = 20                 # o cabeçalho é procurado nas primeiras linhas
 MAX_ERROS_EXIBIDOS = 200
 
@@ -133,13 +135,19 @@ def ler_planilha(arquivo):
         arquivo.seek(0)
         pasta = load_workbook(arquivo, read_only=True, data_only=True)
         aba = pasta.worksheets[0]
-        brutas = []
+        brutas, vazias_seguidas = [], 0
         for n, valores in enumerate(aba.iter_rows(values_only=True), start=1):
-            if n > MAX_LINHAS + LINHAS_CABECALHO:
-                raise ErroImportacao(f"A planilha tem mais de {MAX_LINHAS} linhas. Divida-a em arquivos menores.")
             celulas = [_texto_celula(v) for v in valores[:MAX_COLUNAS]]
-            if any(celulas):
-                brutas.append((n, celulas))
+            if not any(celulas):
+                # Planilhas formatadas costumam ter milhares de linhas vazias no final.
+                vazias_seguidas += 1
+                if vazias_seguidas > MAX_VAZIAS_SEGUIDAS:
+                    break
+                continue
+            vazias_seguidas = 0
+            brutas.append((n, celulas))
+            if len(brutas) > MAX_LINHAS + LINHAS_CABECALHO:
+                raise ErroImportacao(f"A planilha tem mais de {MAX_LINHAS} linhas. Divida-a em arquivos menores.")
         pasta.close()
     except ErroImportacao:
         raise
@@ -165,6 +173,8 @@ def ler_planilha(arquivo):
     linhas = [{"n": n, "c": (c + [""] * largura)[:largura]} for n, c in dados]
     if not cabecalhos or not linhas:
         raise ErroImportacao("A planilha não tem linhas de dados abaixo do cabeçalho.")
+    if sum(len(c) for l in linhas for c in l["c"]) > MAX_TEXTO:
+        raise ErroImportacao("A planilha tem texto demais. Divida-a em arquivos menores.")
     if len(linhas) > MAX_LINHAS:
         raise ErroImportacao(f"A planilha tem mais de {MAX_LINHAS} linhas. Divida-a em arquivos menores.")
     return cabecalhos, linhas

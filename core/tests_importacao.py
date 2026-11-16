@@ -51,6 +51,21 @@ class ConversaoTests(SimpleTestCase):
         self.assertEqual(cabecalhos, ["Matéria", "Classe", "", ""])     # título solto ignorado; colunas com dados preservadas
         self.assertEqual(linhas, [{"n": 4, "c": ["x", "y", "", "w"]}])
 
+    def test_linhas_vazias_no_meio_e_no_fim_sao_ignoradas(self):
+        from openpyxl import Workbook
+
+        pasta = Workbook()
+        aba = pasta.active
+        aba.append(list(CAB))
+        aba.append(list(linha()))
+        aba.append([])
+        aba.append(list(linha(dia=QUA)))
+        aba.cell(row=9000, column=1).number_format = "0.00"      # formatação "esticada", sem dados
+        saida = BytesIO()
+        pasta.save(saida)
+        _, linhas = imp.ler_planilha(SimpleUploadedFile("p.xlsx", saida.getvalue()))
+        self.assertEqual([l["n"] for l in linhas], [2, 4])
+
     def test_leitura_localiza_cabecalho_abaixo_de_titulos(self):
         cabecalhos, linhas = imp.ler_planilha(arquivo([linha(), linha(dia=QUA)]))
         self.assertEqual(tuple(cabecalhos), CAB)
@@ -81,8 +96,9 @@ class ConversaoTests(SimpleTestCase):
             imp.ler_planilha(arquivo([linha(dia=date(2027, 2, d)) for d in (1, 2, 3)]))
         with patch.object(imp, "MAX_BYTES", 100), self.assertRaises(imp.ErroImportacao):
             imp.ler_planilha(arquivo([linha()]))
-        with patch.object(imp, "MAX_DESCOMPACTADO", 100), self.assertRaises(imp.ErroImportacao):
-            imp.ler_planilha(arquivo([linha()]))
+        for limite in ("MAX_DESCOMPACTADO", "MAX_TEXTO"):
+            with patch.object(imp, limite, 100), self.assertRaises(imp.ErroImportacao):
+                imp.ler_planilha(arquivo([linha(conteudo="x" * 200)]))
 
 
 class Base(TestCase):
