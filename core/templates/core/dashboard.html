@@ -5,11 +5,11 @@
 {% if pendencias %}
 <section class="card painel-pendencias mb-3" aria-labelledby="tit-pend">
   <div class="card-body">
-    <h2 class="h6 fw-bold mb-2" id="tit-pend" style="color:var(--conflito)"><i class="bi bi-exclamation-triangle-fill"></i> Você tem {{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de horário pendente{{ n_minhas_pendencias|pluralize }}</h2>
+    <h2 class="h6 fw-bold mb-2" id="tit-pend" style="color:var(--conflito)"><i class="bi bi-exclamation-triangle-fill"></i> Você tem {{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de alocação pendente{{ n_minhas_pendencias|pluralize }}</h2>
     <ul class="list-unstyled mb-2 small">
       {% for c in pendencias %}
-      <li class="mb-1"><i class="bi bi-person-fill" aria-hidden="true"></i> <strong>{{ c.professor.nome }}</strong> — {{ c.data|date:"d/m/Y" }}, {{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}:
-        {{ c.encontro_a.componente.nome }} (Turma {{ c.encontro_a.componente.turma }}) × {{ c.encontro_b.componente.nome }} (Turma {{ c.encontro_b.componente.turma }})
+      <li class="mb-1"><i class="bi {% if c.tipo == 'DOCENTE' %}bi-person-fill{% elif c.tipo == 'TURMA' %}bi-people-fill{% else %}bi-calendar-x{% endif %}" aria-hidden="true"></i> <strong>{{ c.sujeito }}</strong> — {{ c.data|date:"d/m/Y" }}, {{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}:
+        {{ c.encontro_a.componente.nome }} (Turma {{ c.encontro_a.componente.turma }}){% if c.encontro_b %} × {{ c.encontro_b.componente.nome }} (Turma {{ c.encontro_b.componente.turma }}){% endif %}
         · <a href="{% url 'conflito_detalhe' c.pk %}">ver e resolver</a></li>
       {% endfor %}
     </ul>
@@ -65,7 +65,7 @@
 <div class="modal fade" id="modal-pendencias" tabindex="-1" aria-labelledby="mp-tit" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
     <div class="modal-header"><h2 class="modal-title h5" id="mp-tit"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Pendências de horário</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
-    <div class="modal-body">Há <strong>{{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de horário</strong> relacionado{{ n_minhas_pendencias|pluralize }} a você ou aos componentes em que atua. Você pode continuar usando o sistema normalmente e resolvê-los quando preferir.</div>
+    <div class="modal-body">Há <strong>{{ n_minhas_pendencias }} conflito{{ n_minhas_pendencias|pluralize }} de alocação</strong> relacionado{{ n_minhas_pendencias|pluralize }} a você ou aos componentes em que atua. Você pode continuar usando o sistema normalmente e resolvê-los quando preferir.</div>
     <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Ver depois</button><a class="btn btn-danger" href="{% url 'conflitos' %}?meus=1">Ver minhas pendências</a></div>
   </div></div>
 </div>

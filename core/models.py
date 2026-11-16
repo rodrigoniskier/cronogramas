@@ -323,18 +323,33 @@ class Encontro(models.Model):
 
 
 class Conflito(models.Model):
-    """Sobreposição de horário do mesmo docente em dois encontros distintos."""
+    """Conflito de alocação detectado (ver regras em core/agenda.py).
+
+    DOCENTE e TURMA envolvem dois encontros; CALENDARIO, apenas `encontro_a`.
+    """
+
+    class Tipo(models.TextChoices):
+        DOCENTE = "DOCENTE", "Conflito docente"
+        TURMA = "TURMA", "Conflito de turma"
+        CALENDARIO = "CALENDARIO", "Restrição de calendário"
 
     class Status(models.TextChoices):
         ATIVO = "ATIVO", "Ativo"
         RESOLVIDO = "RESOLVIDO", "Resolvido"
 
+    tipo = models.CharField(max_length=10, choices=Tipo.choices, default=Tipo.DOCENTE)
     encontro_a = models.ForeignKey(Encontro, on_delete=models.CASCADE, related_name="conflitos_a")
-    encontro_b = models.ForeignKey(Encontro, on_delete=models.CASCADE, related_name="conflitos_b")
-    professor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="conflitos")
+    encontro_b = models.ForeignKey(
+        Encontro, null=True, blank=True, on_delete=models.CASCADE, related_name="conflitos_b"
+    )
+    professor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="conflitos"
+    )
     data = models.DateField()
     sobreposicao_inicio = models.TimeField()
     sobreposicao_fim = models.TimeField()
+    motivo = models.CharField(max_length=20, blank=True)       # CALENDARIO: código da restrição
+    descricao = models.CharField(max_length=160, blank=True)   # CALENDARIO: texto da restrição
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ATIVO)
     detectado_em = models.DateTimeField(auto_now_add=True)
     resolvido_em = models.DateTimeField(null=True, blank=True)
@@ -344,12 +359,59 @@ class Conflito(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["encontro_a", "encontro_b", "professor"], name="conflito_unico_por_par"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["encontro_a", "encontro_b"], condition=models.Q(tipo="TURMA"),
+                name="conflito_turma_unico",
+            ),
+            models.UniqueConstraint(
+                fields=["encontro_a", "motivo"], condition=models.Q(tipo="CALENDARIO"),
+                name="conflito_calendario_unico",
+            ),
         ]
 
     @property
     def ativo(self):
         return self.status == self.Status.ATIVO
+
+    @property
+    def chave(self):
+        """Mesma identidade usada por agenda.Achado.chave."""
+        return (self.tipo, self.encontro_a_id, self.encontro_b_id, self.professor_id, self.motivo)
+
+    @property
+    def sujeito(self):
+        """Quem ou o que está em conflito: o docente, a turma ou a restrição de calendário."""
+        if self.tipo == self.Tipo.DOCENTE:
+            return self.professor.nome
+        comp = self.encontro_a.componente
+        if self.tipo == self.Tipo.TURMA:
+            return f"Turma {comp.turma} ({comp.periodo} período)"
+        if self.motivo == "DATA_BLOQUEADA":
+            return f"Data bloqueada — {self.descricao}"
+        return f"Data {self.descricao}"
+
+    @property
+    def explicacao(self):
+        """Frase completa que descreve o conflito, para telas e validação."""
+        a = self.encontro_a
+        if self.tipo == self.Tipo.CALENDARIO:
+            if self.motivo == "DATA_BLOQUEADA":
+                return f"{a.componente} tem encontro em {a.descricao}, data bloqueada no calendário ({self.descricao})."
+            return f"{a.componente} tem encontro em {a.descricao}, {self.descricao}."
+        b = self.encontro_b
+        faixa = f"{self.sobreposicao_inicio:%H:%M}–{self.sobreposicao_fim:%H:%M}"
+        if self.tipo == self.Tipo.TURMA:
+            return (
+                f"A {self.sujeito} tem dois componentes em {self.data:%d/%m/%Y}: {a.componente.nome} "
+                f"({a.hora_inicio:%H:%M}–{a.hora_fim:%H:%M}) e {b.componente.nome} "
+                f"({b.hora_inicio:%H:%M}–{b.hora_fim:%H:%M}). Sobreposição: {faixa}."
+            )
+        return (
+            f"{self.professor.nome} está em dois encontros em {self.data:%d/%m/%Y}: {a.componente} "
+            f"({a.hora_inicio:%H:%M}–{a.hora_fim:%H:%M}) e {b.componente} "
+            f"({b.hora_inicio:%H:%M}–{b.hora_fim:%H:%M}). Sobreposição: {faixa}."
+        )
 
 
 class ObservacaoConflito(models.Model):

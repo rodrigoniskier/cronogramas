@@ -13,6 +13,8 @@
   <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-sem">Semestre</label>
     <select id="c-sem" name="semestre" class="form-select form-select-sm"><option value="">Todos</option>{% for s in semestres %}<option value="{{ s.pk }}" {% if g.semestre == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}</select></div>
   <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-data">Data</label><input id="c-data" type="date" name="data" value="{{ g.data }}" class="form-control form-control-sm"></div>
+  <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-tipo">Tipo</label>
+    <select id="c-tipo" name="tipo" class="form-select form-select-sm"><option value="">Todos</option>{% for v, r in tipos %}<option value="{{ v }}" {% if g.tipo == v %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
   <div class="col-6 col-md-2"><label class="form-label small mb-0" for="c-sit">Situação</label>
     <select id="c-sit" name="situacao" class="form-select form-select-sm">
       <option value="ATIVO" {% if situacao == 'ATIVO' %}selected{% endif %}>Ativos</option>
@@ -39,14 +41,15 @@
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
       {% if c.ativo %}<span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Conflito ativo</span>
       {% else %}<span class="badge text-bg-success"><i class="bi bi-check-circle-fill"></i> Resolvido em {{ c.resolvido_em|date:"d/m/Y H:i" }}</span>{% endif %}
-      <span><i class="bi bi-person-fill"></i> <strong>{{ c.professor.nome }}</strong></span>
+      <span class="badge text-bg-light border">{{ c.get_tipo_display }}</span>
+      <span><i class="bi {% if c.tipo == 'DOCENTE' %}bi-person-fill{% elif c.tipo == 'TURMA' %}bi-people-fill{% else %}bi-calendar-x{% endif %}"></i> <strong>{{ c.sujeito }}</strong></span>
       <span><i class="bi bi-calendar-event"></i> {{ c.data|date:"l, d/m/Y" }}</span>
-      <span><i class="bi bi-clock"></i> Sobreposição: <strong>{{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}</strong></span>
+      {% if c.tipo != 'CALENDARIO' %}<span><i class="bi bi-clock"></i> Sobreposição: <strong>{{ c.sobreposicao_inicio|time:"H:i" }}–{{ c.sobreposicao_fim|time:"H:i" }}</strong></span>{% endif %}
       <a class="btn btn-sm btn-primary ms-auto" href="{% url 'conflito_detalhe' c.pk %}"><i class="bi bi-search"></i> Detalhes, histórico e resolução</a>
     </div>
     <div class="row g-2">
       {% for l in c.lados %}
-      <div class="col-md-6"><div class="border rounded p-2 h-100 bg-light">
+      <div class="{% if c.lados|length == 1 %}col-12{% else %}col-md-6{% endif %}"><div class="border rounded p-2 h-100 bg-light">
         <div class="fw-semibold">{{ l.comp.nome }} — Turma {{ l.comp.turma }}</div>
         <div class="small text-secondary">{{ l.comp.semestre.nome }} · Coord.: {{ l.comp.coordenador.nome }}</div>
         <div class="small"><i class="bi bi-clock"></i> {{ l.enc.hora_inicio|time:"H:i" }}–{{ l.enc.hora_fim|time:"H:i" }}{% if l.enc.conteudo %} · {{ l.enc.conteudo|truncatechars:70 }}{% endif %}</div>

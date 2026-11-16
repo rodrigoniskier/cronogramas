@@ -135,8 +135,9 @@ class Command(BaseCommand):
         morfo = comp("Morfofuncional II (DEMO)", "DEMO-03", "A", "MANHA", "coord3", ["prof6", "prof7"],
                      [(1, (8, 0), (10, 0)), (4, (8, 0), (10, 0))], "Laboratório Morfofuncional")
         preencher(morfo, ["prof6", "prof7"])
-        # 4) Saúde Coletiva II — Turma B: qua 15h–17h30 (parcial)
-        saude = comp("Saúde Coletiva II (DEMO)", "DEMO-04", "B", "TARDE", "coord2", ["prof2", "prof8"],
+        # 4) Saúde Coletiva II — Turma C: qua 15h–17h30 (parcial). Turma distinta da de Habilidades
+        #    (qua 15h30–18h) para que a demonstração tenha apenas os conflitos intencionais.
+        saude = comp("Saúde Coletiva II (DEMO)", "DEMO-04", "C", "TARDE", "coord2", ["prof2", "prof8"],
                      [(2, (15, 0), (17, 30))], "Sala 105 — Bloco C")
         preencher(saude, ["prof8"], quantos=2)
 
