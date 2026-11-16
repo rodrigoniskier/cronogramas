@@ -10,7 +10,8 @@
       {% for s in semestres %}<option value="{{ s.pk }}" {% if sem_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>{% endfor %}
     </select>
   </form>
-  {% if pode_criar %}<a class="btn btn-destaque ms-auto" href="{% url 'componente_novo' %}"><i class="bi bi-plus-lg"></i> Novo componente</a>{% endif %}
+  {% if pode_criar %}<a class="btn btn-outline-primary ms-auto" href="{% url 'importar' %}"><i class="bi bi-file-earmark-spreadsheet"></i> Importar planilha</a>
+  <a class="btn btn-destaque" href="{% url 'componente_novo' %}"><i class="bi bi-plus-lg"></i> Novo componente</a>{% endif %}
 </div>
 <div class="card">{% include "core/_tabela_componentes.html" %}</div>
 <p class="small text-secondary mt-2">Todos os cronogramas podem ser consultados. A edição é restrita aos docentes vinculados, ao coordenador responsável e à administração.</p>

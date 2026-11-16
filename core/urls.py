@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth
 from django.urls import path
 
-from . import views
+from . import views, views_importacao
 from .forms import LoginForm
 
 urlpatterns = [
@@ -24,6 +24,9 @@ urlpatterns = [
     path("api/encontros/<int:pk>/", views.api_encontro_salvar, name="api_encontro_salvar"),
     path("api/encontros/<int:pk>/excluir/", views.api_encontro_excluir, name="api_encontro_excluir"),
     path("api/encontros/<int:pk>/historico/", views.api_encontro_historico, name="api_encontro_historico"),
+    path("importar/", views_importacao.importar, name="importar"),
+    path("importar/modelo/", views_importacao.importacao_modelo, name="importacao_modelo"),
+    path("importar/<int:pk>/", views_importacao.importacao_detalhe, name="importacao_detalhe"),
     path("conflitos/", views.conflitos, name="conflitos"),
     path("conflitos/verificar/", views.conflitos_verificar, name="conflitos_verificar"),
     path("conflitos/<int:pk>/", views.conflito_detalhe, name="conflito_detalhe"),

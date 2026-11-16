@@ -132,6 +132,21 @@ def gerar_encontros(componente, sincronizar=True):
 # ------------------------------------------------------------------ conflitos
 
 
+def calendarios_de(semestre_ids):
+    """{semestre_id: agenda.Calendario} com o período letivo e as datas bloqueadas."""
+    bloqueadas = defaultdict(dict)
+    for sem_id, dia, descricao in DataBloqueada.objects.filter(semestre__in=semestre_ids).values_list(
+        "semestre_id", "data", "descricao"
+    ):
+        bloqueadas[sem_id][dia] = descricao
+    return {
+        sem_id: ag.Calendario(inicio, fim, bloqueadas[sem_id])
+        for sem_id, inicio, fim in Semestre.objects.filter(pk__in=semestre_ids).values_list(
+            "id", "data_inicio", "data_fim"
+        )
+    }
+
+
 def montar_agenda(encontros, docente=True, turma_calendario=True):
     """Constrói a agenda em memória a partir de um queryset de encontros.
 
@@ -142,18 +157,7 @@ def montar_agenda(encontros, docente=True, turma_calendario=True):
         "id", "componente_id", "componente__semestre_id", "componente__curso",
         "componente__periodo", "componente__turma", "professor_id", "data", "hora_inicio", "hora_fim",
     ))
-    calendarios = {}
-    if turma_calendario:
-        semestres = {l[2] for l in linhas}
-        bloqueadas = defaultdict(dict)
-        for sem_id, dia, descricao in DataBloqueada.objects.filter(semestre__in=semestres).values_list(
-            "semestre_id", "data", "descricao"
-        ):
-            bloqueadas[sem_id][dia] = descricao
-        for sem_id, inicio, fim in Semestre.objects.filter(pk__in=semestres).values_list(
-            "id", "data_inicio", "data_fim"
-        ):
-            calendarios[sem_id] = ag.Calendario(inicio, fim, bloqueadas[sem_id])
+    calendarios = calendarios_de({l[2] for l in linhas}) if turma_calendario else {}
     return ag.Agenda(
         (
             ag.Aula(

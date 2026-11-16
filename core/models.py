@@ -436,3 +436,41 @@ class HistoricoAlteracao(models.Model):
 
     class Meta:
         ordering = ["-data_hora", "-id"]
+
+
+class Importacao(models.Model):
+    """Planilha enviada por um usuário, aguardando conferência ou já aplicada.
+
+    O conteúdo lido fica no banco (e não em disco) para funcionar também em
+    ambientes sem sistema de arquivos gravável. Cada importação pertence a quem
+    a enviou e só é visível a essa pessoa.
+    """
+
+    class Status(models.TextChoices):
+        PENDENTE = "PENDENTE", "Aguardando conferência"
+        APLICADA = "APLICADA", "Importada"
+
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="importacoes")
+    semestre = models.ForeignKey(Semestre, on_delete=models.CASCADE, related_name="importacoes")
+    coordenador_padrao = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    arquivo_nome = models.CharField(max_length=200)
+    cabecalhos = models.JSONField(default=list)
+    linhas = models.JSONField(default=list)        # [{"n": linha no Excel, "c": [textos]}]
+    mapeamento = models.JSONField(default=dict)    # {campo: índice da coluna}
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDENTE)
+    resumo = models.JSONField(default=dict)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    aplicado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-criado_em", "-id"]
+        verbose_name = "importação"
+
+    def __str__(self):
+        return f"{self.arquivo_nome} — {self.get_status_display()}"
+
+    @property
+    def pendente(self):
+        return self.status == self.Status.PENDENTE
