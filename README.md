@@ -6,6 +6,18 @@ Plataforma web multiusuário para construção colaborativa de cronogramas acad�
 
 > MVP para piloto. Foi verificado nos fluxos essenciais (ver "O que foi verificado"), e possui testes automatizados apenas das regras críticas.
 
+## Problema, público e resultado
+
+**Problema.** Montar cronogramas acadêmicos em grupo gera conflitos de horário docente que só aparecem tarde.
+
+**Para quem.** Professores e coordenação de um curso que constroem cronogramas colaborativamente.
+
+**O que entrega.** Plataforma multiusuário para construir cronogramas com detecção automática de conflitos de horário docente, cadastro de professores e dados de demonstração fictícios.
+
+**Tecnologias.** Python, Django, PostgreSQL, SQLite, Docker, Gunicorn, Vercel, GitHub Actions.
+
+**Qualidade e evidências.** 22 funções de teste automatizadas das regras críticas; workflow de CI; o README declara o escopo de MVP para piloto.
+
 ## 1. Como executar (local, SQLite)
 
 Requer Python 3.11 ou superior.
