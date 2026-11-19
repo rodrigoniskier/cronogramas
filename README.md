@@ -16,7 +16,7 @@ Plataforma web multiusuário para construção colaborativa de cronogramas acad�
 
 **Tecnologias.** Python, Django, PostgreSQL, SQLite, Docker, Gunicorn, Vercel, GitHub Actions.
 
-**Qualidade e evidências.** 22 funções de teste automatizadas das regras críticas; workflow de CI; o README declara o escopo de MVP para piloto.
+**Qualidade e evidências.** 22 funções de teste automatizadas das regras críticas; workflow de CI; o README declara o escopo de MVP para piloto. Licença MIT.
 
 ## 1. Como executar (local, SQLite)
 
